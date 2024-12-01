@@ -4,6 +4,7 @@ import json
 import libpybee
 import pandas as pd
 import requests
+import tqdm
 
 # Pandas options
 pd.set_option('display.max_columns', None)
@@ -23,11 +24,11 @@ with open('../token/songstats_key.txt', 'r', encoding='utf-8') as key_file:
 
 
 def format_title(track_title: str) -> str:
+    """Format track title to a suitable format for REST queries
+    :param track_title: track title
+    :return: formatted track title.
     """
-    :param track_title:
-    :return:
-    """
-    to_remove = ('[Extended Mix]', '[Original Mix]', '[Remix]', '[Extended Version]', '[', ']', '?', '.', '(', ')')
+    to_remove = ('[Extended Mix]', '[Original Mix]', '[Remix]', '[Extended Version]', '[', ']', '?', '(', ')')
     to_replace_by_space = (' × ', ', ')
 
     for sub_string in to_remove:
@@ -39,18 +40,18 @@ def format_title(track_title: str) -> str:
 
 
 def remove_remixer(track_title: str, artist_list: list) -> list:
-    """
-    :param track_title:
-    :param artist_list:
-    :return:
+    """Remove remixer from artist list
+    :param track_title: track title
+    :param artist_list: artists list
+    :return: the artists list without remixer.
     """
     return [artist for artist in artist_list if artist not in track_title]
 
 
 def search(request_str: str) -> dict:
-    """
-    :param request_str:
-    :return:
+    """Search track in songstats.com database using their API
+    :param request_str: character string including track title and artists involved
+    :return: dictionary with track title (according to Songstats, for manual check) and Songstats ID.
     """
     response = requests.get(url="https://api.songstats.com/enterprise/v1/tracks/search",
                             headers={
@@ -58,30 +59,42 @@ def search(request_str: str) -> dict:
                                 "Accept": "application/json",
                                 "apikey": api_key
                             },
-                            params={'q': request_str, 'limit': 1})
+                            params={'q': request_str, 'limit': 1}).json()
 
-    return response.json()
+    if not response['results']:
+        return {'s_id': '', 's_title': ''}
+
+    return {'s_id': response['results'][0]['songstats_track_id'], 's_title': response['results'][0]['title']}
 
 
 'Main'
 
-MY_LIBRARY = libpybee.Library('../../../../Music/MusicBee/iTunes Music Library.xml')
-dj_global_playlist = MY_LIBRARY.playlists['6543']
+if __name__ == '__main__':
+    MY_LIBRARY = libpybee.Library('../data/lib.xml')  # MusicBee Library File
+    dj_global_playlist = MY_LIBRARY.playlists['6301']  # Playlist for Electronic Music
 
-tracks_2024_init = [{'title': format_title(track.title),
-                     'artist_list': list(map(lambda x: x.lower(), track.artist_list)),
-                     'genre': list(map(lambda x: x.lower(), track.genre))}
-                    for track in dj_global_playlist.tracks if track.year == 2024]
+    # Keep 2024 releases and formatting
+    tracks_2024_init = [{'title': format_title(track.title),
+                         'artist_list': list(map(lambda x: x.lower(), track.artist_list)),
+                         'label': list(map(lambda x: x.lower(), track.grouping)),
+                         'genre': list(map(lambda x: x.lower(), track.genre))}
+                        for track in dj_global_playlist.tracks if track.year == 2024]
 
-tracks_2024_rq = [{'title': track['title'], 'artist_list': track['artist_list'], 'genre': track['genre'],
-                   'request': f'{", ".join(remove_remixer(track["title"], track["artist_list"]))} {track["title"]}'}
-                  for track in tracks_2024_init]
+    # Create the request string for the Songstats API
+    tracks_2024_rq = [{'request': f'{", ".join(remove_remixer(track["title"], track["artist_list"]))} {track["title"]}',
+                       'title': track['title'],
+                       'artist_list': track['artist_list'],
+                       'label': track['label'],
+                       'genre': track['genre']} for track in tracks_2024_init]
 
-tracks_2024 = [{'title': track['title'],
-                'artist_list': track['artist_list'],
-                'genre': track['genre'],
-                'request': track['request'],
-                'data': search(track['request'])} for track in tracks_2024_rq]
+    # Perform queries
+    tracks_2024 = [{'title': track['title'],
+                    'artist_list': track['artist_list'],
+                    'label': track['label'],
+                    'genre': track['genre'],
+                    'request': track['request'],
+                    'data': search(track['request'])} for track in tqdm.tqdm(tracks_2024_rq)]
 
-with open('../data/selection_2024.json', 'w', encoding='utf-8') as selection_file:
-    json.dump(tracks_2024, selection_file, ensure_ascii=False, indent=4)
+    # Store results as JSON file
+    with open('../data/selection_2024.json', 'w', encoding='utf-8') as selection_file:
+        json.dump(tracks_2024, selection_file, ensure_ascii=False, indent=2, sort_keys=True)
