@@ -22,10 +22,16 @@ with open('../data/selection_2024.json', 'r', encoding='utf-8') as j_file:
 
 'Functions'
 
+
+def show_missing_s_id(track_list: list):
+    """Print tracks with missing Songstats ID
+    :param track_list: list of dictionaries with track information
+    """
+    for track in [track for track in selection_2024 if not track['data']['s_id']]:
+        print(track['request'])
+
+
 'Main'
 
 if __name__ == '__main__':
-    missing_id = [track for track in selection_2024 if not track['data']['s_id']]
-
-    for track in missing_id:
-        print(track['request'])
+    show_missing_s_id(selection_2024)
