@@ -162,4 +162,9 @@ cython_debug/
 .idea/
 
 # Ignored for privacy purpose
-token/
+tokens/
+
+# Large files
+data/data_2024.json
+data/lib.xml
+data/selection_2024.json
