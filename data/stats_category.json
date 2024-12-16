@@ -2,7 +2,6 @@
   "charts": [
     "amazon_charts_total",
     "apple_music_charts_total",
-    "deezer_charts_total",
     "soundcloud_charts_total",
     "spotify_charts_total",
     "tidal_charts_total",
@@ -58,6 +57,7 @@
     "apple_music_playlists_editorial_current",
     "apple_music_playlists_total",
     "deezer_charts_current",
+    "deezer_charts_total",
     "deezer_playlist_reach_current",
     "deezer_playlists_current",
     "deezer_playlists_editorial_current",
@@ -94,8 +94,5 @@
     "youtube_video_comments_total",
     "youtube_video_likes_total",
     "youtube_videos_total"
-  ],
-  "_unsorted": [
-    ""
   ]
 }
