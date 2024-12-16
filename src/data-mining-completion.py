@@ -5,6 +5,8 @@ import json
 import os
 import pandas as pd
 import pyyoutube as pyt
+import requests
+import tqdm
 
 from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
@@ -22,8 +24,16 @@ pd.set_option('display.width', 275)
 Script to complete and correct information retrieved with 'data-mining-prep.py'.
 """
 
+with open('../tokens/songstats_key.txt', 'r', encoding='utf-8') as key_file:
+    api_key = key_file.read()
+
 with open('../data/selection_2024.json', 'r', encoding='utf-8') as j_file:
     selection_2024 = json.load(j_file)
+
+with open('../data/data_2024.json', 'r', encoding='utf-8') as d_file:
+    data_2024 = json.load(d_file)
+
+playlist = 'PLOMUdQFdS-XNqUpFzE89aHgwn0wrBidyG'
 
 'Functions'
 
@@ -48,7 +58,7 @@ def create_youtube_service():
     if os.path.exists('../tokens/credentials.json'):
         cred = Credentials.from_authorized_user_file('../tokens/credentials.json')  # Retrieve credentials
 
-    if not cred or not cred.valid:  # Cover outdated or non-existant credentials
+    if not cred or not cred.valid:  # Cred outdated or non-existant credentials
         if cred and cred.expired and cred.refresh_token:
             try:
                 cred.refresh(Request())
@@ -76,8 +86,87 @@ def create_youtube_service():
         raise error
 
 
+def get_youtube_playlist_videos(service: pyt.Client, playlist_id: str) -> dict:
+    """Get the videos in a YouTube playlist
+    :param service: a Python YouTube Client
+    :param playlist_id: a YouTube playlist ID
+    :return: playlist items (videos) as a dictionary.
+    """
+    p_items = {}
+    next_page_token = None
+
+    while True:
+        try:
+            request = service.playlistItems.list(part=['snippet', 'contentDetails'],
+                                                 playlist_id=playlist_id,
+                                                 max_results=50,
+                                                 pageToken=next_page_token)  # Request playlist's items
+
+            # Keep necessary data
+            p_items.update({item.contentDetails.videoId: item.snippet.title for item in request.items})
+
+            next_page_token = request.nextPageToken
+
+            if next_page_token is None:
+                break
+
+        except pyt.error.PyYouTubeException as error:
+            raise error
+
+    return p_items
+
+
+def get_songstats_youtube_videos(songstats_id: str):
+    if not songstats_id:
+        return {}
+
+    response = requests.get(url='https://api.songstats.com/enterprise/v1/tracks/stats',
+                            headers={
+                                'Accept-Encoding': '',
+                                'Accept': 'application/json',
+                                'apikey': api_key
+                            },
+                            params={'songstats_track_id': songstats_id,
+                                    'with_videos': 'true',
+                                    'source': 'youtube'}).json()
+
+    yt_stats = [{'ytb_id': item['external_id'],
+                 'views': item['view_count'],
+                 'channel_name': item['youtube_channel_name']} for item in response['stats'][0]['data']['videos']]
+
+    try:
+        most_viewed = [vid for vid in yt_stats if ' - Topic' not in vid['channel_name']][0]
+
+    except IndexError:
+        most_viewed = {}
+
+    yt_results = {
+        'most_viewed': most_viewed,
+        'all_sources': [vid['ytb_id'] for vid in yt_stats]
+    }
+
+    return yt_results
+
+
 'Main'
 
 if __name__ == '__main__':
-    show_missing_s_id(selection_2024)
+    import pprint as pp
+
+    # show_missing_s_id(selection_2024)
     # my_service = create_youtube_service()
+    # videos = get_youtube_playlist_videos(my_service, playlist)
+
+    ytb_2024 = [{'songstats_identifiers': track['songstats_identifiers'],
+                 'data': get_songstats_youtube_videos(track['songstats_identifiers']['s_id'])}
+                for track in tqdm.tqdm(data_2024)]
+
+    # Store results as JSON file
+    with open('../data/ytb_2024.json', 'w', encoding='utf-8') as ytb_file:
+        # noinspection PyTypeChecker
+        json.dump(ytb_2024, ytb_file, ensure_ascii=False, indent=2, sort_keys=True)
+
+    missing_video = [vid for vid in ytb_2024 if not vid['data'].get('most_viewed')]
+
+    for vid in missing_video:
+        print(vid['songstats_identifiers']['s_id'], vid['songstats_identifiers']['s_title'])

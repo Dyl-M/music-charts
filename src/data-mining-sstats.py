@@ -40,15 +40,18 @@ def get_stats(songstats_id: str) -> dict:
                             },
                             params={'songstats_track_id': songstats_id,
                                     'source': ",".join(source_list)}).json()
+    try:
+        stats_list_dict = [{f'{stats_list["source"].replace("tracklist", "1001tracklists")}_{key}': value
+                            for key, value in stats_list['data'].items()}
+                           for stats_list in response['stats']]
 
-    stats_list_dict = [{f'{stats_list["source"].replace("tracklist", "1001tracklists")}_{key}': value
-                        for key, value in stats_list['data'].items()}
-                       for stats_list in response['stats']]
+        flatten_dict = dict(collections.ChainMap(*stats_list_dict))
+        flatten_dict.update(get_peaks(songstats_id))
 
-    flatten_dict = dict(collections.ChainMap(*stats_list_dict))
-    flatten_dict.update(get_peaks(songstats_id))
+        return flatten_dict
 
-    return flatten_dict
+    except KeyError:
+        return {}
 
 
 def get_peaks(songstats_id: str) -> dict:
