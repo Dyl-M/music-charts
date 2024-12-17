@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import ast
+import itertools
 import json
 import os
 import pandas as pd
@@ -32,6 +33,9 @@ with open('../data/selection_2024.json', 'r', encoding='utf-8') as j_file:
 
 with open('../data/data_2024.json', 'r', encoding='utf-8') as d_file:
     data_2024 = json.load(d_file)
+
+with open('../data/ytb_2024.json', 'r', encoding='utf-8') as y_file:
+    ytb_2024 = json.load(y_file)
 
 playlist = 'PLOMUdQFdS-XNqUpFzE89aHgwn0wrBidyG'
 
@@ -148,25 +152,34 @@ def get_songstats_youtube_videos(songstats_id: str):
     return yt_results
 
 
-'Main'
-
-if __name__ == '__main__':
-    import pprint as pp
-
-    # show_missing_s_id(selection_2024)
-    # my_service = create_youtube_service()
-    # videos = get_youtube_playlist_videos(my_service, playlist)
-
-    ytb_2024 = [{'songstats_identifiers': track['songstats_identifiers'],
-                 'data': get_songstats_youtube_videos(track['songstats_identifiers']['s_id'])}
-                for track in tqdm.tqdm(data_2024)]
+def show_most_viewed_missing():
+    ytb_vid = [{'songstats_identifiers': track['songstats_identifiers'],
+                'data': get_songstats_youtube_videos(track['songstats_identifiers']['s_id'])}
+               for track in tqdm.tqdm(data_2024)]
 
     # Store results as JSON file
     with open('../data/ytb_2024.json', 'w', encoding='utf-8') as ytb_file:
         # noinspection PyTypeChecker
-        json.dump(ytb_2024, ytb_file, ensure_ascii=False, indent=2, sort_keys=True)
+        json.dump(ytb_vid, ytb_file, ensure_ascii=False, indent=2, sort_keys=True)
 
-    missing_video = [vid for vid in ytb_2024 if not vid['data'].get('most_viewed')]
+    missing_video = [vid for vid in ytb_vid if not vid['data'].get('most_viewed')]
 
     for vid in missing_video:
         print(vid['songstats_identifiers']['s_id'], vid['songstats_identifiers']['s_title'])
+
+
+def show_missing_source_from_youtube():
+    my_service = create_youtube_service()
+    videos_in_playlist = get_youtube_playlist_videos(my_service, playlist)
+    sources_songstats = set(itertools.chain(*[item['data']['all_sources'] for item in ytb_2024]))
+    missing_source = [(f'https://youtu.be/{v_id}', title) for v_id, title in videos_in_playlist.items() if
+                      v_id not in sources_songstats]
+
+    for item in missing_source:
+        print(item)
+
+
+'Main'
+
+if __name__ == '__main__':
+    print('Hello world!')
