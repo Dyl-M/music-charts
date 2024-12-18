@@ -73,7 +73,7 @@ def search(request_str: str) -> dict:
 
 if __name__ == '__main__':
     MY_LIBRARY = libpybee.Library('../data/lib.xml')  # MusicBee Library File
-    dj_global_playlist = MY_LIBRARY.playlists['4355']  # Playlist for Electronic Music
+    dj_global_playlist = MY_LIBRARY.playlists['4361']  # Playlist for Electronic Music
 
     # Keep 2024 releases and formatting
     tracks_2024_init = [{'title': format_title(track.title),
