@@ -30,7 +30,7 @@ def get_stats(songstats_id: str) -> dict:
         return {}
 
     source_list = ('spotify', 'apple_music', 'amazon', 'deezer', 'tiktok', 'youtube', 'tracklist', 'beatport',
-                   'traxsource', 'tidal', 'soundcloud')
+                   'tidal', 'soundcloud')
 
     response = requests.get(url='https://api.songstats.com/enterprise/v1/tracks/stats',
                             headers={

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+10# -*- coding: utf-8 -*-
 
 import ast
 import itertools
@@ -177,6 +177,31 @@ def show_missing_source_from_youtube():
 
     for item in missing_source:
         print(item)
+
+
+def check_sources(threshold: int):
+    validated = {'nl3bivek', 'bvrp6jlh', 'z90p25na', 'cxsruom1', '5fc29dga', 'mbjr7uin', 's0yn3m2g', 'iukgelph',
+                 't2bi3g69', 'ghzbn7s1', 'nwqit015', 'a7z986yl', 'm0q9nujb', 'b4razlvm', 'mlwfg9v4', 'r3nlk0we'}
+
+    source_list = {'spotify', 'apple_music', 'amazon', 'deezer', 'youtube', 'beatport', 'tidal', 'soundcloud'}
+
+    for item in data_2024:
+        response = requests.get(url='https://api.songstats.com/enterprise/v1/tracks/info',
+                                headers={
+                                    'Accept-Encoding': '',
+                                    'Accept': 'application/json',
+                                    'apikey': api_key
+                                },
+                                params={'songstats_track_id': item['songstats_identifiers']['s_id'],
+                                        'with_videos': 'true',
+                                        'source': 'youtube'}).json()
+
+        found_source = set(track['source'] for track in response['track_info']['links'])
+        check = all(e in found_source for e in source_list)
+
+        if not check and len(found_source) < threshold and item['songstats_identifiers']['s_id'] not in validated:
+            print(item['songstats_identifiers']['s_id'], item['songstats_identifiers']['s_title'])
+            print(f'{found_source}\n')
 
 
 'Main'
