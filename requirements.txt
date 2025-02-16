@@ -1,4 +1,4 @@
-google-api-python-client~=2.160
+google-api-python-client~=2.161
 google-auth-oauthlib~=1.2
 libpybee~=0.2
 pandas~=2.2
