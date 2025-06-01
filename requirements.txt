@@ -1,9 +1,9 @@
-google-api-python-client~=2.169
+google-api-python-client~=2.170
 google-auth-oauthlib~=1.2
 libpybee~=0.2
 pandas~=2.2
-plotly~=6.0
-protobuf~=6.30
+plotly~=6.1
+protobuf~=6.31
 requests~=2.32
 scikit-learn~=1.6
 tqdm~=4.67
