@@ -66,7 +66,7 @@ def run(
             "-s",
             help="Stages to run (extract, enrich, youtube, rank). Use multiple times for multiple stages.",
         ),
-    ] = ["all"],
+    ] = None,
 ) -> None:
     """Run the music charts pipeline.
 
@@ -74,6 +74,8 @@ def run(
         msc run --year 2025
         msc run --year 2025 --stage extract --stage enrich
     """
+    if stages is None:
+        stages = ["all"]
     settings = get_settings()
     settings.year = year
 
