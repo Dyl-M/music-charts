@@ -9,25 +9,82 @@ Data pipeline for analyzing track performance across streaming platforms and gen
 
 ## Overview
 
-Music-charts processes electronic music tracks from a MusicBee library, enriches them with data from the [Songstats API](https://songstats.com/), and generates power rankings based on weighted metrics across 10 platforms: Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amazon Music, and 1001Tracklists.
+Music-charts processes electronic music tracks from a MusicBee library, enriches them with data from
+the [Songstats API](https://songstats.com/), and generates power rankings based on weighted metrics across 10 platforms:
+Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amazon Music, and 1001Tracklists.
 
 ## Status
 
-**Current:** Legacy ETL pipeline (4-stage process with standalone scripts)
+**Current:** Modular architecture in development (`msc` package)
 
-**In Progress:** Modular architecture revamp for EOY 2025 Recap - see [`_docs/IMPROVEMENTS.md`](_docs/IMPROVEMENTS.md)
+**Legacy:** Original ETL scripts archived in `_legacy/` - see [`_docs/IMPROVEMENTS.md`](_docs/IMPROVEMENTS.md) for
+migration roadmap
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/Dyl-M/music-charts.git
+cd music-charts
+
+# Install the package with dependencies
+pip install -e .
+
+# Or with development tools (pytest, ruff, mypy)
+pip install -e ".[dev]"
+```
 
 ## Quick Start
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+### New CLI (In Development)
 
+```bash
+# Initialize directory structure
+msc init
+
+# Check Songstats API quota
+msc billing
+
+# Run pipeline (not yet implemented)
+msc run --year 2025
+```
+
+### Legacy Pipeline
+
+```bash
 # Run pipeline stages sequentially
-cd src && python data-mining-prep.py      # Stage 1: Extract & search
-cd src && python data-mining-sstats.py    # Stage 2: Fetch platform stats
-cd src && python data-mining-completion.py # Stage 3: YouTube enrichment
-jupyter notebook notebooks/power_ranking_2024.ipynb  # Stage 4: Analysis
+cd _legacy/src && python data-mining-prep.py       # Stage 1: Extract & search
+cd _legacy/src && python data-mining-sstats.py     # Stage 2: Fetch platform stats
+cd _legacy/src && python data-mining-completion.py # Stage 3: YouTube enrichment
+jupyter notebook _legacy/notebooks/power_ranking_2024.ipynb  # Stage 4: Analysis
+```
+
+## Project Structure
+
+```
+music-charts/
+├── _config/                # Runtime configuration
+├── _data/                  # Data artifacts (gitignored)
+├── _docs/                  # Documentations and notes
+│
+├── _legacy/                # Archived original scripts
+│   ├── src/                # Original pipeline scripts
+│   ├── notebooks/          # Original Jupyter notebooks
+│   └── data/               # Legacy data artifacts
+│
+├── _notebooks/             # Jupyter notebooks
+├── _tests/                 # Test suite
+├── _tokens/                # Credentials (gitignored)
+│
+└── msc/                    # Main package (new modular architecture)
+    ├── analysis/           # Analytics modules (skeleton)
+    ├── clients/            # API client base classes
+    ├── config/             # Settings and constants
+    ├── models/             # Data models (skeleton)
+    ├── pipeline/           # ETL pipeline base classes
+    ├── storage/            # Data persistence (skeleton)
+    ├── utils/              # Logging, retry, text utilities
+    └── cli.py              # Typer CLI entry point
 ```
 
 ## Documentation

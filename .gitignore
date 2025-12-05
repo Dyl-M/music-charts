@@ -162,13 +162,21 @@ cython_debug/
 .idea/
 
 # Ignored for privacy purpose
-tokens/
+*tokens/
 
-# Large files
-data/data_2024.json
-data/lib.xml
-data/selection_2024.json
-data/ytb_2024.json
+# Large data files (from legacy development)
+_legacy/data/data_2024.json
+_legacy/data/lib.xml
+_legacy/data/selection_2024.json
+_legacy/data/ytb_2024.json
+
+# New data structure
+_data/input/
+_data/output/
+_data/cache/
 
 # Claude.ai configuration files
 _docs/commit_m_tmp.txt
+
+# Ruff
+.ruff_cache/
