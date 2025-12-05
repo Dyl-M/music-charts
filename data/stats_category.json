@@ -1,0 +1,97 @@
+{
+  "charts": [
+    "amazon_charts_total",
+    "apple_music_charts_total",
+    "soundcloud_charts_total",
+    "spotify_charts_total",
+    "tidal_charts_total",
+    "tiktok_charts_total",
+    "youtube_charts_total"
+  ],
+  "engagement": [
+    "soundcloud_engagement_rate_total",
+    "tiktok_engagement_rate_total",
+    "youtube_engagement_rate_total"
+  ],
+  "playlists": [
+    "amazon_playlists_editorial_total",
+    "apple_music_playlists_editorial_total",
+    "deezer_playlists_editorial_total",
+    "spotify_playlists_editorial_total",
+    "tidal_playlists_editorial_total",
+    "youtube_playlists_editorial_total"
+  ],
+  "popularity": [
+    "deezer_popularity_peak",
+    "spotify_popularity_peak",
+    "tidal_popularity_peak"
+  ],
+  "professional_support": [
+    "1001tracklists_unique_support",
+    "beatport_dj_charts_total"
+  ],
+  "reach": [
+    "deezer_playlist_reach_total",
+    "spotify_playlist_reach_total"
+  ],
+  "shorts": [
+    "tiktok_views_total",
+    "youtube_short_views_total"
+  ],
+  "streams": [
+    "soundcloud_streams_total",
+    "spotify_streams_total",
+    "youtube_video_views_total"
+  ],
+  "_unnecessary": [
+    "1001tracklists_total_support",
+    "1001tracklists_tracklist_views",
+    "amazon_charts_current",
+    "amazon_playlists_current",
+    "amazon_playlists_editorial_current",
+    "amazon_playlists_total",
+    "apple_music_charted_countries_total",
+    "apple_music_charts_current",
+    "apple_music_playlists_current",
+    "apple_music_playlists_editorial_current",
+    "apple_music_playlists_total",
+    "deezer_charts_current",
+    "deezer_charts_total",
+    "deezer_playlist_reach_current",
+    "deezer_playlists_current",
+    "deezer_playlists_editorial_current",
+    "deezer_playlists_total",
+    "deezer_popularity_current",
+    "soundcloud_charts_current",
+    "soundcloud_favorites_total",
+    "soundcloud_reposts_total",
+    "spotify_charts_current",
+    "spotify_playlist_reach_current",
+    "spotify_playlists_current",
+    "spotify_playlists_editorial_current",
+    "spotify_playlists_total",
+    "spotify_popularity_current",
+    "tidal_charts_current",
+    "tidal_playlists_current",
+    "tidal_playlists_editorial_current",
+    "tidal_playlists_total",
+    "tidal_popularity_current",
+    "tiktok_charts_current",
+    "tiktok_comments_total",
+    "tiktok_likes_total",
+    "tiktok_playlists_current",
+    "tiktok_playlists_total",
+    "tiktok_shares_total",
+    "tiktok_videos_total",
+    "youtube_charts_current",
+    "youtube_playlists_current",
+    "youtube_playlists_editorial_current",
+    "youtube_playlists_total",
+    "youtube_short_comments_total",
+    "youtube_short_likes_total",
+    "youtube_shorts_total",
+    "youtube_video_comments_total",
+    "youtube_video_likes_total",
+    "youtube_videos_total"
+  ]
+}
