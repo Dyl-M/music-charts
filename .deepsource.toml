@@ -1,0 +1,11 @@
+version = 1
+
+test_patterns = ["_tests/*.py"]
+
+exclude_patterns = ["_legacy/*"]
+
+[[analyzers]]
+name = "python"
+
+  [analyzers.meta]
+  runtime_version = "3.x.x"
