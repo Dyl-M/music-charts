@@ -46,7 +46,7 @@ class TestFormatTitle:
     @staticmethod
     def test_replaces_cross_symbol_with_space() -> None:
         """Should replace × with space."""
-        assert format_title("Artist A × Artist B") == "artist a  artist b"
+        assert format_title("Artist A × Artist B") == "artist a artist b"
 
     @staticmethod
     def test_replaces_comma_with_space() -> None:

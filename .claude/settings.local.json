@@ -1,13 +1,16 @@
 {
   "permissions": {
     "allow": [
+      "Bash(_docs/commit_m_tmp.txt)",
       "Bash(gh issue view:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr create:*)",
-      "Bash(_docs/commit_m_tmp.txt)",
-      "WebFetch(domain:app.deepsource.com)",
+      "Bash(gh pr list:*)",
       "Bash(gh pr edit:*)",
+      "Bash(gh run view:*)",
       "Bash(wc:*)",
+      "WebFetch(domain:app.deepsource.com)",
+      "WebFetch(domain:docs.deepsource.com)",
       "WebSearch"
     ],
     "deny": [],
