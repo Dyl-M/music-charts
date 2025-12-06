@@ -1,10 +1,13 @@
 """Abstract base class for external API clients."""
 
+# Standard library
 from abc import ABC, abstractmethod
 from typing import Any
 
+# Third-party
 import requests
 
+# Local
 from msc.config.constants import DEFAULT_HEADERS
 from msc.utils.logging import get_logger
 from msc.utils.retry import RateLimiter, retry_with_backoff
@@ -18,10 +21,10 @@ class BaseClient(ABC):
     """
 
     def __init__(
-        self,
-        api_key: str | None = None,
-        rate_limit: int = 10,
-        timeout: int = 30,
+            self,
+            api_key: str | None = None,
+            rate_limit: int = 10,
+            timeout: int = 30,
     ):
         """Initialize the base client.
 
@@ -61,7 +64,7 @@ class BaseClient(ABC):
         Returns:
             True if the API is reachable and responding.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement health_check()")
 
     @abstractmethod
     def get_quota(self) -> dict[str, Any]:
@@ -70,15 +73,15 @@ class BaseClient(ABC):
         Returns:
             Dictionary with quota information.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_quota()")
 
     @retry_with_backoff(max_retries=3)
     def _request(
-        self,
-        method: str,
-        url: str,
-        params: dict[str, Any] | None = None,
-        json_data: dict[str, Any] | None = None,
+            self,
+            method: str,
+            url: str,
+            params: dict[str, Any] | None = None,
+            json_data: dict[str, Any] | None = None,
     ) -> requests.Response:
         """Make an HTTP request with rate limiting and retry.
 
@@ -109,9 +112,9 @@ class BaseClient(ABC):
             return response
 
     def get(
-        self,
-        url: str,
-        params: dict[str, Any] | None = None,
+            self,
+            url: str,
+            params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Make a GET request and return JSON response.
 
@@ -126,10 +129,10 @@ class BaseClient(ABC):
         return response.json()
 
     def post(
-        self,
-        url: str,
-        json_data: dict[str, Any] | None = None,
-        params: dict[str, Any] | None = None,
+            self,
+            url: str,
+            json_data: dict[str, Any] | None = None,
+            params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Make a POST request and return JSON response.
 

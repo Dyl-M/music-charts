@@ -1,7 +1,10 @@
 """Pytest configuration and shared fixtures."""
 
-import pytest
+# Standard library
 from pathlib import Path
+
+# Third-party
+import pytest
 
 
 @pytest.fixture

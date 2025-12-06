@@ -1,9 +1,11 @@
 """Abstract base class for ETL pipeline stages."""
 
+# Standard library
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Generic, TypeVar
 
+# Local
 from msc.config.settings import Settings, get_settings
 from msc.utils.logging import PipelineLogger
 
@@ -47,7 +49,7 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
     @abstractmethod
     def stage_name(self) -> str:
         """Human-readable name for this pipeline stage."""
-        pass
+        raise NotImplementedError("Subclasses must implement stage_name property")
 
     @abstractmethod
     def extract(self) -> InputT:
@@ -56,7 +58,7 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
         Returns:
             Input data for transformation.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement extract()")
 
     @abstractmethod
     def transform(self, data: InputT) -> OutputT:
@@ -68,7 +70,7 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
         Returns:
             Transformed output data.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement transform()")
 
     @abstractmethod
     def load(self, data: OutputT) -> None:
@@ -77,7 +79,7 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
         Args:
             data: Transformed data from transform().
         """
-        pass
+        raise NotImplementedError("Subclasses must implement load()")
 
     def run(self) -> OutputT:
         """Execute the full ETL pipeline.

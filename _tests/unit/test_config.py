@@ -1,11 +1,21 @@
 """Unit tests for configuration module."""
 
+# Standard library
+from pathlib import Path
+from unittest.mock import patch
+
+# Third-party
+import pytest
+
+# Local
 from msc.config.constants import (
     CATEGORY_WEIGHTS,
     Platform,
     StatCategory,
     WeightLevel,
 )
+
+from msc.config.settings import Settings, get_settings
 
 
 class TestPlatform:
@@ -89,3 +99,95 @@ class TestCategoryWeights:
         """Popularity and Streams should be high."""
         assert CATEGORY_WEIGHTS[StatCategory.POPULARITY] == WeightLevel.HIGH
         assert CATEGORY_WEIGHTS[StatCategory.STREAMS] == WeightLevel.HIGH
+
+
+class TestSettings:
+    """Tests for the Settings class."""
+
+    @staticmethod
+    def test_input_dir_property() -> None:
+        """Should construct input directory path."""
+        settings = Settings()
+        assert settings.input_dir == settings.data_dir / "input"
+
+    @staticmethod
+    def test_output_dir_property() -> None:
+        """Should construct output directory path."""
+        settings = Settings()
+        assert settings.output_dir == settings.data_dir / "output"
+
+    @staticmethod
+    def test_cache_dir_property() -> None:
+        """Should construct cache directory path."""
+        settings = Settings()
+        assert settings.cache_dir == settings.data_dir / "cache"
+
+    @staticmethod
+    def test_year_output_dir_property() -> None:
+        """Should construct year-specific output directory."""
+        settings = Settings(year=2024)
+        assert settings.year_output_dir == settings.output_dir / "2024"
+
+    @staticmethod
+    def test_get_songstats_key_from_env() -> None:
+        """Should return API key from environment variable."""
+        settings = Settings(songstats_api_key="test_key_from_env")
+        assert settings.get_songstats_key() == "test_key_from_env"
+
+    @staticmethod
+    def test_get_songstats_key_from_file(tmp_path: Path) -> None:
+        """Should load API key from file."""
+        tokens_dir = tmp_path / "tokens"
+        tokens_dir.mkdir()
+        key_file = tokens_dir / "songstats_key.txt"
+        key_file.write_text("test_key_from_file\n", encoding="utf-8")
+
+        settings = Settings(tokens_dir=tokens_dir)
+        assert settings.get_songstats_key() == "test_key_from_file"
+
+    @staticmethod
+    def test_get_songstats_key_missing_raises_error() -> None:
+        """Should raise ValueError when API key not found."""
+        settings = Settings(tokens_dir=Path("/nonexistent"))
+        with pytest.raises(ValueError, match="Songstats API key not found"):
+            settings.get_songstats_key()
+
+    @staticmethod
+    def test_ensure_directories_creates_all(tmp_path: Path) -> None:
+        """Should create all required directories."""
+        base = tmp_path / "test_dirs"
+        settings = Settings(
+            data_dir=base / "data",
+            tokens_dir=base / "tokens",
+            config_dir=base / "config",
+            year=2024,
+        )
+
+        settings.ensure_directories()
+
+        assert settings.data_dir.exists()
+        assert settings.input_dir.exists()
+        assert settings.output_dir.exists()
+        assert settings.cache_dir.exists()
+        assert settings.year_output_dir.exists()
+        assert settings.tokens_dir.exists()
+        assert settings.config_dir.exists()
+
+
+class TestGetSettings:
+    """Tests for the get_settings function."""
+
+    @staticmethod
+    def test_get_settings_returns_settings_instance() -> None:
+        """Should return a Settings instance."""
+        with patch("msc.config.settings._settings", None):
+            settings = get_settings()
+            assert isinstance(settings, Settings)
+
+    @staticmethod
+    def test_get_settings_returns_same_instance() -> None:
+        """Should return the same instance on multiple calls."""
+        with patch("msc.config.settings._settings", None):
+            settings1 = get_settings()
+            settings2 = get_settings()
+            assert settings1 is settings2
