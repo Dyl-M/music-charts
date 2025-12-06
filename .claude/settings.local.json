@@ -7,7 +7,8 @@
       "Bash(_docs/commit_m_tmp.txt)",
       "WebFetch(domain:app.deepsource.com)",
       "Bash(gh pr edit:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
