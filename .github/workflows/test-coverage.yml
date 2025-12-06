@@ -30,6 +30,7 @@ jobs:
           pytest --cov=msc --cov-report=xml --cov-report=term
 
       - name: Report coverage to DeepSource
+        if: github.actor != 'dependabot[bot]'
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
         run: |
