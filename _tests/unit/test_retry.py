@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 # Third-party
 import pytest
 import requests
-from tenacity import RetryError
 
 # Local
 from msc.utils.retry import RateLimiter, is_retryable_status, retry_with_backoff
@@ -186,9 +185,8 @@ class TestRateLimiter:
         """Should call wait() when entering context."""
         limiter = RateLimiter()
 
-        with patch.object(limiter, "wait") as mock_wait:
-            with limiter:
-                mock_wait.assert_called_once()
+        with patch.object(limiter, "wait") as mock_wait, limiter:
+            mock_wait.assert_called_once()
 
     @staticmethod
     def test_context_manager_returns_self() -> None:
