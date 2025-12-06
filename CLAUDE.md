@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Music-charts is a data pipeline for analyzing track performance across streaming platforms (Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amazon Music, 1001Tracklists). It processes electronic music tracks from a MusicBee library, enriches them with Songstats API data, and generates power rankings based on weighted metrics.
 
-**Status:** Phase 1 (Foundation) complete - modular `msc` package established. Legacy scripts archived in `_legacy/`.
+**Status:** Phase 1 (Foundation) complete - modular `msc` package established with 53% test coverage (83 tests). Legacy scripts archived in `_legacy/`.
 
 ## Commands
 
@@ -85,11 +85,13 @@ music-charts/
 │   ├── data/                   # Legacy data artifacts
 │   └── notes/
 │
-├── _tests/                     # Pytest test suite
+├── _tests/                     # Pytest test suite (83 tests, 53% coverage)
 │   ├── conftest.py             # Shared fixtures
 │   ├── unit/
-│   │   ├── test_text.py
-│   │   └── test_config.py
+│   │   ├── test_config.py      # 19 tests (settings, constants)
+│   │   ├── test_logging.py     # 18 tests (logging utilities)
+│   │   ├── test_retry.py       # 22 tests (retry, rate limiting)
+│   │   └── test_text.py        # 24 tests (text utilities)
 │   └── integration/
 │
 ├── _config/                    # Runtime configuration (YAML files)
@@ -108,23 +110,23 @@ music-charts/
 
 ### Key Modules
 
-| Module | Purpose | Status |
-|--------|---------|--------|
-| `msc/config/settings.py` | Pydantic settings with `MSC_` env prefix | ✅ Complete |
-| `msc/config/constants.py` | Platform enum, StatCategory, weights | ✅ Complete |
-| `msc/utils/logging.py` | setup_logging, PipelineLogger | ✅ Complete |
-| `msc/utils/retry.py` | retry_with_backoff, RateLimiter | ✅ Complete |
-| `msc/utils/text.py` | Title formatting, query building | ✅ Complete |
-| `msc/clients/base.py` | Abstract client with session management | ✅ Complete |
-| `msc/pipeline/base.py` | Abstract ETL stage, Pipeline orchestrator | ✅ Complete |
-| `msc/cli.py` | Typer CLI skeleton | ✅ Skeleton |
-| `msc/clients/songstats.py` | Songstats API client | 🔲 Phase 2 |
-| `msc/clients/youtube.py` | YouTube API client | 🔲 Phase 2 |
-| `msc/clients/musicbee.py` | MusicBee library reader | 🔲 Phase 2 |
-| `msc/models/*` | Track, Stats, Ranking dataclasses | 🔲 Phase 3 |
-| `msc/pipeline/extract.py` | ExtractionStage | 🔲 Phase 4 |
-| `msc/pipeline/enrich.py` | EnrichmentStage | 🔲 Phase 4 |
-| `msc/analysis/scorer.py` | PowerRankingScorer | 🔲 Phase 4 |
+| Module | Purpose | Status | Coverage |
+|--------|---------|--------|----------|
+| `msc/config/settings.py` | Pydantic settings with `MSC_` env prefix | ✅ Complete | 100% (19 tests) |
+| `msc/config/constants.py` | Platform enum, StatCategory, weights | ✅ Complete | 100% (in test_config) |
+| `msc/utils/logging.py` | setup_logging, PipelineLogger | ✅ Complete | 100% (18 tests) |
+| `msc/utils/retry.py` | retry_with_backoff, RateLimiter | ✅ Complete | 96% (22 tests) |
+| `msc/utils/text.py` | Title formatting, query building | ✅ Complete | 100% (24 tests) |
+| `msc/clients/base.py` | Abstract client with session management | ✅ Base class | 0% (NotImplementedError) |
+| `msc/pipeline/base.py` | Abstract ETL stage, Pipeline orchestrator | ✅ Base class | 0% (NotImplementedError) |
+| `msc/cli.py` | Typer CLI skeleton | ✅ Skeleton | 0% (NotImplementedError) |
+| `msc/clients/songstats.py` | Songstats API client | 🔲 Phase 2 | - |
+| `msc/clients/youtube.py` | YouTube API client | 🔲 Phase 2 | - |
+| `msc/clients/musicbee.py` | MusicBee library reader | 🔲 Phase 2 | - |
+| `msc/models/*` | Track, Stats, Ranking dataclasses | 🔲 Phase 3 | - |
+| `msc/pipeline/extract.py` | ExtractionStage | 🔲 Phase 4 | - |
+| `msc/pipeline/enrich.py` | EnrichmentStage | 🔲 Phase 4 | - |
+| `msc/analysis/scorer.py` | PowerRankingScorer | 🔲 Phase 4 | - |
 
 ### Data Flow
 
@@ -170,6 +172,7 @@ All stored in `_tokens/` (gitignored):
 - **API failures:** Return empty dicts/lists (defensive coding)
 - **File encoding:** UTF-8 explicit on all operations
 - **Support folders:** Underscore prefix (`_config/`, `_data/`, `_tests/`, `_tokens/`)
+- **Placeholders:** Use `NotImplementedError` for incomplete code (excluded from coverage)
 
 ## Development
 
@@ -187,6 +190,12 @@ pytest --cov=msc            # With coverage report
 - Tests use pytest with class-based grouping
 - Test methods use `@staticmethod` decorator (no `self` parameter)
 - Fixtures defined in `_tests/conftest.py`
+- Current coverage: 53% overall (83 tests)
+  - `config/`: 100% (19 tests for settings + constants)
+  - `utils/logging.py`: 100% (18 tests)
+  - `utils/retry.py`: 96% (22 tests)
+  - `utils/text.py`: 100% (24 tests)
+  - Base classes, CLI: 0% (NotImplementedError excluded from coverage)
 
 ### Code Quality
 

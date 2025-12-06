@@ -1,13 +1,13 @@
-"""Command-line interface for the Music Charts pipeline."""
+import typer
 
 from pathlib import Path
 from typing import Annotated
 
-import typer
-
 from msc import __version__
 from msc.config.settings import get_settings
 from msc.utils.logging import setup_logging
+
+"""Command-line interface for the Music Charts pipeline."""
 
 app = typer.Typer(
     name="msc",
@@ -25,24 +25,24 @@ def version_callback(value: bool) -> None:
 
 @app.callback()
 def main(
-    version: Annotated[
-        bool,
-        typer.Option(
-            "--version",
-            "-v",
-            help="Show version and exit.",
-            callback=version_callback,
-            is_eager=True,
-        ),
-    ] = False,
-    verbose: Annotated[
-        bool,
-        typer.Option(
-            "--verbose",
-            "-V",
-            help="Enable verbose output.",
-        ),
-    ] = False,
+        version: Annotated[
+            bool,
+            typer.Option(
+                "--version",
+                "-v",
+                help="Show version and exit.",
+                callback=version_callback,
+                is_eager=True,
+            ),
+        ] = False,
+        verbose: Annotated[
+            bool,
+            typer.Option(
+                "--verbose",
+                "-V",
+                help="Enable verbose output.",
+            ),
+        ] = False,
 ) -> None:
     """Music Charts CLI - Analyze track performance across streaming platforms."""
     log_level = "DEBUG" if verbose else "INFO"
@@ -51,22 +51,22 @@ def main(
 
 @app.command()
 def run(
-    year: Annotated[
-        int,
-        typer.Option(
-            "--year",
-            "-y",
-            help="Target year for analysis.",
-        ),
-    ] = 2025,
-    stages: Annotated[
-        list[str],
-        typer.Option(
-            "--stage",
-            "-s",
-            help="Stages to run (extract, enrich, youtube, rank). Use multiple times for multiple stages.",
-        ),
-    ] = None,
+        year: Annotated[
+            int,
+            typer.Option(
+                "--year",
+                "-y",
+                help="Target year for analysis.",
+            ),
+        ] = 2025,
+        stages: Annotated[
+            list[str],
+            typer.Option(
+                "--stage",
+                "-s",
+                help="Stages to run (extract, enrich, youtube, rank). Use multiple times for multiple stages.",
+            ),
+        ] = None,
 ) -> None:
     """Run the music charts pipeline.
 
@@ -82,9 +82,10 @@ def run(
     typer.echo(f"Running pipeline for year {year}")
     typer.echo(f"Stages: {', '.join(stages)}")
 
-    # TODO: Implement pipeline execution
-    typer.echo("Pipeline execution not yet implemented.")
-    typer.echo("Use legacy scripts in src/ for now.")
+    raise NotImplementedError(
+        "Pipeline execution not yet implemented. "
+        "This will be available in Phase 4 after pipeline stages are implemented."
+    )
 
 
 @app.command()
@@ -95,10 +96,12 @@ def billing() -> None:
     try:
         api_key = settings.get_songstats_key()
         typer.echo("Checking Songstats API status...")
-
-        # TODO: Implement billing check using SongstatsClient
         typer.echo(f"API key loaded: {api_key[:8]}...")
-        typer.echo("Billing check not yet implemented.")
+
+        raise NotImplementedError(
+            "Billing check not yet implemented. "
+            "This will be available in Phase 2 after SongstatsClient is implemented."
+        )
 
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
@@ -107,14 +110,14 @@ def billing() -> None:
 
 @app.command()
 def validate(
-    input_file: Annotated[
-        Path,
-        typer.Argument(
-            help="Path to data file to validate.",
-            exists=True,
-            readable=True,
-        ),
-    ],
+        input_file: Annotated[
+            Path,
+            typer.Argument(
+                help="Path to data file to validate.",
+                exists=True,
+                readable=True,
+            ),
+        ],
 ) -> None:
     """Validate a data file against the expected schema.
 
@@ -123,8 +126,10 @@ def validate(
     """
     typer.echo(f"Validating: {input_file}")
 
-    # TODO: Implement schema validation
-    typer.echo("Validation not yet implemented.")
+    raise NotImplementedError(
+        "Schema validation not yet implemented. "
+        "This will be available in Phase 3 after data models are defined."
+    )
 
 
 @app.command()

@@ -15,10 +15,22 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 ## Status
 
-**Current:** Modular architecture in development (`msc` package)
+**Current:** Phase 1 (Foundation) complete - modular `msc` package with 53% test coverage (83 tests)
 
 **Legacy:** Original ETL scripts archived in `_legacy/` - see [`_docs/IMPROVEMENTS.md`](_docs/IMPROVEMENTS.md) for
 migration roadmap
+
+### Test Coverage
+
+| Module             | Coverage | Tests                          |
+|--------------------|----------|--------------------------------|
+| `config/`          | 100%     | 19 tests (settings, constants) |
+| `utils/logging.py` | 100%     | 18 tests                       |
+| `utils/retry.py`   | 96%      | 22 tests                       |
+| `utils/text.py`    | 100%     | 24 tests                       |
+| **Overall**        | **53%**  | **83 tests**                   |
+
+*Note: CLI, clients, and pipeline modules contain placeholder code (NotImplementedError) excluded from coverage.*
 
 ## Installation
 
@@ -85,6 +97,25 @@ music-charts/
     ├── storage/            # Data persistence (skeleton)
     ├── utils/              # Logging, retry, text utilities
     └── cli.py              # Typer CLI entry point
+```
+
+## Development
+
+### Running Tests
+
+```bash
+pytest                      # Run all tests
+pytest _tests/unit/         # Unit tests only
+pytest --cov=msc           # With coverage report
+pytest -v --tb=short        # Verbose with short traceback
+```
+
+### Code Quality
+
+```bash
+ruff check msc/             # Linting
+ruff format msc/            # Formatting
+mypy msc/                   # Type checking
 ```
 
 ## Documentation
