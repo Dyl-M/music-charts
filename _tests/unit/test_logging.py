@@ -1,8 +1,11 @@
+# Standard library
+from unittest.mock import patch
 import logging
+
+# Third-party
 import pytest
 
-from unittest.mock import patch
-
+# Local
 from msc.utils.logging import PipelineLogger, get_logger, setup_logging
 
 """Unit tests for logging utilities."""

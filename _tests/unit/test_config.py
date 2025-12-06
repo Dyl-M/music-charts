@@ -1,8 +1,11 @@
-import pytest
-
+# Standard library
 from pathlib import Path
 from unittest.mock import patch
 
+# Third-party
+import pytest
+
+# Local
 from msc.config.constants import (
     CATEGORY_WEIGHTS,
     Platform,

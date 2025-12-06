@@ -1,19 +1,21 @@
-"""Retry utilities with exponential backoff for API calls."""
-
+# Standard library
 import functools
 import logging
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
+# Third-party
+import requests
 from tenacity import (
     RetryError,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    before_sleep_log,
 )
-import requests
+
+"""Retry utilities with exponential backoff for API calls."""
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +24,10 @@ T = TypeVar("T")
 
 
 def retry_with_backoff(
-    max_retries: int = 3,
-    min_wait: float = 1.0,
-    max_wait: float = 60.0,
-    retry_exceptions: tuple[type[Exception], ...] | None = None,
+        max_retries: int = 3,
+        min_wait: float = 1.0,
+        max_wait: float = 60.0,
+        retry_exceptions: tuple[type[Exception], ...] | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Decorator for retrying functions with exponential backoff.
 

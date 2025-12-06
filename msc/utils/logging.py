@@ -1,15 +1,16 @@
-"""Structured logging setup for the Music Charts pipeline."""
-
+# Standard library
 import logging
 import sys
 from typing import Literal
+
+"""Structured logging setup for the Music Charts pipeline."""
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
 def setup_logging(
-    level: LogLevel = "INFO",
-    format_string: str | None = None,
+        level: LogLevel = "INFO",
+        format_string: str | None = None,
 ) -> None:
     """Configure the root logger with consistent formatting.
 

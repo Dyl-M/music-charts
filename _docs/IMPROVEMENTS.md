@@ -493,6 +493,7 @@ if __name__ == "__main__":
 - [x] Create CLI skeleton with Typer
 - [x] Add NotImplementedError for all abstract/incomplete methods
 - [x] Configure coverage exclusions in pyproject.toml
+- [x] Implement PEP 8 semantic import organization across all Python files
 
 ### Phase 2: API Clients (Next)
 
@@ -675,14 +676,20 @@ msc export --year 2025 --format csv
   - `_tests/` structure with 83 unit tests achieving 53% overall coverage
   - Legacy scripts moved to `_legacy/`
   - `.env.example` configuration template
+  - PEP 8 semantic import organization (stdlib → third-party → local) across all 24 Python files
 
 **Test Coverage Breakdown:**
-- Total: 353 statements, 169 missed → 53% coverage
+- Total: 362 statements, 171 missed → 53% coverage
 - `msc/config/`: 100% (19 tests)
 - `msc/utils/logging.py`: 100% (18 tests)
 - `msc/utils/retry.py`: 96% (22 tests)
 - `msc/utils/text.py`: 100% (24 tests)
 - Abstract classes: 0% (excluded via NotImplementedError)
+
+**Code Quality:**
+- All Python files use PEP 8 import grouping with comment headers
+- Imports alphabetically sorted within each category
+- Consistent structure across entire codebase
 
 ### Next Steps
 

@@ -173,6 +173,7 @@ All stored in `_tokens/` (gitignored):
 - **File encoding:** UTF-8 explicit on all operations
 - **Support folders:** Underscore prefix (`_config/`, `_data/`, `_tests/`, `_tokens/`)
 - **Placeholders:** Use `NotImplementedError` for incomplete code (excluded from coverage)
+- **Import style:** PEP 8 semantic grouping (stdlib → third-party → local, alphabetically sorted)
 
 ## Development
 
@@ -184,6 +185,27 @@ pytest _tests/unit/         # Unit tests only
 pytest -v --tb=short        # Verbose with short traceback
 pytest --cov=msc            # With coverage report
 ```
+
+### Code Style
+
+All Python files follow PEP 8 semantic import organization:
+
+```python
+# Standard library
+import logging
+from pathlib import Path
+from typing import Annotated
+
+# Third-party
+import pytest
+from pydantic import Field
+
+# Local
+from msc.config.settings import get_settings
+from msc.utils.logging import setup_logging
+```
+
+Imports within each section are alphabetically sorted.
 
 ### Test Conventions
 
@@ -202,7 +224,7 @@ pytest --cov=msc            # With coverage report
 ```bash
 ruff check msc/             # Linting
 ruff format msc/            # Formatting
-mypy msc/                   # Type checking
+mypy msc/                   # Type checking (when available)
 ```
 
 ## Refactoring Roadmap

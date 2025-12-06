@@ -1,8 +1,11 @@
-import typer
-
+# Standard library
 from pathlib import Path
 from typing import Annotated
 
+# Third-party
+import typer
+
+# Local
 from msc import __version__
 from msc.config.settings import get_settings
 from msc.utils.logging import setup_logging

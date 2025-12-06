@@ -1,6 +1,7 @@
-"""Static constants and enumerations for the Music Charts pipeline."""
-
+# Third-party
 from enum import Enum
+
+"""Static constants and enumerations for the Music Charts pipeline."""
 
 
 class Platform(str, Enum):
@@ -70,7 +71,6 @@ CATEGORY_WEIGHTS: dict[StatCategory, int] = {
     StatCategory.STREAMS: WeightLevel.HIGH,
 }
 
-
 # Title formatting patterns for API search
 TITLE_PATTERNS_TO_REMOVE: tuple[str, ...] = (
     "[Extended Mix]",
@@ -90,7 +90,6 @@ TITLE_PATTERNS_TO_SPACE: tuple[str, ...] = (
     ", ",
 )
 
-
 # API endpoints
 SONGSTATS_BASE_URL = "https://api.songstats.com/enterprise/v1"
 SONGSTATS_ENDPOINTS = {
@@ -100,7 +99,6 @@ SONGSTATS_ENDPOINTS = {
     "historic": f"{SONGSTATS_BASE_URL}/tracks/historic_stats",
     "info": f"{SONGSTATS_BASE_URL}/tracks/info",
 }
-
 
 # Default headers for API requests
 DEFAULT_HEADERS = {

@@ -1,7 +1,9 @@
+# Standard library
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Generic, TypeVar
 
+# Local
 from msc.config.settings import Settings, get_settings
 from msc.utils.logging import PipelineLogger
 

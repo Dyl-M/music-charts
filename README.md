@@ -115,7 +115,7 @@ pytest -v --tb=short        # Verbose with short traceback
 ```bash
 ruff check msc/             # Linting
 ruff format msc/            # Formatting
-mypy msc/                   # Type checking
+mypy msc/                   # Type checking (when available)
 ```
 
 ## Documentation

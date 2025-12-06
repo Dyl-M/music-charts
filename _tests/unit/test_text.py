@@ -1,5 +1,4 @@
-"""Unit tests for text utilities."""
-
+# Local
 from msc.utils.text import (
     build_search_query,
     format_title,
@@ -8,6 +7,8 @@ from msc.utils.text import (
     remove_remixer,
     truncate,
 )
+
+"""Unit tests for text utilities."""
 
 
 class TestFormatTitle:

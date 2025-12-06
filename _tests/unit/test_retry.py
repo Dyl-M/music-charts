@@ -1,10 +1,13 @@
-import pytest
-import requests
+# Standard library
+from unittest.mock import MagicMock, patch
 import time
 
+# Third-party
 from tenacity import RetryError
-from unittest.mock import MagicMock, patch
+import pytest
+import requests
 
+# Local
 from msc.utils.retry import RateLimiter, is_retryable_status, retry_with_backoff
 
 """Unit tests for retry utilities."""

@@ -8,6 +8,7 @@
       "Bash(gh pr list:*)",
       "Bash(gh pr edit:*)",
       "Bash(gh run view:*)",
+      "Bash(pytest:*)",
       "Bash(wc:*)",
       "WebFetch(domain:app.deepsource.com)",
       "WebFetch(domain:docs.deepsource.com)",

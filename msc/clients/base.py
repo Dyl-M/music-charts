@@ -1,8 +1,11 @@
-import requests
-
+# Standard library
 from abc import ABC, abstractmethod
 from typing import Any
 
+# Third-party
+import requests
+
+# Local
 from msc.config.constants import DEFAULT_HEADERS
 from msc.utils.logging import get_logger
 from msc.utils.retry import RateLimiter, retry_with_backoff
