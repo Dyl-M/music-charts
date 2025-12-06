@@ -175,6 +175,9 @@ All stored in `_tokens/` (gitignored):
 - **Placeholders:** Use `NotImplementedError` for incomplete code (excluded from coverage)
 - **Module docstrings:** PEP 257 compliance - docstrings before imports as first statement
 - **Import style:** PEP 8 semantic grouping (stdlib → third-party → local, alphabetically sorted)
+- **Unused parameters:** Prefix with `_` (e.g., `_version`) to signal intentionally unused
+- **Context managers:** Use explicit `as` clauses for all managers in multi-with statements
+- **Nested functions:** All functions require docstrings, including test helpers
 
 ## Development
 
@@ -213,6 +216,9 @@ Key style rules:
 - Imports organized semantically: stdlib → third-party → local (PEP 8)
 - Imports within each section are alphabetically sorted
 - Comment headers separate import groups
+- Prefix unused parameters with `_` (e.g., `_version: bool`)
+- Use explicit `as` clauses for all context managers: `with a as x, b as y:` not `with a as x, b:`
+- Add docstrings to all nested functions, including test helpers
 
 ### Test Conventions
 

@@ -21,6 +21,7 @@ class TestRetryWithBackoff:
 
         @retry_with_backoff(max_retries=3)
         def always_succeeds() -> str:
+            """Test helper that succeeds immediately."""
             return "success"
 
         assert always_succeeds() == "success"
@@ -34,6 +35,7 @@ class TestRetryWithBackoff:
 
         @retry_with_backoff(max_retries=3)
         def func_with_retries() -> str:
+            """Test helper that fails twice then succeeds."""
             return mock_func()
 
         result = func_with_retries()
@@ -46,6 +48,7 @@ class TestRetryWithBackoff:
 
         @retry_with_backoff(max_retries=2)
         def always_fails() -> None:
+            """Test helper that always raises ConnectionError."""
             raise requests.exceptions.ConnectionError("Network error")
 
         with pytest.raises(requests.exceptions.ConnectionError):
@@ -57,6 +60,7 @@ class TestRetryWithBackoff:
 
         @retry_with_backoff(max_retries=3, retry_exceptions=(ValueError,))
         def raises_value_error() -> None:
+            """Test helper that raises ValueError."""
             raise ValueError("test")
 
         with pytest.raises(ValueError):
@@ -68,6 +72,7 @@ class TestRetryWithBackoff:
 
         @retry_with_backoff(max_retries=3, retry_exceptions=(ValueError,))
         def raises_type_error() -> None:
+            """Test helper that raises TypeError."""
             raise TypeError("test")
 
         with pytest.raises(TypeError):
@@ -80,6 +85,7 @@ class TestRetryWithBackoff:
 
         @retry_with_backoff(max_retries=3)
         def func() -> str:
+            """Test helper that fails once then succeeds."""
             return mock_func()
 
         result = func()
@@ -185,7 +191,7 @@ class TestRateLimiter:
         """Should call wait() when entering context."""
         limiter = RateLimiter()
 
-        with patch.object(limiter, "wait") as mock_wait, limiter:
+        with patch.object(limiter, "wait") as mock_wait, limiter as _limiter:
             mock_wait.assert_called_once()
 
     @staticmethod

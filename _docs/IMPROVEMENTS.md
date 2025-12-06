@@ -495,6 +495,11 @@ if __name__ == "__main__":
 - [x] Configure coverage exclusions in pyproject.toml
 - [x] Implement PEP 8 semantic import organization across all Python files
 - [x] Apply PEP 257 compliance - module docstrings before imports (16 files updated)
+- [x] Address DeepSource code quality issues:
+  - [x] Remove unused imports (pytest, RetryError)
+  - [x] Add docstrings to nested test helper functions (6 functions)
+  - [x] Fix unused parameter warning (prefix with `_`)
+  - [x] Fix ambiguous context manager syntax (explicit `as` clauses)
 
 ### Phase 2: API Clients (Next)
 
@@ -693,6 +698,11 @@ msc export --year 2025 --format csv
 - All Python files use PEP 8 import grouping with comment headers
 - Imports alphabetically sorted within each category
 - Consistent structure across entire codebase
+- DeepSource code quality standards:
+  - No unused imports
+  - All functions have docstrings (including nested test helpers)
+  - Unused parameters prefixed with `_`
+  - Explicit `as` clauses in multi-context manager statements
 
 ### Next Steps
 
