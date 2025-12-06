@@ -1,3 +1,5 @@
+"""Command-line interface for the Music Charts pipeline."""
+
 # Standard library
 from pathlib import Path
 from typing import Annotated
@@ -9,8 +11,6 @@ import typer
 from msc import __version__
 from msc.config.settings import get_settings
 from msc.utils.logging import setup_logging
-
-"""Command-line interface for the Music Charts pipeline."""
 
 app = typer.Typer(
     name="msc",

@@ -1,3 +1,5 @@
+"""Unit tests for configuration module."""
+
 # Standard library
 from pathlib import Path
 from unittest.mock import patch
@@ -14,8 +16,6 @@ from msc.config.constants import (
 )
 
 from msc.config.settings import Settings, get_settings
-
-"""Unit tests for configuration module."""
 
 
 class TestPlatform:

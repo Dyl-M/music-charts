@@ -1,3 +1,5 @@
+"""Abstract base class for ETL pipeline stages."""
+
 # Standard library
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -6,8 +8,6 @@ from typing import Generic, TypeVar
 # Local
 from msc.config.settings import Settings, get_settings
 from msc.utils.logging import PipelineLogger
-
-"""Abstract base class for ETL pipeline stages."""
 
 # Type variables for input and output data types
 InputT = TypeVar("InputT")

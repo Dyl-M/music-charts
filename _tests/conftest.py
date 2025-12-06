@@ -1,10 +1,10 @@
+"""Pytest configuration and shared fixtures."""
+
 # Standard library
 from pathlib import Path
 
 # Third-party
 import pytest
-
-"""Pytest configuration and shared fixtures."""
 
 
 @pytest.fixture

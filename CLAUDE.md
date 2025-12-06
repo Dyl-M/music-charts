@@ -173,6 +173,7 @@ All stored in `_tokens/` (gitignored):
 - **File encoding:** UTF-8 explicit on all operations
 - **Support folders:** Underscore prefix (`_config/`, `_data/`, `_tests/`, `_tokens/`)
 - **Placeholders:** Use `NotImplementedError` for incomplete code (excluded from coverage)
+- **Module docstrings:** PEP 257 compliance - docstrings before imports as first statement
 - **Import style:** PEP 8 semantic grouping (stdlib → third-party → local, alphabetically sorted)
 
 ## Development
@@ -188,9 +189,11 @@ pytest --cov=msc            # With coverage report
 
 ### Code Style
 
-All Python files follow PEP 8 semantic import organization:
+All Python files follow PEP 257 (docstrings) and PEP 8 (imports):
 
 ```python
+"""Module docstring as the first statement in the file."""
+
 # Standard library
 import logging
 from pathlib import Path
@@ -205,7 +208,11 @@ from msc.config.settings import get_settings
 from msc.utils.logging import setup_logging
 ```
 
-Imports within each section are alphabetically sorted.
+Key style rules:
+- Module docstring must be the first statement (PEP 257)
+- Imports organized semantically: stdlib → third-party → local (PEP 8)
+- Imports within each section are alphabetically sorted
+- Comment headers separate import groups
 
 ### Test Conventions
 

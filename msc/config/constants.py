@@ -1,7 +1,7 @@
+"""Static constants and enumerations for the Music Charts pipeline."""
+
 # Third-party
 from enum import Enum
-
-"""Static constants and enumerations for the Music Charts pipeline."""
 
 
 class Platform(str, Enum):

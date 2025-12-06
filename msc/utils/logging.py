@@ -1,9 +1,9 @@
+"""Structured logging setup for the Music Charts pipeline."""
+
 # Standard library
 import logging
 import sys
 from typing import Literal
-
-"""Structured logging setup for the Music Charts pipeline."""
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 

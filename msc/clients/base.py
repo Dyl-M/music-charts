@@ -1,3 +1,5 @@
+"""Abstract base class for external API clients."""
+
 # Standard library
 from abc import ABC, abstractmethod
 from typing import Any
@@ -9,8 +11,6 @@ import requests
 from msc.config.constants import DEFAULT_HEADERS
 from msc.utils.logging import get_logger
 from msc.utils.retry import RateLimiter, retry_with_backoff
-
-"""Abstract base class for external API clients."""
 
 
 class BaseClient(ABC):

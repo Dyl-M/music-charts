@@ -1,3 +1,5 @@
+"""Unit tests for logging utilities."""
+
 # Standard library
 from unittest.mock import patch
 import logging
@@ -7,8 +9,6 @@ import pytest
 
 # Local
 from msc.utils.logging import PipelineLogger, get_logger, setup_logging
-
-"""Unit tests for logging utilities."""
 
 
 class TestSetupLogging:

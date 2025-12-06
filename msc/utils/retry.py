@@ -1,3 +1,5 @@
+"""Retry utilities with exponential backoff for API calls."""
+
 # Standard library
 import functools
 import logging
@@ -14,8 +16,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-"""Retry utilities with exponential backoff for API calls."""
 
 logger = logging.getLogger(__name__)
 
