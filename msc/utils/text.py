@@ -19,7 +19,7 @@ def format_title(track_title: str) -> str:
         >>> format_title("Song Name [Extended Mix]")
         'song name'
         >>> format_title("Artist A × Artist B - Track")
-        'artist a  artist b - track'
+        'artist a artist b - track'
     """
     result = track_title
 
