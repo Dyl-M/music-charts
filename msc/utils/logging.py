@@ -82,7 +82,8 @@ class PipelineLogger:
             msg += f" - {item}"
         self._logger.info(msg)
 
-    def _format_message(self, message: str, context: dict[str, object]) -> str:
+    @staticmethod
+    def _format_message(message: str, context: dict[str, object]) -> str:
         """Format message with optional context."""
         if context:
             context_str = " | ".join(f"{k}={v}" for k, v in context.items())

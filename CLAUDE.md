@@ -182,6 +182,12 @@ pytest -v --tb=short        # Verbose with short traceback
 pytest --cov=msc            # With coverage report
 ```
 
+### Test Conventions
+
+- Tests use pytest with class-based grouping
+- Test methods use `@staticmethod` decorator (no `self` parameter)
+- Fixtures defined in `_tests/conftest.py`
+
 ### Code Quality
 
 ```bash

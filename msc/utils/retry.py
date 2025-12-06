@@ -119,6 +119,7 @@ class RateLimiter:
         self.wait()
         return self
 
-    def __exit__(self, *args: object) -> None:
+    # TODO: Remove skipcq if cleanup logic is added
+    def __exit__(self, *args: object) -> None:  # skipcq: PYL-R6301
         """Context manager exit."""
         pass
