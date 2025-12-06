@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Data pipeline for analyzing track performance across streaming platforms"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     { name = "Dylan \"Dyl-M\" Monfret", email = "dyl_m.dev@proton.me" }
 ]
@@ -18,9 +18,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 dependencies = [
@@ -31,7 +31,7 @@ dependencies = [
     "plotly>=6.5.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
-    "requests>=2.32.0",
+    "requests>=2.32.5",
     "scikit-learn>=1.7.0",
     "tenacity>=9.0.0",
     "tqdm>=4.67.0",
@@ -80,7 +80,7 @@ ignore = [
 known-first-party = ["msc"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
