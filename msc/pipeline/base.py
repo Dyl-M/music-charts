@@ -26,10 +26,10 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
     """
 
     def __init__(
-        self,
-        settings: Settings | None = None,
-        input_path: Path | None = None,
-        output_path: Path | None = None,
+            self,
+            settings: Settings | None = None,
+            input_path: Path | None = None,
+            output_path: Path | None = None,
     ):
         """Initialize the pipeline stage.
 
@@ -104,7 +104,8 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
         self.logger.info(f"Completed {self.stage_name}")
         return transformed_data
 
-    def validate_input(self, data: InputT) -> bool:
+    # TODO: Remove skipcq after implementing validation logic in subclasses
+    def validate_input(self, data: InputT) -> bool:  # skipcq: PYL-R6301
         """Validate input data before transformation.
 
         Override in subclasses for custom validation logic.
@@ -117,7 +118,8 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
         """
         return True
 
-    def validate_output(self, data: OutputT) -> bool:
+    # TODO: Remove skipcq after implementing validation logic in subclasses
+    def validate_output(self, data: OutputT) -> bool:  # skipcq: PYL-R6301
         """Validate output data before loading.
 
         Override in subclasses for custom validation logic.
