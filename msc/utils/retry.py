@@ -88,7 +88,7 @@ def retry_with_backoff(
             )
             try:
                 return retryer(func)(*args, **kwargs)
-            except RetryError as e:
+            except RetryError as e:  # pragma: no cover
                 logger.error("All %s retries failed for %s: %s", max_retries, func.__name__, e)
                 raise
 
