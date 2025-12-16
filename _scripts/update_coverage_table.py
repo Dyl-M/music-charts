@@ -28,7 +28,6 @@ def load_coverage_data() -> dict:
 def generate_coverage_table() -> str:
     """Generate markdown table from coverage data."""
     import coverage
-    import os
 
     cov = coverage.Coverage()
     cov.load()
