@@ -29,6 +29,18 @@ jobs:
         run: |
           pytest --cov=msc --cov-report=xml --cov-report=term
 
+      - name: Update coverage table in README
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          python _scripts/update_coverage_table.py
+
+      - name: Commit updated README
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs(coverage): update coverage table [skip ci]"
+          file_pattern: "README.md"
+
       - name: Report coverage to DeepSource
         if: github.actor != 'dependabot[bot]'
         env:
