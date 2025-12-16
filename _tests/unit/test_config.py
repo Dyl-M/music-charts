@@ -2,7 +2,6 @@
 
 # Standard library
 from pathlib import Path
-from unittest.mock import patch
 
 # Third-party
 import pytest
