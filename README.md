@@ -15,20 +15,25 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 ## Status
 
-**Current:** Phase 1 (Foundation) complete - modular `msc` package with 53% test coverage (83 tests)
+**Current:** Phase 1 (Foundation) complete - modular `msc` package with 56% test coverage (83 tests)
 
-**Legacy:** Original ETL scripts archived in `_legacy/` - see [`_docs/IMPROVEMENTS.md`](_docs/IMPROVEMENTS.md) for
-migration roadmap
+**Package Manager:** Migrated from pip to [uv](https://github.com/astral-sh/uv) for faster dependency resolution and reproducible builds
+
+**Legacy:** Original ETL scripts archived in `_legacy/` for reference
 
 ### Test Coverage
 
-| Module             | Coverage | Tests                          |
-|--------------------|----------|--------------------------------|
-| `config/`          | 100%     | 19 tests (settings, constants) |
-| `utils/logging.py` | 100%     | 18 tests                       |
-| `utils/retry.py`   | 96%      | 22 tests                       |
-| `utils/text.py`    | 100%     | 24 tests                       |
-| **Overall**        | **53%**  | **83 tests**                   |
+*Auto-updated on every push to main via GitHub Actions*
+
+| Module        | Coverage | Files            |
+|---------------|----------|------------------|
+| `__init__.py` | 100%     | 1 files          |
+| `cli.py`      | 0%       | 1 files          |
+| `clients/`    | 0%       | 2 files          |
+| `config/`     | 100%     | 3 files          |
+| `pipeline/`   | 0%       | 2 files          |
+| `utils/`      | 100%     | 4 files          |
+| **Overall**   | **56%**  | **4 test files** |
 
 *Note: CLI, clients, and pipeline modules contain placeholder code (NotImplementedError) excluded from coverage.*
 
@@ -89,6 +94,7 @@ music-charts/
 │   └── data/               # Legacy data artifacts
 │
 ├── _notebooks/             # Jupyter notebooks
+├── _scripts/               # Automation scripts (coverage updates)
 ├── _tests/                 # Test suite
 ├── _tokens/                # Credentials (gitignored)
 │
@@ -110,7 +116,7 @@ music-charts/
 ```bash
 pytest                      # Run all tests
 pytest _tests/unit/         # Unit tests only
-pytest --cov=msc           # With coverage report
+pytest --cov=msc            # With coverage report
 pytest -v --tb=short        # Verbose with short traceback
 ```
 
@@ -121,11 +127,6 @@ ruff check msc/             # Linting
 ruff format msc/            # Formatting
 mypy msc/                   # Type checking (when available)
 ```
-
-## Documentation
-
-- [`CLAUDE.md`](CLAUDE.md) - Technical architecture and conventions
-- [`_docs/IMPROVEMENTS.md`](_docs/IMPROVEMENTS.md) - Modular revamp roadmap
 
 ## License
 
