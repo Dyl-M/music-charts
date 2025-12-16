@@ -1,6 +1,7 @@
 """Runtime configuration management using Pydantic settings."""
 
 # Standard library
+from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
@@ -115,8 +116,7 @@ class Settings(BaseSettings):
             directory.mkdir(parents=True, exist_ok=True)
 
 
+@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Get or create the global settings instance (singleton pattern)."""
-    if not hasattr(get_settings, "_instance"):
-        get_settings._instance = Settings()  # type: ignore[attr-defined]
-    return get_settings._instance  # type: ignore[attr-defined, return-value] # TODO: check this?
+    return Settings()

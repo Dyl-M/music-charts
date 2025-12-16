@@ -179,9 +179,8 @@ class TestGetSettings:
     @staticmethod
     def test_get_settings_returns_settings_instance() -> None:
         """Should return a Settings instance."""
-        # Clear the singleton instance if it exists
-        if hasattr(get_settings, "_instance"):
-            delattr(get_settings, "_instance")
+        # Clear the lru_cache
+        get_settings.cache_clear()
 
         settings = get_settings()
         assert isinstance(settings, Settings)
@@ -189,9 +188,8 @@ class TestGetSettings:
     @staticmethod
     def test_get_settings_returns_same_instance() -> None:
         """Should return the same instance on multiple calls."""
-        # Clear the singleton instance if it exists
-        if hasattr(get_settings, "_instance"):
-            delattr(get_settings, "_instance")
+        # Clear the lru_cache
+        get_settings.cache_clear()
 
         settings1 = get_settings()
         settings2 = get_settings()
