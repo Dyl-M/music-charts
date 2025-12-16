@@ -106,6 +106,10 @@ branch = true
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
+    "pragma: nocover",
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
+    "def __repr__",
+    "if __name__ == .__main__.:",
 ]
