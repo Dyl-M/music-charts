@@ -176,7 +176,12 @@ _data/output/
 _data/cache/
 
 # Claude.ai configuration files
+.claude/
 _docs/commit_m_tmp.txt
+
+# Internal documentation
+_docs/IMPROVEMENTS.md
+CLAUDE.md
 
 # Ruff
 .ruff_cache/

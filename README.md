@@ -39,10 +39,14 @@ migration roadmap
 git clone https://github.com/Dyl-M/music-charts.git
 cd music-charts
 
-# Install the package with dependencies
-pip install -e .
+# Install the package with dependencies (using uv)
+uv sync
 
 # Or with development tools (pytest, ruff, mypy)
+uv sync --extra dev
+
+# Alternative: Using pip
+pip install -e .
 pip install -e ".[dev]"
 ```
 
