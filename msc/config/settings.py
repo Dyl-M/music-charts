@@ -115,13 +115,8 @@ class Settings(BaseSettings):
             directory.mkdir(parents=True, exist_ok=True)
 
 
-# Global settings instance (lazy-loaded)
-_settings: Settings | None = None
-
-
 def get_settings() -> Settings:
-    """Get or create the global settings instance."""
-    global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
+    """Get or create the global settings instance (singleton pattern)."""
+    if not hasattr(get_settings, "_instance"):
+        get_settings._instance = Settings()  # type: ignore[attr-defined]
+    return get_settings._instance  # type: ignore[attr-defined, return-value] # TODO: check this?

@@ -180,14 +180,20 @@ class TestGetSettings:
     @staticmethod
     def test_get_settings_returns_settings_instance() -> None:
         """Should return a Settings instance."""
-        with patch("msc.config.settings._settings", None):
-            settings = get_settings()
-            assert isinstance(settings, Settings)
+        # Clear the singleton instance if it exists
+        if hasattr(get_settings, "_instance"):
+            delattr(get_settings, "_instance")
+
+        settings = get_settings()
+        assert isinstance(settings, Settings)
 
     @staticmethod
     def test_get_settings_returns_same_instance() -> None:
         """Should return the same instance on multiple calls."""
-        with patch("msc.config.settings._settings", None):
-            settings1 = get_settings()
-            settings2 = get_settings()
-            assert settings1 is settings2
+        # Clear the singleton instance if it exists
+        if hasattr(get_settings, "_instance"):
+            delattr(get_settings, "_instance")
+
+        settings1 = get_settings()
+        settings2 = get_settings()
+        assert settings1 is settings2

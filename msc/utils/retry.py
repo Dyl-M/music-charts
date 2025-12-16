@@ -56,8 +56,29 @@ def retry_with_backoff(
         )
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
+        """Actual decorator that wraps the target function.
+
+        Args:
+            func: Function to decorate with retry logic.
+
+        Returns:
+            Wrapped function with retry capabilities.
+        """
+
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            """Wrapper function that executes retry logic.
+
+            Args:
+                *args: Positional arguments for the wrapped function.
+                **kwargs: Keyword arguments for the wrapped function.
+
+            Returns:
+                Result from the wrapped function.
+
+            Raises:
+                RetryError: If all retry attempts are exhausted.
+            """
             retryer = retry(
                 stop=stop_after_attempt(max_retries),
                 wait=wait_exponential(multiplier=1, min=min_wait, max=max_wait),
@@ -68,7 +89,7 @@ def retry_with_backoff(
             try:
                 return retryer(func)(*args, **kwargs)
             except RetryError as e:
-                logger.error(f"All {max_retries} retries failed for {func.__name__}: {e}")
+                logger.error("All %s retries failed for %s: %s", max_retries, func.__name__, e)
                 raise
 
         return wrapper
@@ -124,4 +145,4 @@ class RateLimiter:
     # TODO: Remove skipcq if cleanup logic is added
     def __exit__(self, *args: object) -> None:  # skipcq: PYL-R6301
         """Context manager exit."""
-        pass
+        ...

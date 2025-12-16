@@ -98,7 +98,7 @@ class BaseClient(ABC):
             requests.HTTPError: If request fails after retries.
         """
         with self.rate_limiter:
-            self.logger.debug(f"{method} {url}", params=params)
+            self.logger.debug("%s %s", method, url, extra={"params": params})
 
             response = self.session.request(
                 method=method,
