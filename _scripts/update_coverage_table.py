@@ -87,7 +87,7 @@ def generate_coverage_table() -> str:
     for module in sorted(modules.keys()):
         data = modules[module]
         coverage_pct = (data["covered"] / data["statements"]) * 100
-        table += f"| {module} | {coverage_pct:.0f}% | {data['files']} files |\n"
+        table += f"| {module} | {coverage_pct:.1f}% | {data['files']} files |\n"
 
     # Overall
     overall_pct = (total_covered / total_statements) * 100 if total_statements > 0 else 0
@@ -95,7 +95,7 @@ def generate_coverage_table() -> str:
     # Count total test files
     test_count = len(list(Path("_tests").rglob("test_*.py")))
 
-    table += f"| **Overall** | **{overall_pct:.0f}%** | **{test_count} test files** |\n"
+    table += f"| **Overall** | **{overall_pct:.1f}%** | **{test_count} test files** |\n"
 
     return table
 
@@ -115,6 +115,7 @@ def update_readme(rm_table: str) -> None:
     if new_content != content:
         readme_path.write_text(new_content, encoding="utf-8")
         print("[OK] README.md updated with new coverage data")
+
     else:
         print("[SKIP] No changes needed")
 
