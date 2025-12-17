@@ -21,23 +21,6 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 **Legacy:** Original ETL scripts archived in `_legacy/` for reference
 
-### Test Coverage
-
-| Module | Coverage | Files |
-|--------|----------|-------|
-| `__init__.py` | 100.0% | 1 files |
-| `cli.py` | 0.0% | 1 files |
-| `clients/` | 90.4% | 3 files |
-| `config/` | 100.0% | 3 files |
-| `pipeline/` | 0.0% | 2 files |
-| `utils/` | 100.0% | 4 files |
-| **Overall** | **76.0%** | **6 test files** |
-
-
-
-
-*Note: CLI and pipeline base classes contain placeholder code (NotImplementedError) excluded from coverage.*
-
 ## Installation
 
 ```bash
@@ -96,7 +79,6 @@ music-charts/
 │   └── data/               # Legacy data artifacts
 │
 ├── _notebooks/             # Jupyter notebooks
-├── _scripts/               # Automation scripts
 ├── _tests/                 # Test suite
 ├── _tokens/                # Credentials (gitignored)
 │
