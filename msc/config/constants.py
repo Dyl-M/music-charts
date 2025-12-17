@@ -92,12 +92,16 @@ TITLE_PATTERNS_TO_SPACE: tuple[str, ...] = (
 
 # API endpoints
 SONGSTATS_BASE_URL = "https://api.songstats.com/enterprise/v1"
+
 SONGSTATS_ENDPOINTS = {
-    "status": f"{SONGSTATS_BASE_URL}/status",
-    "search": f"{SONGSTATS_BASE_URL}/tracks/search",
-    "stats": f"{SONGSTATS_BASE_URL}/tracks/stats",
+    "artist_link": f"{SONGSTATS_BASE_URL}/artists/link_request",
+    "artist_track": f"{SONGSTATS_BASE_URL}/artists/track_request",
     "historic": f"{SONGSTATS_BASE_URL}/tracks/historic_stats",
     "info": f"{SONGSTATS_BASE_URL}/tracks/info",
+    "search": f"{SONGSTATS_BASE_URL}/tracks/search",
+    "stats": f"{SONGSTATS_BASE_URL}/tracks/stats",
+    "status": f"{SONGSTATS_BASE_URL}/status",
+    "track_link": f"{SONGSTATS_BASE_URL}/tracks/link_request",
 }
 
 # Default headers for API requests
