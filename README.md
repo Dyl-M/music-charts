@@ -23,17 +23,16 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 ### Test Coverage
 
-*Auto-updated on every push to main via GitHub Actions*
+| Module | Coverage | Files |
+|--------|----------|-------|
+| `__init__.py` | 100% | 1 files |
+| `cli.py` | 0% | 1 files |
+| `clients/` | 0% | 2 files |
+| `config/` | 100% | 3 files |
+| `pipeline/` | 0% | 2 files |
+| `utils/` | 100% | 4 files |
+| **Overall** | **55%** | **4 test files** |
 
-| Module        | Coverage | Files            |
-|---------------|----------|------------------|
-| `__init__.py` | 100%     | 1 files          |
-| `cli.py`      | 0%       | 1 files          |
-| `clients/`    | 0%       | 2 files          |
-| `config/`     | 100%     | 3 files          |
-| `pipeline/`   | 0%       | 2 files          |
-| `utils/`      | 100%     | 4 files          |
-| **Overall**   | **56%**  | **4 test files** |
 
 *Note: CLI, clients, and pipeline modules contain placeholder code (NotImplementedError) excluded from coverage.*
 
