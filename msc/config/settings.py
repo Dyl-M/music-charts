@@ -10,6 +10,10 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# Project root directory (msc/config/settings.py -> msc/config/ -> msc/ -> project_root/)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables and .env file."""
 
@@ -29,17 +33,17 @@ class Settings(BaseSettings):
     data_dir: Annotated[
         Path,
         Field(description="Directory for data artifacts"),
-    ] = Path("_data")
+    ] = PROJECT_ROOT / "_data"
 
     tokens_dir: Annotated[
         Path,
         Field(description="Directory for credential files"),
-    ] = Path("_tokens")
+    ] = PROJECT_ROOT / "_tokens"
 
     config_dir: Annotated[
         Path,
         Field(description="Directory for configuration files"),
-    ] = Path("_config")
+    ] = PROJECT_ROOT / "_config"
 
     # Filters
     year: Annotated[

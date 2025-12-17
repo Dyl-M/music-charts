@@ -15,7 +15,7 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 ## Status
 
-**Current:** Phase 1 (Foundation) complete - modular `msc` package with 56% test coverage (83 tests)
+**Current:** Phase 2 (API Clients) in progress - SongstatsClient complete with 99% coverage, 76% overall test coverage (154 tests)
 
 **Package Manager:** Migrated from pip to [uv](https://github.com/astral-sh/uv) for faster dependency resolution and reproducible builds
 
@@ -27,14 +27,15 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 |--------|----------|-------|
 | `__init__.py` | 100% | 1 files |
 | `cli.py` | 0% | 1 files |
-| `clients/` | 0% | 2 files |
+| `clients/base.py` | 45% | 1 files |
+| `clients/songstats.py` | 99% | 1 files |
 | `config/` | 100% | 3 files |
 | `pipeline/` | 0% | 2 files |
 | `utils/` | 100% | 4 files |
-| **Overall** | **55%** | **4 test files** |
+| **Overall** | **76%** | **6 test files** |
 
 
-*Note: CLI, clients, and pipeline modules contain placeholder code (NotImplementedError) excluded from coverage.*
+*Note: CLI and pipeline base classes contain placeholder code (NotImplementedError) excluded from coverage.*
 
 ## Installation
 
@@ -85,6 +86,7 @@ jupyter notebook _legacy/notebooks/power_ranking_2024.ipynb  # Stage 4: Analysis
 music-charts/
 ├── _config/                # Runtime configuration
 ├── _data/                  # Data artifacts (gitignored)
+├── _demos/                 # Interactive demo scripts
 ├── _docs/                  # Documentations and notes
 │
 ├── _legacy/                # Archived original scripts
@@ -93,18 +95,18 @@ music-charts/
 │   └── data/               # Legacy data artifacts
 │
 ├── _notebooks/             # Jupyter notebooks
-├── _scripts/               # Automation scripts (coverage updates)
+├── _scripts/               # Automation scripts
 ├── _tests/                 # Test suite
 ├── _tokens/                # Credentials (gitignored)
 │
 └── msc/                    # Main package (new modular architecture)
-    ├── analysis/           # Analytics modules (skeleton)
-    ├── clients/            # API client base classes
-    ├── config/             # Settings and constants
-    ├── models/             # Data models (skeleton)
+    ├── analysis/           # Analytics modules
+    ├── clients/            # API clients
+    ├── config/             # Configuration
+    ├── models/             # Data models
     ├── pipeline/           # ETL pipeline base classes
-    ├── storage/            # Data persistence (skeleton)
-    ├── utils/              # Logging, retry, text utilities
+    ├── storage/            # Data persistence
+    ├── utils/              # Utilities
     └── cli.py              # Typer CLI entry point
 ```
 
