@@ -25,14 +25,14 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 | Module | Coverage | Files |
 |--------|----------|-------|
-| `__init__.py` | 100% | 1 files |
-| `cli.py` | 0% | 1 files |
-| `clients/base.py` | 45% | 1 files |
-| `clients/songstats.py` | 99% | 1 files |
-| `config/` | 100% | 3 files |
-| `pipeline/` | 0% | 2 files |
-| `utils/` | 100% | 4 files |
-| **Overall** | **76%** | **6 test files** |
+| `__init__.py` | 100.0% | 1 files |
+| `cli.py` | 0.0% | 1 files |
+| `clients/` | 90.4% | 3 files |
+| `config/` | 100.0% | 3 files |
+| `pipeline/` | 0.0% | 2 files |
+| `utils/` | 100.0% | 4 files |
+| **Overall** | **76.0%** | **6 test files** |
+
 
 
 *Note: CLI and pipeline base classes contain placeholder code (NotImplementedError) excluded from coverage.*
