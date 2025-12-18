@@ -15,7 +15,7 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 ## Status
 
-**Current:** Phase 2 (API Clients) in progress - SongstatsClient complete with 99% coverage, 76% overall test coverage (154 tests)
+**Current:** Phase 2 (API Clients) in progress - SongstatsClient and YouTubeClient complete
 
 **Package Manager:** Migrated from pip to [uv](https://github.com/astral-sh/uv) for faster dependency resolution and reproducible builds
 
