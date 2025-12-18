@@ -172,6 +172,107 @@ class TestSettings:
         assert settings.tokens_dir.exists()
         assert settings.config_dir.exists()
 
+    @staticmethod
+    def test_get_youtube_oauth_success(tmp_path: Path) -> None:
+        """Should load YouTube OAuth configuration from file."""
+        tokens_dir = tmp_path / "tokens"
+        tokens_dir.mkdir()
+        oauth_file = tokens_dir / "oauth.json"
+
+        oauth_data = {
+            "installed": {
+                "client_id": "test_client_id",
+                "client_secret": "test_secret",
+                "redirect_uris": ["http://localhost:8080/"]
+            }
+        }
+        
+        oauth_file.write_text(
+            '{"installed": {"client_id": "test_client_id", "client_secret": "test_secret", "redirect_uris": '
+            '["http://localhost:8080/"]}}',
+            encoding="utf-8"
+        )
+
+        settings = Settings(youtube_oauth_path=oauth_file)
+        result = settings.get_youtube_oauth()
+
+        assert result == oauth_data
+        assert result["installed"]["client_id"] == "test_client_id"
+
+    @staticmethod
+    def test_get_youtube_oauth_file_not_found() -> None:
+        """Should raise ValueError when OAuth file not found."""
+        settings = Settings(youtube_oauth_path=Path("/nonexistent/oauth.json"))
+
+        with pytest.raises(ValueError, match="YouTube OAuth file not found"):
+            settings.get_youtube_oauth()
+
+    @staticmethod
+    def test_get_youtube_credentials_success(tmp_path: Path) -> None:
+        """Should load cached YouTube credentials from file."""
+        tokens_dir = tmp_path / "tokens"
+        tokens_dir.mkdir()
+        creds_file = tokens_dir / "credentials.json"
+
+        creds_data = {
+            "token": "test_token",
+            "refresh_token": "test_refresh",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "client_id": "test_client_id",
+            "client_secret": "test_secret"
+        }
+
+        creds_file.write_text(
+            '{"token": "test_token", "refresh_token": "test_refresh", "token_uri": '
+            '"https://oauth2.googleapis.com/token", "client_id": "test_client_id", "client_secret": "test_secret"}',
+            encoding="utf-8"
+        )
+
+        settings = Settings(youtube_credentials_path=creds_file)
+        result = settings.get_youtube_credentials()
+
+        assert result == creds_data
+        assert result["token"] == "test_token"
+
+    @staticmethod
+    def test_get_youtube_credentials_file_not_found() -> None:
+        """Should return None when credentials file not found."""
+        settings = Settings(youtube_credentials_path=Path("/nonexistent/credentials.json"))
+
+        result = settings.get_youtube_credentials()
+        assert result is None
+
+    @staticmethod
+    def test_save_youtube_credentials(tmp_path: Path) -> None:
+        """Should save YouTube credentials to file with correct formatting."""
+        tokens_dir = tmp_path / "tokens"
+        tokens_dir.mkdir()
+        creds_file = tokens_dir / "credentials.json"
+
+        settings = Settings(youtube_credentials_path=creds_file)
+
+        creds_data = {
+            "token": "test_token",
+            "refresh_token": "test_refresh",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "client_id": "test_client_id",
+            "client_secret": "test_secret"
+        }
+
+        settings.save_youtube_credentials(creds_data)
+
+        # Verify file was created
+        assert creds_file.exists()
+
+        # Verify content is correct
+        saved_content = creds_file.read_text(encoding="utf-8")
+        import json
+        saved_data = json.loads(saved_content)
+        assert saved_data == creds_data
+
+        # Verify formatting (indent=4)
+        assert "    " in saved_content  # Check for 4-space indentation
+
 
 class TestGetSettings:
     """Tests for the get_settings function."""
