@@ -1,9 +1,10 @@
 """Runtime configuration management using Pydantic settings."""
 
 # Standard library
+import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 # Third-party
 from pydantic import Field
@@ -62,10 +63,25 @@ class Settings(BaseSettings):
         Field(description="Maximum Songstats API requests per second", ge=1, le=100),
     ] = 10
 
+    youtube_rate_limit: Annotated[
+        int,
+        Field(description="Maximum YouTube API requests per second", ge=1, le=100),
+    ] = 10
+
     youtube_quota_daily: Annotated[
         int,
         Field(description="Daily YouTube API quota limit", ge=0),
     ] = 10000
+
+    youtube_oauth_path: Annotated[
+        Path,
+        Field(description="Path to YouTube OAuth 2.0 client secrets"),
+    ] = PROJECT_ROOT / "_tokens" / "oauth.json"
+
+    youtube_credentials_path: Annotated[
+        Path,
+        Field(description="Path to cached YouTube credentials"),
+    ] = PROJECT_ROOT / "_tokens" / "credentials.json"
 
     # API Keys (loaded from files or environment)
     songstats_api_key: Annotated[
@@ -105,6 +121,42 @@ class Settings(BaseSettings):
         raise ValueError(
             "Songstats API key not found. Set MSC_SONGSTATS_API_KEY or create tokens/songstats_key.txt"
         )
+
+    def get_youtube_oauth(self) -> dict[str, Any]:
+        """Load YouTube OAuth 2.0 client secrets from file.
+
+        Returns:
+            dict[str, Any]: OAuth client configuration.
+
+        Raises:
+            ValueError: If OAuth file not found.
+        """
+        if not self.youtube_oauth_path.exists():
+            raise ValueError(f"YouTube OAuth file not found: {self.youtube_oauth_path}")
+
+        with open(self.youtube_oauth_path, encoding="utf-8") as f:
+            return json.load(f)
+
+    def get_youtube_credentials(self) -> dict[str, Any] | None:
+        """Load cached YouTube credentials if available.
+
+        Returns:
+            dict[str, Any] | None: Cached credentials or None if not found.
+        """
+        if not self.youtube_credentials_path.exists():
+            return None
+
+        with open(self.youtube_credentials_path, encoding="utf-8") as f:
+            return json.load(f)
+
+    def save_youtube_credentials(self, credentials: dict[str, Any]) -> None:
+        """Save YouTube credentials to cache file.
+
+        Args:
+            credentials: Credentials dictionary to save.
+        """
+        with open(self.youtube_credentials_path, "w", encoding="utf-8") as f:
+            json.dump(credentials, f, ensure_ascii=False, indent=4)
 
     def ensure_directories(self) -> None:
         """Create all required directories if they don't exist."""
