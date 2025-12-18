@@ -10,10 +10,10 @@ import pytest
 from msc.clients.songstats import SongstatsClient
 
 
-# Skip if no API key available
+# Skip if no API key available (check both env var and file)
 pytestmark = pytest.mark.skipif(
-    not os.getenv("MSC_SONGSTATS_API_KEY"),
-    reason="Songstats API key not configured"
+    not (os.getenv("MSC_SONGSTATS_API_KEY") or os.path.exists("_tokens/songstats_key.txt")),
+    reason="Songstats API key not configured",
 )
 
 
@@ -32,8 +32,9 @@ class TestSongstatsIntegration:
         client = SongstatsClient()
         quota = client.get_quota()
 
-        assert "requests_used" in quota or "usage" in quota
         assert isinstance(quota, dict)
+        assert "status" in quota
+        assert "current_month_total_requests" in quota["status"]
 
     @staticmethod
     def test_search_known_track() -> None:

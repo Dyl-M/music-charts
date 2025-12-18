@@ -1,6 +1,7 @@
 """Pytest configuration and shared fixtures."""
 
 # Standard library
+import json
 from pathlib import Path
 
 # Third-party
@@ -57,3 +58,54 @@ def temp_tokens_dir(tmp_path: Path) -> Path:
     (tokens_dir / "songstats_key.txt").write_text("mock_api_key_for_testing")
 
     return tokens_dir
+
+
+@pytest.fixture
+def temp_youtube_oauth(tmp_path: Path) -> Path:
+    """Create temporary YouTube OAuth file for testing.
+
+    Returns:
+        Path: Path to the created OAuth JSON file.
+    """
+    oauth_file = tmp_path / "_tokens" / "oauth.json"
+    oauth_file.parent.mkdir(parents=True, exist_ok=True)
+
+    oauth_data = {
+        "installed": {
+            "client_id": "test_client_id.apps.googleusercontent.com",
+            "client_secret": "test_client_secret",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "redirect_uris": ["http://localhost"],
+        }
+    }
+
+    oauth_file.write_text(json.dumps(oauth_data, ensure_ascii=False, indent=4), encoding="utf-8")
+    return oauth_file
+
+
+@pytest.fixture
+def temp_youtube_credentials(tmp_path: Path) -> Path:
+    """Create temporary YouTube credentials file for testing.
+
+    Returns:
+        Path: Path to the created credentials JSON file.
+    """
+    creds_file = tmp_path / "_tokens" / "credentials.json"
+    creds_file.parent.mkdir(parents=True, exist_ok=True)
+
+    creds_data = {
+        "token": "test_access_token",
+        "refresh_token": "test_refresh_token",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "client_id": "test_client_id.apps.googleusercontent.com",
+        "client_secret": "test_client_secret",
+        "scopes": [
+            "https://www.googleapis.com/auth/youtube.readonly",
+            "https://www.googleapis.com/auth/youtube.force-ssl",
+        ],
+    }
+
+    creds_file.write_text(json.dumps(creds_data, ensure_ascii=False, indent=4), encoding="utf-8")
+    return creds_file
