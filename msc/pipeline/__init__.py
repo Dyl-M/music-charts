@@ -1,6 +1,6 @@
 """ETL pipeline stages."""
 
 # Local
-from msc.pipeline.base import PipelineStage
+from msc.pipeline.base import Pipeline, PipelineStage
 
-__all__ = ["PipelineStage"]
+__all__ = ["Pipeline", "PipelineStage"]
