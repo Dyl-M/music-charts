@@ -217,9 +217,8 @@ class TestRequestMethod:
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
 
-        with patch.object(client.session, "request", return_value=mock_response):
-            with pytest.raises(requests.HTTPError, match="404 Not Found"):
-                client._request("GET", "https://api.example.com/notfound")
+        with patch.object(client.session, "request", return_value=mock_response), pytest.raises(requests.HTTPError, match="404 Not Found"):
+            client._request("GET", "https://api.example.com/notfound")
 
 
 class TestContextManager:
