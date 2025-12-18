@@ -815,6 +815,27 @@ class TestYouTubeClientProperty:
         mock_authenticate.assert_called_once()
         assert result == mock_yt_client
 
+    @staticmethod
+    @patch("msc.clients.youtube.get_settings")
+    def test_youtube_client_already_initialized(mock_settings: MagicMock) -> None:
+        """Should return existing client without re-authenticating."""
+        mock_settings_instance = MagicMock()
+        mock_settings_instance.youtube_rate_limit = 10
+        mock_settings.return_value = mock_settings_instance
+
+        # Create a mock pyyoutube client
+        mock_yt_client = MagicMock()
+
+        client = YouTubeClient()
+        # Set the client as already initialized
+        client._youtube_client = mock_yt_client
+
+        # Access property should return existing client
+        result = client.youtube_client
+
+        # Verify it returns the same client without calling _authenticate again
+        assert result == mock_yt_client
+
 
 class TestFetchVideoBatch:
     """Tests for _fetch_video_batch helper method."""
