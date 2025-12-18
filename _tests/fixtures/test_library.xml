@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Major Version</key><integer>1</integer>
+	<key>Minor Version</key><integer>1</integer>
+	<key>Application Version</key><string>3.5.8447</string>
+	<key>Date</key><date>2025-01-15T10:00:00Z</date>
+	<key>Features</key><integer>5</integer>
+	<key>Show Content Ratings</key><true/>
+	<key>Music Folder</key><string>file://localhost/E:/Music/</string>
+	<key>Library Persistent ID</key><string>ABC123DEF456</string>
+
+	<key>Tracks</key>
+	<dict>
+		<key>1001</key>
+		<dict>
+			<key>Track ID</key><integer>1001</integer>
+			<key>Size</key><integer>12000000</integer>
+			<key>Name</key><string>Test Track 1 [Extended Mix]</string>
+			<key>Artist</key><string>Artist A</string>
+			<key>Album</key><string>Test Album 1</string>
+			<key>Grouping</key><string>Test Label</string>
+			<key>Genre</key><string>Electronic</string>
+			<key>Year</key><integer>2024</integer>
+			<key>Total Time</key><integer>300000</integer>
+			<key>Track Number</key><integer>1</integer>
+			<key>Date Added</key><date>2024-01-01T10:00:00Z</date>
+			<key>Bit Rate</key><integer>320</integer>
+			<key>Sample Rate</key><integer>44100</integer>
+			<key>Play Count</key><integer>5</integer>
+			<key>Location</key><string>file://localhost/E:/Music/track1.mp3</string>
+		</dict>
+
+		<key>1002</key>
+		<dict>
+			<key>Track ID</key><integer>1002</integer>
+			<key>Size</key><integer>15000000</integer>
+			<key>Name</key><string>Test Track 2 [Original Mix]</string>
+			<key>Artist</key><string>Artist B</string>
+			<key>Album</key><string>Test Album 2</string>
+			<key>Grouping</key><string>Another Label</string>
+			<key>Genre</key><string>House</string>
+			<key>Year</key><integer>2024</integer>
+			<key>Total Time</key><integer>420000</integer>
+			<key>Track Number</key><integer>1</integer>
+			<key>Date Added</key><date>2024-02-15T10:00:00Z</date>
+			<key>Bit Rate</key><integer>320</integer>
+			<key>Sample Rate</key><integer>44100</integer>
+			<key>Play Count</key><integer>12</integer>
+			<key>Location</key><string>file://localhost/E:/Music/track2.mp3</string>
+		</dict>
+
+		<key>1003</key>
+		<dict>
+			<key>Track ID</key><integer>1003</integer>
+			<key>Size</key><integer>13500000</integer>
+			<key>Name</key><string>Test Track 3</string>
+			<key>Artist</key><string>Artist C</string>
+			<key>Album</key><string>Test Album 3</string>
+			<key>Grouping</key><string>Test Label</string>
+			<key>Genre</key><string>Techno</string>
+			<key>Year</key><integer>2025</integer>
+			<key>Total Time</key><integer>360000</integer>
+			<key>Track Number</key><integer>1</integer>
+			<key>Date Added</key><date>2025-01-01T10:00:00Z</date>
+			<key>Bit Rate</key><integer>320</integer>
+			<key>Sample Rate</key><integer>44100</integer>
+			<key>Play Count</key><integer>3</integer>
+			<key>Location</key><string>file://localhost/E:/Music/track3.mp3</string>
+		</dict>
+
+		<key>1004</key>
+		<dict>
+			<key>Track ID</key><integer>1004</integer>
+			<key>Size</key><integer>10800000</integer>
+			<key>Name</key><string>Test Track 4 [Remix]</string>
+			<key>Artist</key><string>Artist D</string>
+			<key>Album</key><string>Test Album 4</string>
+			<key>Grouping</key><string>Big Label</string>
+			<key>Genre</key><string>Drum &amp; Bass</string>
+			<key>Year</key><integer>2025</integer>
+			<key>Total Time</key><integer>270000</integer>
+			<key>Track Number</key><integer>1</integer>
+			<key>Date Added</key><date>2025-01-10T10:00:00Z</date>
+			<key>Bit Rate</key><integer>320</integer>
+			<key>Sample Rate</key><integer>44100</integer>
+			<key>Play Count</key><integer>8</integer>
+			<key>Location</key><string>file://localhost/E:/Music/track4.mp3</string>
+		</dict>
+
+		<key>1005</key>
+		<dict>
+			<key>Track ID</key><integer>1005</integer>
+			<key>Size</key><integer>18000000</integer>
+			<key>Name</key><string>Test Track 5</string>
+			<key>Artist</key><string>Artist E</string>
+			<key>Album</key><string>Test Album 5</string>
+			<key>Grouping</key><string>Indie Label</string>
+			<key>Genre</key><string>Trance</string>
+			<key>Year</key><integer>2023</integer>
+			<key>Total Time</key><integer>480000</integer>
+			<key>Track Number</key><integer>1</integer>
+			<key>Date Added</key><date>2023-12-01T10:00:00Z</date>
+			<key>Bit Rate</key><integer>320</integer>
+			<key>Sample Rate</key><integer>44100</integer>
+			<key>Play Count</key><integer>20</integer>
+			<key>Location</key><string>file://localhost/E:/Music/track5.mp3</string>
+		</dict>
+	</dict>
+
+	<key>Playlists</key>
+	<array>
+		<dict>
+			<key>Name</key><string>Master Playlist</string>
+			<key>Playlist ID</key><integer>1000</integer>
+			<key>Playlist Persistent ID</key><string>MASTER001</string>
+			<key>All Items</key><true/>
+			<key>Master</key><true/>
+		</dict>
+
+		<dict>
+			<key>Name</key><string>Test Playlist 2024</string>
+			<key>Playlist ID</key><integer>4361</integer>
+			<key>Playlist Persistent ID</key><string>TEST2024</string>
+			<key>Playlist Items</key>
+			<array>
+				<dict>
+					<key>Track ID</key><integer>1001</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>1002</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>1003</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>1004</integer>
+				</dict>
+			</array>
+		</dict>
+
+		<dict>
+			<key>Name</key><string>Empty Playlist</string>
+			<key>Playlist ID</key><integer>9999</integer>
+			<key>Playlist Persistent ID</key><string>EMPTY999</string>
+			<key>Playlist Items</key>
+			<array>
+			</array>
+		</dict>
+
+		<dict>
+			<key>Name</key><string>Old Tracks</string>
+			<key>Playlist ID</key><integer>5555</integer>
+			<key>Playlist Persistent ID</key><string>OLD5555</string>
+			<key>Playlist Items</key>
+			<array>
+				<dict>
+					<key>Track ID</key><integer>1005</integer>
+				</dict>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

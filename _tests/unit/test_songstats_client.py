@@ -40,6 +40,12 @@ class TestSongstatsClientInit:
         client = SongstatsClient()
         assert client.rate_limiter.requests_per_second == 15
 
+    @staticmethod
+    def test_init_with_explicit_rate_limit() -> None:
+        """Should use explicit rate_limit when provided."""
+        client = SongstatsClient(api_key="test", rate_limit=25)
+        assert client.rate_limiter.requests_per_second == 25
+
 
 class TestHealthCheck:
     """Tests for health_check method."""
@@ -336,6 +342,32 @@ class TestGetHistoricalPeaks:
         result = client.get_historical_peaks("abc123", "2024-01-01")
 
         assert result == {}
+
+    @staticmethod
+    @patch.object(SongstatsClient, "get")
+    def test_get_historical_peaks_default_sources(mock_get: MagicMock) -> None:
+        """Should use default sources when not provided."""
+        mock_get.return_value = {"stats": []}
+
+        client = SongstatsClient(api_key="test")
+        client.get_historical_peaks("abc123", "2024-01-01")
+
+        # Verify it uses default sources: spotify, deezer, tidal
+        call_args = mock_get.call_args
+        assert call_args[1]["params"]["source"] == "spotify,deezer,tidal"
+
+    @staticmethod
+    @patch.object(SongstatsClient, "get")
+    def test_get_historical_peaks_with_explicit_sources(mock_get: MagicMock) -> None:
+        """Should use explicit sources when provided."""
+        mock_get.return_value = {"stats": []}
+
+        client = SongstatsClient(api_key="test")
+        client.get_historical_peaks("abc123", "2024-01-01", sources=["apple_music", "youtube"])
+
+        # Verify it uses the provided sources
+        call_args = mock_get.call_args
+        assert call_args[1]["params"]["source"] == "apple_music,youtube"
 
 
 class TestGetYouTubeVideos:
