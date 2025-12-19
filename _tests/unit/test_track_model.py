@@ -3,12 +3,14 @@
 # Standard library
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 # Third-party
 import pytest
 from pydantic import ValidationError
 
 # Local
+from msc.config.settings import PROJECT_ROOT
 from msc.models.track import SongstatsIdentifiers, Track
 
 
@@ -263,6 +265,28 @@ class TestTrack:
         assert "title" in data
 
     @staticmethod
+    def test_validate_path_within_project() -> None:
+        """Test path validation accepts paths within project."""
+        # Path within project should be accepted
+        valid_path = PROJECT_ROOT / "_data" / "test.json"
+        validated = Track._validate_path(valid_path)
+        assert validated == valid_path.resolve()
+
+    @staticmethod
+    def test_validate_path_rejects_traversal() -> None:
+        """Test path validation rejects path traversal attempts."""
+        # Path escaping project should be rejected
+        with pytest.raises(ValueError, match="attempts to escape project directory"):
+            Track._validate_path(Path("../../../etc/passwd"))
+
+    @staticmethod
+    def test_validate_path_rejects_absolute_outside() -> None:
+        """Test path validation rejects absolute paths outside project."""
+        # Absolute path outside project should be rejected
+        with pytest.raises(ValueError, match="attempts to escape project directory"):
+            Track._validate_path(Path("/tmp/malicious.json"))
+
+    @staticmethod
     def test_to_json_file(tmp_path: Path) -> None:
         """Test saving Track to JSON file."""
         track = Track(
@@ -271,17 +295,50 @@ class TestTrack:
             year=2024
         )
 
-        output_path = tmp_path / "track.json"
-        track.to_json_file(output_path)
+        # Mock PROJECT_ROOT to allow tmp_path
+        with patch("msc.models.base.PROJECT_ROOT", tmp_path):
+            output_path = tmp_path / "track.json"
+            track.to_json_file(output_path)
 
-        assert output_path.exists()
+            assert output_path.exists()
 
-        # Verify content
-        with open(output_path, encoding="utf-8") as f:
-            data = json.load(f)
+            # Verify content
+            with open(output_path, encoding="utf-8") as f:
+                data = json.load(f)
 
-        assert data["title"] == "Test"
-        assert data["year"] == 2024
+            assert data["title"] == "Test"
+            assert data["year"] == 2024
+
+    @staticmethod
+    def test_to_json_file_creates_directories(tmp_path: Path) -> None:
+        """Test to_json_file creates parent directories if they don't exist."""
+        track = Track(
+            title="Test",
+            artist_list=["artist"],
+            year=2024
+        )
+
+        # Mock PROJECT_ROOT to allow tmp_path
+        with patch("msc.models.base.PROJECT_ROOT", tmp_path):
+            # Path with non-existent parent directory
+            output_path = tmp_path / "subdir" / "track.json"
+            track.to_json_file(output_path)
+
+            assert output_path.exists()
+            assert output_path.parent.exists()
+
+    @staticmethod
+    def test_to_json_file_rejects_path_traversal(tmp_path: Path) -> None:
+        """Test to_json_file rejects path traversal attempts."""
+        track = Track(
+            title="Test",
+            artist_list=["artist"],
+            year=2024
+        )
+
+        # Attempt path traversal
+        with pytest.raises(ValueError, match="attempts to escape project directory"):
+            track.to_json_file(Path("../../../etc/passwd"))
 
     @staticmethod
     def test_from_json_file(tmp_path: Path) -> None:
@@ -293,16 +350,34 @@ class TestTrack:
             "year": 2024,
             "genre": ["techno"]
         }
-        input_path = tmp_path / "track.json"
-        with open(input_path, "w", encoding="utf-8") as f:
-            json.dump(data, f)
 
-        # Load and verify
-        track = Track.from_json_file(input_path)
-        assert track.title == "Test"
-        assert track.artist_list == ["artist"]
-        assert track.year == 2024
-        assert track.genre == ["techno"]
+        # Mock PROJECT_ROOT to allow tmp_path
+        with patch("msc.models.base.PROJECT_ROOT", tmp_path):
+            input_path = tmp_path / "track.json"
+            with open(input_path, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+
+            # Load and verify
+            track = Track.from_json_file(input_path)
+            assert track.title == "Test"
+            assert track.artist_list == ["artist"]
+            assert track.year == 2024
+            assert track.genre == ["techno"]
+
+    @staticmethod
+    def test_from_json_file_not_found(tmp_path: Path) -> None:
+        """Test from_json_file raises FileNotFoundError for missing file."""
+        # Mock PROJECT_ROOT to allow tmp_path
+        with patch("msc.models.base.PROJECT_ROOT", tmp_path):
+            with pytest.raises(FileNotFoundError, match="File not found"):
+                Track.from_json_file(tmp_path / "nonexistent.json")
+
+    @staticmethod
+    def test_from_json_file_rejects_path_traversal() -> None:
+        """Test from_json_file rejects path traversal attempts."""
+        # Attempt path traversal
+        with pytest.raises(ValueError, match="attempts to escape project directory"):
+            Track.from_json_file(Path("../../../etc/passwd"))
 
     @staticmethod
     def test_full_track_with_all_fields() -> None:

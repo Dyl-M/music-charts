@@ -44,6 +44,37 @@ class TestPlatformStats:
         assert stats.apple_music.playlists_editorial_total is None
 
     @staticmethod
+    def test_group_by_platform_empty() -> None:
+        """Test _group_by_platform with empty data."""
+        result = PlatformStats._group_by_platform({}, "spotify_")
+        assert result == {}
+
+    @staticmethod
+    def test_group_by_platform_with_matching_keys() -> None:
+        """Test _group_by_platform extracts matching keys."""
+        data = {
+            "spotify_streams_total": 1000000,
+            "spotify_popularity_peak": 75,
+            "deezer_popularity_peak": 80,
+            "other_field": "value"
+        }
+        result = PlatformStats._group_by_platform(data, "spotify_")
+        assert result == {
+            "spotify_streams_total": 1000000,
+            "spotify_popularity_peak": 75
+        }
+
+    @staticmethod
+    def test_group_by_platform_no_matches() -> None:
+        """Test _group_by_platform with no matching keys."""
+        data = {
+            "deezer_popularity_peak": 80,
+            "youtube_video_views_total": 500000
+        }
+        result = PlatformStats._group_by_platform(data, "spotify_")
+        assert result == {}
+
+    @staticmethod
     def test_from_flat_dict_empty() -> None:
         """Test from_flat_dict with empty dictionary."""
         stats = PlatformStats.from_flat_dict({})
