@@ -210,6 +210,55 @@ class MusicBeeClient:
         self.logger.debug("Retrieved %d playlists", len(playlists_info))
         return playlists_info
 
+    def find_playlist_by_name(
+            self,
+            name: str,
+            exact_match: bool = False,
+    ) -> str | None:
+        """Find playlist ID by name.
+
+        MusicBee assigns playlist IDs dynamically based on library size,
+        making hardcoded IDs unreliable. This method searches by name instead.
+
+        Args:
+            name: Playlist name to search for.
+            exact_match: If True, require exact match (case-insensitive).
+                        If False, match if name is contained in playlist name.
+
+        Returns:
+            Playlist ID if found, None otherwise.
+
+        Example:
+            >>> client = MusicBeeClient()
+            >>> # Exact match
+            >>> client.find_playlist_by_name("✅ 2025 Selection", exact_match=True)
+            '5218'
+            >>> # Partial match
+            >>> client.find_playlist_by_name("Selection")
+            '5213'  # Returns first match like "'20 and older Selection"
+        """
+        if not name or not name.strip():
+            self.logger.error("Playlist name is required")
+            return None
+
+        library = self.get_library()
+        search_name = name.strip().lower()
+
+        for pid, playlist in library.playlists.items():
+            playlist_name = getattr(playlist, "name", "").lower()
+
+            if exact_match:
+                if playlist_name == search_name:
+                    self.logger.debug("Found playlist '%s' with ID %s", name, pid)
+                    return pid
+            else:
+                if search_name in playlist_name:
+                    self.logger.debug("Found playlist '%s' with ID %s", name, pid)
+                    return pid
+
+        self.logger.warning("Playlist '%s' not found", name)
+        return None
+
     def close(self) -> None:
         """Clean up resources and delete cached XML file.
 
