@@ -12,11 +12,11 @@ from msc.models.base import MSCBaseModel
 
 class Track(MSCBaseModel):
     """Track metadata from MusicBee library.
-    
+
     Represents a single track with artist, title, and classification info.
     Immutable after creation (frozen=True) since track metadata shouldn't
     change during processing.
-    
+
     Attributes:
         title: Track title (cleaned, lowercase).
         artist_list: List of artist names (min 1 required).
@@ -26,7 +26,7 @@ class Track(MSCBaseModel):
         grouping: MusicBee grouping field (optional).
         search_query: Original search query for Songstats (optional,
             alias="request" for backward compatibility).
-    
+
     Examples:
         >>> track = Track(
         ...     title="16",
@@ -84,10 +84,10 @@ class Track(MSCBaseModel):
     @property
     def primary_artist(self) -> str:
         """First artist in artist_list.
-        
+
         Returns:
             Primary artist name.
-        
+
         Examples:
             >>> track.primary_artist
             'blasterjaxx'
@@ -97,10 +97,10 @@ class Track(MSCBaseModel):
     @property
     def all_artists_string(self) -> str:
         """Comma-separated artist names.
-        
+
         Returns:
             Artists joined by ", ".
-        
+
         Examples:
             >>> track.all_artists_string
             'blasterjaxx, hardwell, maddix'
@@ -109,13 +109,13 @@ class Track(MSCBaseModel):
 
     def has_genre(self, genre: str) -> bool:
         """Check if track belongs to a genre (case-insensitive).
-        
+
         Args:
             genre: Genre name to check.
-        
+
         Returns:
             True if genre is in track's genre list.
-        
+
         Examples:
             >>> track.has_genre("hard techno")
             True
@@ -127,17 +127,17 @@ class Track(MSCBaseModel):
 
 class SongstatsIdentifiers(MSCBaseModel):
     """Songstats track identifiers.
-    
+
     Used to link tracks to their Songstats data. Immutable after creation
     since identifiers don't change.
-    
+
     Attributes:
         songstats_id: Songstats track ID (8-char alphanumeric,
             alias="s_id" for backward compatibility).
         songstats_title: Track title in Songstats database
             (alias="s_title" for backward compatibility).
         isrc: International Standard Recording Code (optional).
-    
+
     Examples:
         >>> ids = SongstatsIdentifiers(
         ...     songstats_id="qmr6e0bx",

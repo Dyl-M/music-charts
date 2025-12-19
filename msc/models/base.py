@@ -11,21 +11,21 @@ from pydantic import BaseModel, ConfigDict
 
 class MSCBaseModel(BaseModel):
     """Base model for all music-charts data models.
-    
+
     Provides shared configuration and utility methods for:
     - JSON serialization with None exclusion
     - Alias population for backward compatibility
     - String whitespace stripping
     - Validation on assignment
-    
+
     All models in the msc.models package inherit from this base class
     to ensure consistent behavior and serialization patterns.
-    
+
     Examples:
         >>> class MyModel(MSCBaseModel):
         ...     name: str
         ...     count: int | None = None
-        >>> 
+        >>>
         >>> model = MyModel(name="test", count=5)
         >>> model.model_dump()
         {'name': 'test', 'count': 5}
@@ -40,14 +40,14 @@ class MSCBaseModel(BaseModel):
 
     def to_flat_dict(self) -> dict[str, Any]:
         """Convert nested model to flat dict with aliased keys.
-        
+
         Uses model_dump with by_alias=True to export fields using their
         alias names. Useful for backward compatibility with legacy pandas
         code that expects flat dictionaries.
-        
+
         Returns:
             Flat dictionary with alias keys where defined.
-        
+
         Examples:
             >>> model.to_flat_dict()
             {'spotify_streams_total': 1000000, ...}
@@ -56,11 +56,11 @@ class MSCBaseModel(BaseModel):
 
     def to_json_file(self, path: Path, indent: int = 2) -> None:
         """Save model to JSON file with UTF-8 encoding.
-        
+
         Args:
             path: Output file path.
             indent: JSON indentation level (default: 2).
-        
+
         Examples:
             >>> track.to_json_file(Path("_data/track.json"))
         """
@@ -75,13 +75,13 @@ class MSCBaseModel(BaseModel):
     @classmethod
     def from_json_file(cls, path: Path) -> Self:
         """Load model from JSON file with UTF-8 encoding.
-        
+
         Args:
             path: Input file path.
-        
+
         Returns:
             Model instance loaded from JSON.
-        
+
         Examples:
             >>> track = Track.from_json_file(Path("_data/track.json"))
         """
