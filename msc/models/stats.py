@@ -132,6 +132,19 @@ class PlatformStats(MSCBaseModel):
         )
     ]
 
+    @staticmethod
+    def _group_by_platform(data: dict[str, Any], prefix: str) -> dict[str, Any]:
+        """Extract fields for a specific platform by prefix.
+
+        Args:
+            data: Flat dictionary with platform-prefixed keys.
+            prefix: Platform prefix to filter (e.g., "spotify_").
+
+        Returns:
+            Dictionary with fields matching the prefix.
+        """
+        return {k: v for k, v in data.items() if k.startswith(prefix)}
+
     @classmethod
     def from_flat_dict(cls, data: dict[str, Any]) -> Self:
         """Load from legacy flat dictionary format.
@@ -155,31 +168,29 @@ class PlatformStats(MSCBaseModel):
             >>> stats.spotify.streams_total
             1000000
         """
-        # Group fields by platform prefix
-        spotify_data = {k: v for k, v in data.items() if k.startswith("spotify_")}
-        deezer_data = {k: v for k, v in data.items() if k.startswith("deezer_")}
-        apple_music_data = {k: v for k, v in data.items() if k.startswith("apple_music_")}
-        youtube_data = {k: v for k, v in data.items() if k.startswith("youtube_")}
-        tiktok_data = {k: v for k, v in data.items() if k.startswith("tiktok_")}
-        soundcloud_data = {k: v for k, v in data.items() if k.startswith("soundcloud_")}
-        tidal_data = {k: v for k, v in data.items() if k.startswith("tidal_")}
-        amazon_data = {k: v for k, v in data.items() if k.startswith("amazon_")}
-        beatport_data = {k: v for k, v in data.items() if k.startswith("beatport_")}
-        tracklists_data = {k: v for k, v in data.items() if k.startswith("1001tracklists_")}
+        # Define platform configurations
+        platforms = [
+            ("spotify", "spotify_", SpotifyStats),
+            ("deezer", "deezer_", DeezerStats),
+            ("apple_music", "apple_music_", AppleMusicStats),
+            ("youtube", "youtube_", YouTubeStats),
+            ("tiktok", "tiktok_", TikTokStats),
+            ("soundcloud", "soundcloud_", SoundCloudStats),
+            ("tidal", "tidal_", TidalStats),
+            ("amazon_music", "amazon_", AmazonMusicStats),
+            ("beatport", "beatport_", BeatportStats),
+            ("tracklists", "1001tracklists_", TracklistsStats),
+        ]
 
-        # Create platform models using aliases (populate_by_name=True handles this)
-        return cls(
-            spotify=SpotifyStats(**spotify_data) if spotify_data else SpotifyStats(),
-            deezer=DeezerStats(**deezer_data) if deezer_data else DeezerStats(),
-            apple_music=AppleMusicStats(**apple_music_data) if apple_music_data else AppleMusicStats(),
-            youtube=YouTubeStats(**youtube_data) if youtube_data else YouTubeStats(),
-            tiktok=TikTokStats(**tiktok_data) if tiktok_data else TikTokStats(),
-            soundcloud=SoundCloudStats(**soundcloud_data) if soundcloud_data else SoundCloudStats(),
-            tidal=TidalStats(**tidal_data) if tidal_data else TidalStats(),
-            amazon_music=AmazonMusicStats(**amazon_data) if amazon_data else AmazonMusicStats(),
-            beatport=BeatportStats(**beatport_data) if beatport_data else BeatportStats(),
-            tracklists=TracklistsStats(**tracklists_data) if tracklists_data else TracklistsStats(),
-        )
+        # Group and create platform models
+        platform_kwargs = {}
+        for field_name, prefix, model_class in platforms:
+            platform_data = cls._group_by_platform(data, prefix)
+            platform_kwargs[field_name] = (
+                model_class(**platform_data) if platform_data else model_class()
+            )
+
+        return cls(**platform_kwargs)
 
     def to_flat_dict(self) -> dict[str, Any]:
         """Convert to legacy flat dictionary format.
