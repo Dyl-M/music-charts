@@ -178,6 +178,7 @@ _data/cache/
 # Claude.ai configuration files
 .claude/
 _docs/commit_m_tmp.txt
+_docs/PR-DRAFT.md
 
 # Internal documentation
 _docs/IMPROVEMENTS.md
