@@ -8,6 +8,9 @@ from typing import Any, Self
 # Third-party
 from pydantic import BaseModel, ConfigDict
 
+# Local
+from msc.config.settings import PROJECT_ROOT
+
 
 class MSCBaseModel(BaseModel):
     """Base model for all music-charts data models.
@@ -38,6 +41,37 @@ class MSCBaseModel(BaseModel):
         str_strip_whitespace=True,  # Auto-strip strings
     )
 
+    @staticmethod
+    def _validate_path(path: Path) -> Path:
+        """Validate file path to prevent path traversal attacks.
+
+        Args:
+            path: Path to validate.
+
+        Returns:
+            Resolved absolute path.
+
+        Raises:
+            ValueError: If path attempts to escape project directory.
+
+        Examples:
+            >>> MSCBaseModel._validate_path(Path("_data/track.json"))
+            PosixPath('/project/root/_data/track.json')
+        """
+        # Resolve to absolute path
+        resolved_path = path.resolve()
+
+        # Check if path is within project directory
+        try:
+            resolved_path.relative_to(PROJECT_ROOT)
+
+        except ValueError as e:
+            raise ValueError(
+                f"Path '{path}' attempts to escape project directory"
+            ) from e
+
+        return resolved_path
+
     def to_flat_dict(self) -> dict[str, Any]:
         """Convert nested model to flat dict with aliased keys.
 
@@ -58,13 +92,19 @@ class MSCBaseModel(BaseModel):
         """Save model to JSON file with UTF-8 encoding.
 
         Args:
-            path: Output file path.
+            path: Output file path (must be within project directory).
             indent: JSON indentation level (default: 2).
+
+        Raises:
+            ValueError: If path attempts to escape project directory.
 
         Examples:
             >>> track.to_json_file(Path("_data/track.json"))
         """
-        with open(path, "w", encoding="utf-8") as f:
+        validated_path = self._validate_path(path)
+        validated_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(validated_path, "w", encoding="utf-8") as f:
             json.dump(
                 self.model_dump(exclude_none=True),
                 f,
@@ -77,15 +117,24 @@ class MSCBaseModel(BaseModel):
         """Load model from JSON file with UTF-8 encoding.
 
         Args:
-            path: Input file path.
+            path: Input file path (must be within project directory).
 
         Returns:
             Model instance loaded from JSON.
 
+        Raises:
+            ValueError: If path attempts to escape project directory.
+            FileNotFoundError: If file does not exist.
+
         Examples:
             >>> track = Track.from_json_file(Path("_data/track.json"))
         """
-        with open(path, encoding="utf-8") as f:
+        validated_path = cls._validate_path(path)
+
+        if not validated_path.exists():
+            raise FileNotFoundError(f"File not found: {validated_path}")
+
+        with open(validated_path, encoding="utf-8") as f:
             data = json.load(f)
 
         return cls(**data)
