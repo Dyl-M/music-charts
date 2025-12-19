@@ -247,14 +247,15 @@ class MusicBeeClient:
         for pid, playlist in library.playlists.items():
             playlist_name = getattr(playlist, "name", "").lower()
 
-            if exact_match:
-                if playlist_name == search_name:
-                    self.logger.debug("Found playlist '%s' with ID %s", name, pid)
-                    return pid
-            else:
-                if search_name in playlist_name:
-                    self.logger.debug("Found playlist '%s' with ID %s", name, pid)
-                    return pid
+            # Check match based on mode
+            matches = (
+                playlist_name == search_name if exact_match
+                else search_name in playlist_name
+            )
+
+            if matches:
+                self.logger.debug("Found playlist '%s' with ID %s", name, pid)
+                return pid
 
         self.logger.warning("Playlist '%s' not found", name)
         return None

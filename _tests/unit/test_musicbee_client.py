@@ -502,3 +502,138 @@ class TestEdgeCases:
         assert len(tracks_2024) == 2
         assert len(tracks_2025) == 2
         assert len(tracks_2026) == 0
+
+
+class TestFindPlaylistByName:
+    """Tests for the find_playlist_by_name() method."""
+
+    @staticmethod
+    def test_exact_match_found(tmp_path: Path) -> None:
+        """Should find playlist with exact name match."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        # Exact match for "Test Playlist 2024" (playlist ID: 4361)
+        result = client.find_playlist_by_name("Test Playlist 2024", exact_match=True)
+
+        assert result == "4361"
+
+    @staticmethod
+    def test_exact_match_not_found(tmp_path: Path) -> None:
+        """Should return None when exact match not found."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        result = client.find_playlist_by_name("Nonexistent Playlist", exact_match=True)
+
+        assert result is None
+
+    @staticmethod
+    def test_exact_match_case_insensitive(tmp_path: Path) -> None:
+        """Should match case-insensitively for exact match."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        # Search with different case
+        result = client.find_playlist_by_name("TEST PLAYLIST 2024", exact_match=True)
+
+        assert result == "4361"
+
+    @staticmethod
+    def test_partial_match_found(tmp_path: Path) -> None:
+        """Should find playlist with partial name match."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        # Partial match for "Playlist" should find any playlist containing "Playlist"
+        result = client.find_playlist_by_name("Playlist", exact_match=False)
+
+        assert result is not None
+        assert result in ["1000", "4361", "9999"]  # Master, Test, or Empty Playlist
+
+    @staticmethod
+    def test_partial_match_not_found(tmp_path: Path) -> None:
+        """Should return None when partial match not found."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        result = client.find_playlist_by_name("Nonexistent", exact_match=False)
+
+        assert result is None
+
+    @staticmethod
+    def test_partial_match_case_insensitive(tmp_path: Path) -> None:
+        """Should match case-insensitively for partial match."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        # Search with different case
+        result = client.find_playlist_by_name("TRACKS", exact_match=False)
+
+        assert result is not None  # Should find "Old Tracks"
+
+    @staticmethod
+    def test_empty_name_returns_none(tmp_path: Path) -> None:
+        """Should return None for empty name."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        result = client.find_playlist_by_name("", exact_match=True)
+
+        assert result is None
+
+    @staticmethod
+    def test_whitespace_only_name_returns_none(tmp_path: Path) -> None:
+        """Should return None for whitespace-only name."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        result = client.find_playlist_by_name("   ", exact_match=True)
+
+        assert result is None
+
+    @staticmethod
+    def test_name_with_padding_whitespace(tmp_path: Path) -> None:
+        """Should strip whitespace from search name."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        # Name with padding should still match
+        result = client.find_playlist_by_name("  Old Tracks  ", exact_match=True)
+
+        assert result == "5555"
+
+    @staticmethod
+    @patch("libpybee.Library")
+    def test_playlist_without_name_attribute(
+            mock_library_class: MagicMock,
+            tmp_path: Path,
+    ) -> None:
+        """Should handle playlists without name attribute gracefully."""
+        library_path = tmp_path / "library.xml"
+        library_path.write_text('<?xml version="1.0"?><plist></plist>', encoding="utf-8")
+
+        # Create mock playlist without name attribute
+        mock_playlist = Mock(spec=[])  # No attributes
+        mock_library = Mock()
+        mock_library.playlists = {"1": mock_playlist}
+        mock_library.tracks = {}
+        mock_library_class.return_value = mock_library
+
+        settings = Settings(data_dir=tmp_path, musicbee_library=library_path)
+        client = MusicBeeClient(settings=settings)
+
+        result = client.find_playlist_by_name("Test", exact_match=True)
+
+        assert result is None
+
+    @staticmethod
+    def test_default_uses_partial_match(tmp_path: Path) -> None:
+        """Should use partial match by default (exact_match=False)."""
+        library_path = Path("_tests/fixtures/test_library.xml")
+        client = MusicBeeClient(library_path=library_path)
+
+        # Default behavior should be partial match
+        result = client.find_playlist_by_name("2024")
+
+        assert result is not None  # Should find "Test Playlist 2024"
