@@ -368,9 +368,8 @@ class TestTrack:
     def test_from_json_file_not_found(tmp_path: Path) -> None:
         """Test from_json_file raises FileNotFoundError for missing file."""
         # Mock PROJECT_ROOT to allow tmp_path
-        with patch("msc.models.base.PROJECT_ROOT", tmp_path):
-            with pytest.raises(FileNotFoundError, match="File not found"):
-                Track.from_json_file(tmp_path / "nonexistent.json")
+        with patch("msc.models.base.PROJECT_ROOT", tmp_path), pytest.raises(FileNotFoundError, match="File not found"):
+            Track.from_json_file(tmp_path / "nonexistent.json")
 
     @staticmethod
     def test_from_json_file_rejects_path_traversal() -> None:
