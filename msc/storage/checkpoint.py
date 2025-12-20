@@ -125,7 +125,7 @@ class CheckpointManager:
                 len(state.skipped_ids),
             )
 
-        except (OSError, IOError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, json.JSONEncodeError, TypeError) as error:
             self.logger.exception("Failed to save checkpoint for %s: %s", state.stage_name, error)
             raise  # Re-raise to let caller handle failure
 
@@ -159,7 +159,7 @@ class CheckpointManager:
             )
             return state
 
-        except (OSError, IOError, json.JSONDecodeError, KeyError, ValueError, TypeError) as error:
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as error:
             self.logger.exception("Failed to load checkpoint for %s: %s", stage_name, error)
             return None
 
@@ -197,7 +197,7 @@ class CheckpointManager:
                 checkpoint_path.unlink()
                 self.logger.info("Cleared checkpoint for %s", stage_name)
 
-            except (OSError, IOError, PermissionError) as error:
+            except OSError as error:
                 self.logger.exception("Failed to clear checkpoint for %s: %s", stage_name, error)
 
 
@@ -282,7 +282,7 @@ class ManualReviewQueue:
             self.items = [ManualReviewItem.from_dict(item) for item in data]
             self.logger.info("Loaded %d items from review queue", len(self.items))
 
-        except (OSError, IOError, json.JSONDecodeError, KeyError, ValueError, TypeError) as error:
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as error:
             self.logger.exception("Failed to load review queue from %s: %s", self.file_path, error)
             self.items = []
 
@@ -303,7 +303,7 @@ class ManualReviewQueue:
 
             self.logger.debug("Saved %d items to review queue", len(self.items))
 
-        except (OSError, IOError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, json.JSONEncodeError, TypeError) as error:
             self.logger.exception("Failed to save review queue to %s: %s", self.file_path, error)
             raise  # Re-raise to let caller handle failure
 
