@@ -77,7 +77,7 @@ class JSONTrackRepository(TrackRepository):
 
             self.logger.debug("Saved %d tracks to %s", len(self._tracks), self.file_path)
 
-        except (OSError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, TypeError) as error:
             self.logger.exception("Failed to save tracks to %s: %s", self.file_path, error)
             raise  # Re-raise to let caller handle failure
 
@@ -188,7 +188,7 @@ class JSONStatsRepository(StatsRepository):
 
             self.logger.debug("Saved %d stats to %s", len(self._stats), self.file_path)
 
-        except (OSError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, TypeError) as error:
             self.logger.exception("Failed to save stats to %s: %s", self.file_path, error)
             raise  # Re-raise to let caller handle failure
 
