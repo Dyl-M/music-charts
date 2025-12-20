@@ -128,7 +128,7 @@ def _display_summary(orchestrator, results) -> None:
         typer.echo("Top 5 Rankings:")
         for ranking in results.rankings[:5]:
             typer.echo(
-                f"  {ranking.rank}. {ranking.track.artist} - {ranking.track.title} "
+                f"  {ranking.rank}. {ranking.track.all_artists_string} - {ranking.track.title} "
                 f"(score: {ranking.total_score:.2f})"
             )
 

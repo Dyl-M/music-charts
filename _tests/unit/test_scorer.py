@@ -7,6 +7,7 @@ weighting calculations, and edge cases.
 # Standard library
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 # Local
 from msc.analysis.normalizers import MinMaxNormalizer, RobustNormalizer
@@ -542,3 +543,74 @@ class TestPowerRankingScorer:
 
         value = scorer._get_metric_value(track, "badmetricname")
         assert value is None
+
+    @staticmethod
+    def test_custom_config_path_no_validation(tmp_path: Path) -> None:
+        """Test using custom config path outside config directory without validation."""
+        # Create config in a different directory (not in config_dir)
+        external_dir = tmp_path / "external"
+        external_dir.mkdir()
+        config_file = external_dir / "categories.json"
+
+        with open(config_file, "w", encoding="utf-8") as f:
+            json.dump({"popularity": ["spotify_popularity_peak"]}, f)
+
+        # Should work without validation (validate_path = False when custom path is provided)
+        scorer = PowerRankingScorer(category_config_path=config_file)
+
+        assert "popularity" in scorer.category_config
+        assert scorer.category_config["popularity"] == ["spotify_popularity_peak"]
+
+    @staticmethod
+    def test_unknown_category_fallback_weight(tmp_path: Path) -> None:
+        """Test computing rankings with unknown category uses fallback weight."""
+        config_file = tmp_path / "categories.json"
+        with open(config_file, "w", encoding="utf-8") as f:
+            # Use a category name that's not in StatCategory enum
+            json.dump({"unknown_category": ["spotify_popularity_peak"]}, f)
+
+        scorer = PowerRankingScorer(category_config_path=config_file)
+
+        track = TrackWithStats(
+            track=Track(
+                title="Test Track",
+                artist_list=["Artist"],
+                year=2024,
+            ),
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="123",
+                songstats_title="Test Track",
+            ),
+            platform_stats=PlatformStats(
+                spotify=SpotifyStats(popularity_peak=85)
+            ),
+        )
+
+        results = scorer.compute_rankings([track])
+
+        # Should still produce ranking with fallback weight of 1
+        assert len(results.rankings) == 1
+        ranking = results.rankings[0]
+        assert len(ranking.category_scores) == 1
+        # Unknown category should have weight of 1 (fallback)
+        assert ranking.category_scores[0].weight == 1
+
+    @staticmethod
+    def test_load_category_config_with_validation(tmp_path: Path) -> None:
+        """Test _load_category_config validates path when using default location."""
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
+        config_file = config_dir / "categories.json"
+
+        with open(config_file, "w", encoding="utf-8") as f:
+            json.dump({"popularity": ["spotify_popularity_peak"]}, f)
+
+        # Patch get_settings to return our test config_dir
+        from msc.config.settings import Settings
+        test_settings = Settings(config_dir=config_dir)
+
+        with patch("msc.analysis.scorer.get_settings", return_value=test_settings):
+            # Using default path (None) should trigger validation
+            scorer = PowerRankingScorer()
+
+            assert "popularity" in scorer.category_config
