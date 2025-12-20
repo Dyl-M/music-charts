@@ -83,7 +83,8 @@ class FileObserver(PipelineObserver):
         Args:
             file_path: Path to event log file
         """
-        self.file_path = file_path
+        # Normalize path to prevent directory traversal
+        self.file_path = file_path.resolve()
         self.logger = get_logger(__name__)
         self.events: list[dict[str, Any]] = []
 
