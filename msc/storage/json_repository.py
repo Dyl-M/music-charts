@@ -33,6 +33,7 @@ class JSONTrackRepository(TrackRepository):
         Args:
             file_path: Path to JSON file for storage
         """
+        super().__init__()
         self.file_path = file_path
         self.logger = get_logger(__name__)
         self._tracks: dict[str, Track] = {}
@@ -54,7 +55,7 @@ class JSONTrackRepository(TrackRepository):
 
             self.logger.info("Loaded %d tracks from %s", len(self._tracks), self.file_path)
 
-        except (OSError, IOError, json.JSONDecodeError, ValidationError, KeyError, TypeError) as error:
+        except (OSError, json.JSONDecodeError, ValidationError, KeyError, TypeError) as error:
             self.logger.exception("Failed to load tracks from %s: %s", self.file_path, error)
             self._tracks = {}
 
@@ -75,7 +76,7 @@ class JSONTrackRepository(TrackRepository):
 
             self.logger.debug("Saved %d tracks to %s", len(self._tracks), self.file_path)
 
-        except (OSError, IOError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, json.JSONEncodeError, TypeError) as error:
             self.logger.exception("Failed to save tracks to %s: %s", self.file_path, error)
             raise  # Re-raise to let caller handle failure
 
@@ -137,6 +138,7 @@ class JSONStatsRepository(StatsRepository):
         Args:
             file_path: Path to JSON file for storage
         """
+        super().__init__()
         self.file_path = file_path
         self.logger = get_logger(__name__)
         self._stats: dict[str, TrackWithStats] = {}
@@ -164,7 +166,7 @@ class JSONStatsRepository(StatsRepository):
 
             self.logger.info("Loaded %d stats from %s", len(self._stats), self.file_path)
 
-        except (OSError, IOError, json.JSONDecodeError, ValidationError, KeyError, TypeError, AttributeError) as error:
+        except (OSError, json.JSONDecodeError, ValidationError, KeyError, TypeError, AttributeError) as error:
             self.logger.exception("Failed to load stats from %s: %s", self.file_path, error)
             self._stats = {}
 
@@ -185,7 +187,7 @@ class JSONStatsRepository(StatsRepository):
 
             self.logger.debug("Saved %d stats to %s", len(self._stats), self.file_path)
 
-        except (OSError, IOError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, json.JSONEncodeError, TypeError) as error:
             self.logger.exception("Failed to save stats to %s: %s", self.file_path, error)
             raise  # Re-raise to let caller handle failure
 
@@ -235,6 +237,8 @@ class JSONStatsRepository(StatsRepository):
             flat: If True, use flat dictionary format for legacy compatibility
         """
         try:
+            # Normalize path to prevent directory traversal
+            file_path = file_path.resolve()
             file_path.parent.mkdir(parents=True, exist_ok=True)
 
             if flat:
@@ -250,7 +254,7 @@ class JSONStatsRepository(StatsRepository):
                 "Exported %d items to %s (flat=%s)", len(self._stats), file_path, flat
             )
 
-        except (OSError, IOError, json.JSONEncodeError, TypeError, AttributeError) as error:
+        except (OSError, json.JSONEncodeError, TypeError, AttributeError) as error:
             self.logger.exception("Failed to export to %s: %s", file_path, error)
 
     def export_to_csv(self, file_path: Path) -> None:
@@ -266,7 +270,7 @@ class JSONStatsRepository(StatsRepository):
 
             self.logger.info("Exported %d items to CSV: %s", len(self._stats), file_path)
 
-        except (OSError, IOError, ValueError, AttributeError, KeyError) as error:
+        except (OSError, ValueError, AttributeError, KeyError) as error:
             self.logger.exception("Failed to export to CSV: %s - %s", file_path, error)
 
     def get_by_songstats_id(self, songstats_id: str) -> TrackWithStats | None:
