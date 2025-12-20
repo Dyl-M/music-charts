@@ -8,10 +8,12 @@ and the Observable mixin for event handling and notification.
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock, Mock, patch
 
 # Third-party
 import pytest
+from rich.progress import TaskID
 
 # Local
 from msc.pipeline.observer import EventType, Observable, PipelineEvent, PipelineObserver
@@ -74,8 +76,9 @@ class TestPipelineEvent:
             timestamp=datetime.now(),
         )
 
+        # Use setattr to avoid IDE warnings while testing immutability
         with pytest.raises(AttributeError):
-            event.event_type = EventType.STAGE_COMPLETED  # type: ignore
+            setattr(event, "event_type", EventType.STAGE_COMPLETED)
 
     @staticmethod
     def test_event_str_representation() -> None:
@@ -463,7 +466,7 @@ class TestProgressBarObserver:
     def test_on_item_completed_advances_progress() -> None:
         """Test that item completion advances progress bar."""
         observer = ProgressBarObserver()
-        observer.tasks["extraction"] = 1  # Mock task ID
+        observer.tasks["extraction"] = cast(TaskID, 1)  # Mock task ID
 
         with patch.object(observer.progress, "advance") as mock_advance:
             event = PipelineEvent(
@@ -480,7 +483,7 @@ class TestProgressBarObserver:
     def test_on_item_failed_advances_progress() -> None:
         """Test that failed items also advance progress."""
         observer = ProgressBarObserver()
-        observer.tasks["enrichment"] = 2
+        observer.tasks["enrichment"] = cast(TaskID, 2)
 
         with patch.object(observer.progress, "advance") as mock_advance:
             event = PipelineEvent(
@@ -497,7 +500,7 @@ class TestProgressBarObserver:
     def test_on_item_skipped_advances_progress() -> None:
         """Test that skipped items also advance progress."""
         observer = ProgressBarObserver()
-        observer.tasks["ranking"] = 3
+        observer.tasks["ranking"] = cast(TaskID, 3)
 
         with patch.object(observer.progress, "advance") as mock_advance:
             event = PipelineEvent(
@@ -713,3 +716,138 @@ class TestMetricsObserver:
         assert events_by_type["stage_started"] == 1
         assert events_by_type["item_completed"] == 2
         assert events_by_type["item_failed"] == 1
+
+
+class TestPipelineObserverFallbackHandlers:
+    """Tests for PipelineObserver default handler implementations."""
+
+    @staticmethod
+    def test_on_pipeline_started_fallback() -> None:
+        """Test that on_pipeline_started falls back to on_event."""
+        # Create a minimal observer that only implements on_event
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        # Manually bind the default implementation
+        event = PipelineEvent(
+            event_type=EventType.PIPELINE_STARTED,
+            timestamp=datetime.now(),
+        )
+
+        # Call the default implementation
+        PipelineObserver.on_pipeline_started(observer, event)
+
+        # Should have called on_event
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_pipeline_completed_fallback() -> None:
+        """Test that on_pipeline_completed falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.PIPELINE_COMPLETED,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_pipeline_completed(observer, event)
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_pipeline_failed_fallback() -> None:
+        """Test that on_pipeline_failed falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.PIPELINE_FAILED,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_pipeline_failed(observer, event)
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_stage_completed_fallback() -> None:
+        """Test that on_stage_completed falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.STAGE_COMPLETED,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_stage_completed(observer, event)
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_stage_failed_fallback() -> None:
+        """Test that on_stage_failed falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.STAGE_FAILED,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_stage_failed(observer, event)
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_item_processing_fallback() -> None:
+        """Test that on_item_processing falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.ITEM_PROCESSING,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_item_processing(observer, event)
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_item_completed_fallback() -> None:
+        """Test that on_item_completed falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.ITEM_COMPLETED,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_item_completed(observer, event)
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_item_failed_fallback() -> None:
+        """Test that on_item_failed falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.ITEM_FAILED,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_item_failed(observer, event)
+        observer.on_event.assert_called_once_with(event)
+
+    @staticmethod
+    def test_on_item_skipped_fallback() -> None:
+        """Test that on_item_skipped falls back to on_event."""
+        observer = Mock(spec=PipelineObserver)
+        observer.on_event = Mock()
+
+        event = PipelineEvent(
+            event_type=EventType.ITEM_SKIPPED,
+            timestamp=datetime.now(),
+        )
+
+        PipelineObserver.on_item_skipped(observer, event)
+        observer.on_event.assert_called_once_with(event)

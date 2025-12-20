@@ -122,6 +122,60 @@ class TestMinMaxNormalizer:
         normalizer = MinMaxNormalizer()
         assert normalizer.get_name() == "MinMax"
 
+    @staticmethod
+    def test_normalize_all_nan() -> None:
+        """Test normalization when all values are NaN."""
+        normalizer = MinMaxNormalizer()
+        values = [float('nan'), float('nan'), float('nan')]
+
+        result = normalizer.normalize(values)
+
+        # Should return zeros for all NaN values
+        assert len(result) == 3
+        assert all(v == 0.0 for v in result)
+
+    @staticmethod
+    def test_normalize_all_infinite() -> None:
+        """Test normalization when all values are infinite."""
+        normalizer = MinMaxNormalizer()
+        values = [float('inf'), float('inf'), float('-inf')]
+
+        result = normalizer.normalize(values)
+
+        # Should return zeros for all infinite values
+        assert len(result) == 3
+        assert all(v == 0.0 for v in result)
+
+    @staticmethod
+    def test_normalize_mixed_nan_and_valid() -> None:
+        """Test normalization with mix of NaN and valid values."""
+        normalizer = MinMaxNormalizer()
+        values = [float('nan'), 10.0, 20.0, float('nan'), 30.0]
+
+        result = normalizer.normalize(values)
+
+        # NaN values should become 0.0, valid values should be normalized
+        assert len(result) == 5
+        assert result[0] == 0.0  # NaN → 0.0
+        assert result[3] == 0.0  # NaN → 0.0
+        # Valid values should be normalized
+        assert 0.0 <= result[1] <= 1.0
+        assert 0.0 <= result[2] <= 1.0
+        assert 0.0 <= result[4] <= 1.0
+
+    @staticmethod
+    def test_normalize_mixed_infinite_and_valid() -> None:
+        """Test normalization with mix of infinite and valid values."""
+        normalizer = MinMaxNormalizer()
+        values = [float('inf'), 10.0, 20.0, float('-inf'), 30.0]
+
+        result = normalizer.normalize(values)
+
+        # Infinite values should become 0.0
+        assert len(result) == 5
+        assert result[0] == 0.0  # inf → 0.0
+        assert result[3] == 0.0  # -inf → 0.0
+
 
 class TestRobustNormalizer:
     """Tests for RobustNormalizer (median/IQR scaling)."""
@@ -188,6 +242,43 @@ class TestRobustNormalizer:
         """Test getting normalizer name."""
         normalizer = RobustNormalizer()
         assert normalizer.get_name() == "Robust"
+
+    @staticmethod
+    def test_normalize_all_nan() -> None:
+        """Test normalization when all values are NaN."""
+        normalizer = RobustNormalizer()
+        values = [float('nan'), float('nan'), float('nan')]
+
+        result = normalizer.normalize(values)
+
+        # Should return zeros for all NaN values
+        assert len(result) == 3
+        assert all(v == 0.0 for v in result)
+
+    @staticmethod
+    def test_normalize_all_infinite() -> None:
+        """Test normalization when all values are infinite."""
+        normalizer = RobustNormalizer()
+        values = [float('inf'), float('inf'), float('-inf')]
+
+        result = normalizer.normalize(values)
+
+        # Should return zeros for all infinite values
+        assert len(result) == 3
+        assert all(v == 0.0 for v in result)
+
+    @staticmethod
+    def test_normalize_mixed_nan_and_valid() -> None:
+        """Test normalization with mix of NaN and valid values."""
+        normalizer = RobustNormalizer()
+        values = [float('nan'), 10.0, 20.0, float('nan'), 30.0]
+
+        result = normalizer.normalize(values)
+
+        # NaN values should become 0.0
+        assert len(result) == 5
+        assert result[0] == 0.0  # NaN → 0.0
+        assert result[3] == 0.0  # NaN → 0.0
 
 
 class TestZScoreNormalizer:
@@ -265,6 +356,43 @@ class TestZScoreNormalizer:
         """Test getting normalizer name."""
         normalizer = ZScoreNormalizer()
         assert normalizer.get_name() == "ZScore"
+
+    @staticmethod
+    def test_normalize_all_nan() -> None:
+        """Test normalization when all values are NaN."""
+        normalizer = ZScoreNormalizer()
+        values = [float('nan'), float('nan'), float('nan')]
+
+        result = normalizer.normalize(values)
+
+        # Should return zeros for all NaN values
+        assert len(result) == 3
+        assert all(v == 0.0 for v in result)
+
+    @staticmethod
+    def test_normalize_all_infinite() -> None:
+        """Test normalization when all values are infinite."""
+        normalizer = ZScoreNormalizer()
+        values = [float('inf'), float('inf'), float('-inf')]
+
+        result = normalizer.normalize(values)
+
+        # Should return zeros for all infinite values
+        assert len(result) == 3
+        assert all(v == 0.0 for v in result)
+
+    @staticmethod
+    def test_normalize_mixed_nan_and_valid() -> None:
+        """Test normalization with mix of NaN and valid values."""
+        normalizer = ZScoreNormalizer()
+        values = [float('nan'), 10.0, 20.0, float('nan'), 30.0]
+
+        result = normalizer.normalize(values)
+
+        # NaN values should become 0.0
+        assert len(result) == 5
+        assert result[0] == 0.0  # NaN → 0.0
+        assert result[3] == 0.0  # NaN → 0.0
 
 
 class TestNormalizationBoundaryConditions:

@@ -476,6 +476,151 @@ class TestExtractionStage:
         # Check that at least one handler method was called
         assert observer.on_stage_started.call_count >= 1
 
+    @staticmethod
+    def test_extract_track_creation_validation_error() -> None:
+        """Test extract handles ValidationError during track creation."""
+        musicbee = Mock()
+        musicbee.find_playlist_by_name.return_value = "playlist_123"
+        musicbee.get_playlist_tracks.return_value = [
+            {
+                "title": "Invalid Track",
+                "artist": "Artist",
+                "year": 2024,
+                "invalid_field": "causes validation error",
+            }
+        ]
+
+        songstats = Mock()
+        repository = Mock()
+        checkpoint_mgr = Mock()
+        review_queue = Mock()
+
+        with patch("msc.pipeline.extract.get_settings") as mock_settings:
+            mock_settings.return_value = Settings(year=2024)
+
+            # Patch Track constructor to raise ValidationError
+            with patch("msc.pipeline.extract.Track") as mock_track:
+                # Create a validation error with proper context for Pydantic v2
+                error = TypeError("Invalid type")  # Use a simpler exception approach
+                mock_track.side_effect = error
+
+                stage = ExtractionStage(
+                    musicbee_client=musicbee,
+                    songstats_client=songstats,
+                    track_repository=repository,
+                    checkpoint_manager=checkpoint_mgr,
+                    review_queue=review_queue,
+                )
+
+                result = stage.extract()
+
+                # Should return empty list, not crash
+                assert result == []
+
+    @staticmethod
+    def test_extract_track_creation_key_error() -> None:
+        """Test extract handles KeyError during track creation."""
+        musicbee = Mock()
+        musicbee.find_playlist_by_name.return_value = "playlist_123"
+        musicbee.get_playlist_tracks.return_value = [
+            {
+                # Missing required 'title' field
+                "artist": "Artist",
+                "year": 2024,
+            }
+        ]
+
+        songstats = Mock()
+        repository = Mock()
+        checkpoint_mgr = Mock()
+        review_queue = Mock()
+
+        with patch("msc.pipeline.extract.get_settings") as mock_settings:
+            mock_settings.return_value = Settings(year=2024)
+
+            stage = ExtractionStage(
+                musicbee_client=musicbee,
+                songstats_client=songstats,
+                track_repository=repository,
+                checkpoint_manager=checkpoint_mgr,
+                review_queue=review_queue,
+            )
+
+            result = stage.extract()
+
+            # Should handle KeyError and return partial results
+            assert isinstance(result, list)
+
+    @staticmethod
+    def test_extract_general_exception() -> None:
+        """Test extract handles general exceptions gracefully."""
+        musicbee = Mock()
+        musicbee.find_playlist_by_name.side_effect = Exception("Database connection failed")
+
+        songstats = Mock()
+        repository = Mock()
+        checkpoint_mgr = Mock()
+        review_queue = Mock()
+
+        stage = ExtractionStage(
+            musicbee_client=musicbee,
+            songstats_client=songstats,
+            track_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+            review_queue=review_queue,
+        )
+
+        # Should raise the exception after notifying observers
+        with pytest.raises(Exception, match="Database connection failed"):
+            stage.extract()
+
+    @staticmethod
+    def test_transform_checkpoint_repository_mismatch(sample_track: Track) -> None:
+        """Test transform when track is in checkpoint but missing from repository."""
+        musicbee = Mock()
+        songstats = Mock()
+        songstats.search_track.return_value = [
+            {
+                "songstats_track_id": "abc123",
+                "title": "Test Track",
+            }
+        ]
+
+        repository = Mock()
+        repository.get.return_value = None  # Track missing from repository
+
+        checkpoint = CheckpointState(
+            stage_name="extraction",
+            created_at=datetime.now(),
+            last_updated=datetime.now(),
+            processed_ids={sample_track.identifier},  # Track is in checkpoint
+            failed_ids=set(),
+            metadata={},
+        )
+        checkpoint_mgr = Mock()
+        checkpoint_mgr.load_checkpoint.return_value = checkpoint
+        checkpoint_mgr.save_checkpoint.return_value = None
+
+        review_queue = Mock()
+
+        stage = ExtractionStage(
+            musicbee_client=musicbee,
+            songstats_client=songstats,
+            track_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+            review_queue=review_queue,
+        )
+
+        result = stage.transform([sample_track])
+
+        # Should reprocess the track (search API should be called because track was not in repository)
+        assert len(result) == 1
+        songstats.search_track.assert_called_once()
+        # Repository get should have been called to check for cached track
+        repository.get.assert_called_once_with(sample_track.identifier)
+        # After reprocessing, track ID should be back in processed_ids
+        assert sample_track.identifier in checkpoint.processed_ids
+
 
 # === EnrichmentStage Tests ===
 
@@ -502,7 +647,7 @@ class TestEnrichmentStage:
 
     @staticmethod
     def test_extract_not_used() -> None:
-        """Test extract returns empty list (not used in this stage)."""
+        """Test extract returns empty list when no track repository."""
         songstats = Mock()
         repository = Mock()
         checkpoint_mgr = Mock()
@@ -515,6 +660,28 @@ class TestEnrichmentStage:
 
         result = stage.extract()
         assert result == []
+
+    @staticmethod
+    def test_extract_with_track_repository(sample_track: Track) -> None:
+        """Test extract loads tracks from repository when provided."""
+        songstats = Mock()
+        repository = Mock()
+        checkpoint_mgr = Mock()
+        track_repository = Mock()
+        track_repository.get_all.return_value = [sample_track]
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+            track_repository=track_repository,
+        )
+
+        result = stage.extract()
+
+        assert len(result) == 1
+        assert result[0] == sample_track
+        track_repository.get_all.assert_called_once()
 
     @staticmethod
     def test_transform_empty_data() -> None:
@@ -813,11 +980,60 @@ class TestEnrichmentStage:
             checkpoint_manager=checkpoint_mgr,
         )
 
-        # Invalid data
+        # Invalid data - will cause errors during processing which should be caught
         result = stage._create_platform_stats({"invalid": "data"})
 
         # Should return empty PlatformStats (defensive coding)
         assert isinstance(result, PlatformStats)
+
+    @staticmethod
+    def test_transform_checkpoint_repository_mismatch() -> None:
+        """Test transform when track is in checkpoint but missing from repository."""
+        songstats = Mock()
+        songstats.get_platform_stats.return_value = {"spotify_streams_total": 1000000}
+        songstats.get_historical_peaks.return_value = {}
+        songstats.get_youtube_videos.return_value = []
+
+        repository = Mock()
+        repository.get.return_value = None  # Track missing from repository
+
+        track = Track(
+            title="Test Track",
+            artist_list=["Test Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="test123",
+                songstats_title="Test Track",
+            ),
+        )
+
+        checkpoint = CheckpointState(
+            stage_name="enrichment",
+            created_at=datetime.now(),
+            last_updated=datetime.now(),
+            processed_ids={track.identifier},  # Track is in checkpoint
+            failed_ids=set(),
+            metadata={},
+        )
+        checkpoint_mgr = Mock()
+        checkpoint_mgr.load_checkpoint.return_value = checkpoint
+        checkpoint_mgr.save_checkpoint.return_value = None
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+        )
+
+        result = stage.transform([track])
+
+        # Should reprocess the track (API should be called because track not in repository)
+        assert len(result) == 1
+        songstats.get_platform_stats.assert_called_once()
+        # Repository get should have been called to check for cached track
+        repository.get.assert_called_once_with(track.identifier)
+        # After reprocessing, track ID should be back in processed_ids
+        assert track.identifier in checkpoint.processed_ids
 
 
 # === RankingStage Tests ===

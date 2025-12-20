@@ -2,7 +2,7 @@
 
 # Standard library
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 # Third-party
 import pytest
@@ -151,6 +151,54 @@ class TestRunCommand:
         assert "Enrichment:  ✓" in result.stdout
         assert "Ranking:     ✗" in result.stdout  # Not selected
 
+    @staticmethod
+    def test_run_with_reset_confirmed(tmp_path: Path) -> None:
+        """Should reset pipeline when confirmed."""
+        with patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orch_class:
+            mock_orch = mock_orch_class.return_value
+            mock_orch.reset_pipeline.return_value = None
+            mock_orch.run.return_value = None
+            mock_orch.get_metrics.return_value = {}
+            mock_orch.get_review_queue.return_value = []
+            mock_orch.metrics_observer.get_success_rate.return_value = 100.0
+
+            # Simulate user confirming reset
+            result = runner.invoke(app, ["run", "--reset"], input="y\n")
+
+            # Should show confirmation prompt and reset message
+            assert "This will delete all checkpoints" in result.stdout
+            assert "Pipeline reset complete" in result.stdout
+
+    @staticmethod
+    def test_run_with_reset_aborted() -> None:
+        """Should abort reset when user declines."""
+        with patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orch_class:
+            mock_orch = mock_orch_class.return_value
+
+            # Simulate user declining reset
+            result = runner.invoke(app, ["run", "--reset"], input="n\n")
+
+            # Should abort without resetting (exit code 1 when confirmation is rejected)
+            assert result.exit_code == 1
+            # Confirmation prompt should be shown
+            assert "This will delete all checkpoints" in result.stdout
+            # Should not have called reset
+            mock_orch.reset_pipeline.assert_not_called()
+
+    @staticmethod
+    def test_run_keyboard_interrupt() -> None:
+        """Should handle KeyboardInterrupt gracefully."""
+        with patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orch_class:
+            mock_orch = mock_orch_class.return_value
+            mock_orch.run.side_effect = KeyboardInterrupt()
+
+            result = runner.invoke(app, ["run"])
+
+            # Should show interrupted message
+            assert result.exit_code == 1
+            assert "interrupted by user" in result.stdout
+            assert "Checkpoints have been saved" in result.stdout
+
 
 class TestBillingCommand:
     """Tests for the billing command."""
@@ -234,6 +282,89 @@ class TestMainCallback:
         assert result.exit_code == 0
         assert "Music Charts" in result.stdout
         assert "Analyze track performance" in result.stdout
+
+
+class TestDisplaySummaryHelper:
+    """Tests for _display_summary helper function."""
+
+    @staticmethod
+    def test_display_summary_basic() -> None:
+        """Test _display_summary displays basic metrics."""
+        from msc.cli import _display_summary
+        from msc.models.track import Track
+        from msc.models.ranking import PowerRanking, PowerRankingResults, CategoryScore
+        from io import StringIO
+        import sys
+
+        # Create mock orchestrator with metrics
+        mock_orch = Mock()
+        mock_orch.get_metrics.return_value = {
+            "stages_completed": 3,
+            "items_processed": 100,
+            "items_failed": 5,
+        }
+        mock_orch.metrics_observer.get_success_rate.return_value = 95.0
+        mock_orch.get_review_queue.return_value = []
+
+        # Create mock results with rankings
+        track = Track(title="Test Track", artist_list=["Test Artist"], year=2024)
+        ranking = PowerRanking(
+            track=track,
+            total_score=10.0,
+            rank=1,
+            category_scores=[CategoryScore(category="popularity", raw_score=0.9, weight=4, weighted_score=3.6)]
+        )
+        results = PowerRankingResults(rankings=[ranking], year=2024)
+
+        # Capture stdout
+        captured_output = StringIO()
+        sys.stdout = captured_output
+
+        try:
+            _display_summary(mock_orch, results)
+            output = captured_output.getvalue()
+
+            # Check that summary components are displayed
+            assert "Pipeline Summary" in output
+            assert "Stages completed:  3" in output
+            assert "Items processed:   100" in output
+            assert "Items failed:      5" in output
+            assert "Success rate:      95.0%" in output
+            assert "Top 5 Rankings:" in output
+            assert "Pipeline completed successfully!" in output
+
+        finally:
+            sys.stdout = sys.__stdout__
+
+    @staticmethod
+    def test_display_summary_with_review_queue() -> None:
+        """Test _display_summary displays review queue warning."""
+        from msc.cli import _display_summary
+        from io import StringIO
+        import sys
+
+        mock_orch = Mock()
+        mock_orch.get_metrics.return_value = {
+            "stages_completed": 2,
+            "items_processed": 50,
+            "items_failed": 10,
+        }
+        mock_orch.metrics_observer.get_success_rate.return_value = 80.0
+        mock_orch.get_review_queue.return_value = [{"track_id": "1"}, {"track_id": "2"}]  # 2 items in queue
+
+        captured_output = StringIO()
+        sys.stdout = captured_output
+
+        try:
+            _display_summary(mock_orch, None)
+            output = captured_output.getvalue()
+
+            # Should show review queue warning
+            assert "2 items need manual review" in output
+            assert "manual_review.json" in output
+
+        finally:
+            sys.stdout = sys.__stdout__
 
 
 class TestNoArgs:
