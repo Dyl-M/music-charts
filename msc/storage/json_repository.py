@@ -254,7 +254,7 @@ class JSONStatsRepository(StatsRepository):
                 "Exported %d items to %s (flat=%s)", len(self._stats), file_path, flat
             )
 
-        except (OSError, json.JSONEncodeError, TypeError, AttributeError) as error:
+        except (OSError, TypeError, AttributeError, ValueError) as error:
             self.logger.exception("Failed to export to %s: %s", file_path, error)
 
     def export_to_csv(self, file_path: Path) -> None:
