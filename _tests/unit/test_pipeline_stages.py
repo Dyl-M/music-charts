@@ -1006,17 +1006,19 @@ class TestRankingStage:
         assert csv_file.exists()
 
     @staticmethod
-    def test_load_error_handling(sample_rankings: PowerRankingResults) -> None:
+    def test_load_error_handling(tmp_path: Path, sample_rankings: PowerRankingResults) -> None:
         """Test load handles export errors gracefully (defensive coding)."""
         scorer = Mock(spec=PowerRankingScorer)
 
         with patch("msc.pipeline.rank.get_settings") as mock_settings:
             mock_settings.return_value = Settings(year=2024)
 
-            stage = RankingStage(scorer=scorer, output_dir=Path("/invalid/path"))
+            stage = RankingStage(scorer=scorer, output_dir=tmp_path)
 
-            # Should not raise - errors are logged but not propagated (defensive coding)
-            stage.load(sample_rankings)
+            # Mock secure_write to raise an error during export
+            with patch("msc.pipeline.rank.secure_write", side_effect=OSError("Permission denied")):
+                # Should not raise - errors are logged but not propagated (defensive coding)
+                stage.load(sample_rankings)
 
     @staticmethod
     def test_observable_events(tmp_path: Path, sample_track_with_stats: TrackWithStats, sample_rankings: PowerRankingResults) -> None:
