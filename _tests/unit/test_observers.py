@@ -538,6 +538,67 @@ class TestProgressBarObserver:
             mock_stop.assert_called_once()
             assert observer.started is False
 
+    @staticmethod
+    def test_on_pipeline_failed_stops_progress() -> None:
+        """Test that pipeline failure stops progress display."""
+        observer = ProgressBarObserver()
+        observer.started = True
+
+        with patch.object(observer.progress, "stop") as mock_stop:
+            event = PipelineEvent(
+                event_type=EventType.PIPELINE_FAILED,
+                timestamp=datetime.now(),
+            )
+
+            observer.on_pipeline_failed(event)
+
+            mock_stop.assert_called_once()
+            assert observer.started is False
+
+    @staticmethod
+    def test_on_stage_completed_completes_task() -> None:
+        """Test that stage completion marks task as complete."""
+        from unittest.mock import PropertyMock
+
+        observer = ProgressBarObserver()
+        observer.tasks["extraction"] = cast(TaskID, 1)
+
+        # Create mock task with total
+        mock_task = MagicMock()
+        mock_task.id = 1
+        mock_task.total = 100
+
+        with (
+            patch.object(
+                type(observer.progress), "tasks", new_callable=PropertyMock
+            ) as mock_tasks_prop,
+            patch.object(observer.progress, "update") as mock_update,
+        ):
+            mock_tasks_prop.return_value = [mock_task]
+
+            event = PipelineEvent(
+                event_type=EventType.STAGE_COMPLETED,
+                timestamp=datetime.now(),
+                stage_name="extraction",
+            )
+
+            observer.on_stage_completed(event)
+
+            mock_update.assert_called_once_with(1, completed=100)
+
+    @staticmethod
+    def test_on_event_no_op() -> None:
+        """Test that on_event is a no-op (ellipsis)."""
+        observer = ProgressBarObserver()
+
+        event = PipelineEvent(
+            event_type=EventType.ERROR,
+            timestamp=datetime.now(),
+        )
+
+        # Should not raise, just do nothing
+        observer.on_event(event)
+
 
 class TestMetricsObserver:
     """Tests for MetricsObserver."""
