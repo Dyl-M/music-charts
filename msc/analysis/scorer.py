@@ -67,7 +67,7 @@ class PowerRankingScorer:
         )
 
     def _load_category_config(
-        self, config_path: Path, validate: bool = True
+            self, config_path: Path, validate: bool = True
     ) -> dict[str, list[str]]:
         """Load category configuration from JSON file.
 
@@ -84,15 +84,18 @@ class PowerRankingScorer:
                 config_path = validate_path_within_base(
                     config_path, self.settings.config_dir, "config load"
                 )
+
             else:
                 # Just resolve the path for security without base validation
                 config_path = config_path.resolve()
+
             with open(config_path, encoding="utf-8") as f:
                 config = json.load(f)
 
             self.logger.info("Loaded category config from %s", config_path)
             return config
-        except (OSError, json.JSONDecodeError, ValueError) as error:
+
+        except (OSError, json.JSONDecodeError) as error:
             self.logger.exception("Failed to load category config from %s: %s", config_path, error)
             # Return empty config as fallback (defensive coding)
             return {}
