@@ -52,6 +52,92 @@ def main(
     setup_logging(level=log_level)
 
 
+def _determine_stages(stages: list[str] | None) -> tuple[bool, bool, bool]:
+    """Determine which pipeline stages to run.
+
+    Args:
+        stages: List of stage names or None
+
+    Returns:
+        Tuple of (run_extraction, run_enrichment, run_ranking)
+    """
+    if stages is None:
+        stages = ["all"]
+
+    run_all = "all" in stages
+    run_extraction = run_all or "extract" in stages
+    run_enrichment = run_all or "enrich" in stages
+    run_ranking = run_all or "rank" in stages
+
+    return run_extraction, run_enrichment, run_ranking
+
+
+def _display_pipeline_config(
+        year: int,
+        run_extraction: bool,
+        run_enrichment: bool,
+        run_ranking: bool,
+        no_youtube: bool,
+) -> None:
+    """Display pipeline configuration.
+
+    Args:
+        year: Target year
+        run_extraction: Whether extraction stage is enabled
+        run_enrichment: Whether enrichment stage is enabled
+        run_ranking: Whether ranking stage is enabled
+        no_youtube: Whether YouTube enrichment is disabled
+    """
+    typer.echo(f"🎵 Music Charts Pipeline - Year {year}\n")
+    typer.echo("Pipeline stages:")
+    typer.echo(f"  • Extraction:  {'✓' if run_extraction else '✗'}")
+    typer.echo(f"  • Enrichment:  {'✓' if run_enrichment else '✗'}")
+    typer.echo(f"  • Ranking:     {'✓' if run_ranking else '✗'}")
+    typer.echo(f"  • YouTube:     {'✗ (disabled)' if no_youtube else '✓'}\n")
+
+
+def _display_summary(orchestrator, results) -> None:
+    """Display pipeline execution summary.
+
+    Args:
+        orchestrator: Pipeline orchestrator instance
+        results: Pipeline execution results
+    """
+    from msc.config.settings import get_settings
+
+    settings = get_settings()
+    metrics = orchestrator.get_metrics()
+
+    typer.echo("")
+    typer.echo("=" * 60)
+    typer.echo("Pipeline Summary")
+    typer.echo("=" * 60)
+    typer.echo(f"Stages completed:  {metrics.get('stages_completed', 0)}")
+    typer.echo(f"Items processed:   {metrics.get('items_processed', 0)}")
+    typer.echo(f"Items failed:      {metrics.get('items_failed', 0)}")
+    typer.echo(f"Success rate:      {orchestrator.metrics_observer.get_success_rate():.1f}%")
+
+    # Show manual review queue if not empty
+    review_items = orchestrator.get_review_queue()
+    if review_items:
+        typer.echo("")
+        typer.echo(f"⚠️  {len(review_items)} items need manual review")
+        typer.echo(f"    See: {settings.data_dir / 'manual_review.json'}")
+
+    # Show rankings summary if available
+    if results and results.rankings:
+        typer.echo("")
+        typer.echo("Top 5 Rankings:")
+        for ranking in results.rankings[:5]:
+            typer.echo(
+                f"  {ranking.rank}. {ranking.track.artist} - {ranking.track.title} "
+                f"(score: {ranking.total_score:.2f})"
+            )
+
+    typer.echo("")
+    typer.echo("✓ Pipeline completed successfully!")
+
+
 @app.command()
 def run(
         year: Annotated[
@@ -107,24 +193,14 @@ def run(
     # Local import to avoid circular dependencies
     from msc.pipeline.orchestrator import PipelineOrchestrator
 
-    if stages is None:
-        stages = ["all"]
-
     settings = get_settings()
     settings.year = year
 
     # Determine which stages to run
-    run_all = "all" in stages
-    run_extraction = run_all or "extract" in stages
-    run_enrichment = run_all or "enrich" in stages
-    run_ranking = run_all or "rank" in stages
+    run_extraction, run_enrichment, run_ranking = _determine_stages(stages)
 
-    typer.echo(f"🎵 Music Charts Pipeline - Year {year}\n")
-    typer.echo("Pipeline stages:")
-    typer.echo(f"  • Extraction:  {'✓' if run_extraction else '✗'}")
-    typer.echo(f"  • Enrichment:  {'✓' if run_enrichment else '✗'}")
-    typer.echo(f"  • Ranking:     {'✓' if run_ranking else '✗'}")
-    typer.echo(f"  • YouTube:     {'✗ (disabled)' if no_youtube else '✓'}\n")
+    # Display configuration
+    _display_pipeline_config(year, run_extraction, run_enrichment, run_ranking, no_youtube)
 
     try:
         # Initialize orchestrator
@@ -152,35 +228,7 @@ def run(
         )
 
         # Display summary
-        metrics = orchestrator.get_metrics()
-        typer.echo("")
-        typer.echo("=" * 60)
-        typer.echo("Pipeline Summary")
-        typer.echo("=" * 60)
-        typer.echo(f"Stages completed:  {metrics.get('stages_completed', 0)}")
-        typer.echo(f"Items processed:   {metrics.get('items_processed', 0)}")
-        typer.echo(f"Items failed:      {metrics.get('items_failed', 0)}")
-        typer.echo(f"Success rate:      {orchestrator.metrics_observer.get_success_rate():.1f}%")
-
-        # Show manual review queue if not empty
-        review_items = orchestrator.get_review_queue()
-        if review_items:
-            typer.echo("")
-            typer.echo(f"⚠️  {len(review_items)} items need manual review")
-            typer.echo(f"    See: {settings.data_dir / 'manual_review.json'}")
-
-        # Show rankings summary if available
-        if results and results.rankings:
-            typer.echo("")
-            typer.echo("Top 5 Rankings:")
-            for ranking in results.rankings[:5]:
-                typer.echo(
-                    f"  {ranking.rank}. {ranking.track.artist} - {ranking.track.title} "
-                    f"(score: {ranking.total_score:.2f})"
-                )
-
-        typer.echo("")
-        typer.echo("✓ Pipeline completed successfully!")
+        _display_summary(orchestrator, results)
 
     except KeyboardInterrupt:
         typer.echo("")
