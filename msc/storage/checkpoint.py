@@ -81,7 +81,8 @@ class CheckpointManager:
         Args:
             checkpoint_dir: Directory for storing checkpoint files
         """
-        self.checkpoint_dir = checkpoint_dir
+        # Normalize path to prevent directory traversal
+        self.checkpoint_dir = checkpoint_dir.resolve()
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.logger = get_logger(__name__)
 
@@ -264,7 +265,8 @@ class ManualReviewQueue:
         Args:
             file_path: Path to review queue file
         """
-        self.file_path = file_path
+        # Normalize path to prevent directory traversal
+        self.file_path = file_path.resolve()
         self.logger = get_logger(__name__)
         self.items: list[ManualReviewItem] = []
         self._load()
