@@ -26,6 +26,7 @@ from msc.models.platforms import (
     YouTubeStats,
 )
 from msc.models.track import SongstatsIdentifiers, Track
+from msc.models.youtube import YouTubeVideoData
 
 
 class PlatformStats(MSCBaseModel):
@@ -239,6 +240,7 @@ class TrackWithStats(MSCBaseModel):
         track: Track metadata (title, artists, year, etc.).
         songstats_identifiers: Songstats track identifiers (s_id, s_title).
         platform_stats: All platform statistics.
+        youtube_data: Optional YouTube video data (aggregated from Songstats API).
 
     Examples:
         >>> track_with_stats = TrackWithStats(
@@ -274,6 +276,13 @@ class TrackWithStats(MSCBaseModel):
         Field(
             default_factory=PlatformStats,
             description="Platform statistics"
+        )
+    ]
+    youtube_data: Annotated[
+        YouTubeVideoData | None,
+        Field(
+            default=None,
+            description="YouTube video data aggregated from Songstats API"
         )
     ]
 
