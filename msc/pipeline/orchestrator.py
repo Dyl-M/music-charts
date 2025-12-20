@@ -202,6 +202,7 @@ class PipelineOrchestrator(Observable):
                     stats_repository=self.stats_repository,
                     checkpoint_manager=self.checkpoint_mgr,
                     include_youtube=self.include_youtube,
+                    track_repository=self.track_repository,
                 )
 
                 # Attach all pipeline observers to stage
@@ -225,6 +226,7 @@ class PipelineOrchestrator(Observable):
                 self.ranking_stage = RankingStage(
                     scorer=self.scorer,
                     output_dir=self.settings.output_dir,
+                    stats_repository=self.stats_repository,
                 )
 
                 # Attach all pipeline observers to stage

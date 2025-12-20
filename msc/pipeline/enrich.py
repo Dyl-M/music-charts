@@ -19,7 +19,7 @@ from msc.models.youtube import YouTubeVideoData
 from msc.pipeline.base import PipelineStage
 from msc.pipeline.observer import EventType, Observable
 from msc.storage.checkpoint import CheckpointManager
-from msc.storage.json_repository import JSONStatsRepository
+from msc.storage.json_repository import JSONStatsRepository, JSONTrackRepository
 from msc.utils.logging import get_logger
 
 
@@ -40,6 +40,7 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
             stats_repository: JSONStatsRepository,
             checkpoint_manager: CheckpointManager,
             include_youtube: bool = True,
+            track_repository: "JSONTrackRepository | None" = None,
     ) -> None:
         """Initialize enrichment stage.
 
@@ -48,12 +49,14 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
             stats_repository: Repository for storing enriched tracks
             checkpoint_manager: Manager for checkpoint state
             include_youtube: Whether to fetch YouTube video data
+            track_repository: Optional repository for loading input tracks (enables standalone execution)
         """
         Observable.__init__(self)
         self.songstats = songstats_client
         self.repository = stats_repository
         self.checkpoint_mgr = checkpoint_manager
         self.include_youtube = include_youtube
+        self.track_repository = track_repository
         self.settings = get_settings()
         self.logger = get_logger(__name__)
 
@@ -63,10 +66,17 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
         return "Enrichment"
 
     def extract(self) -> list[Track]:
-        """Extract tracks from input (not used in this stage).
+        """Extract tracks from repository for standalone execution.
 
-        This stage receives tracks from previous stage output.
+        Returns:
+            List of tracks from repository, or empty list if no repository provided
         """
+        if self.track_repository:
+            tracks = self.track_repository.get_all()
+            self.logger.info("Loaded %d tracks from repository", len(tracks))
+            return tracks
+
+        self.logger.debug("No track repository provided, returning empty list")
         return []
 
     def transform(self, data: list[Track]) -> list[TrackWithStats]:
@@ -196,6 +206,7 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
 
                     if youtube_results:
                         youtube_data = YouTubeVideoData.from_songstats_api(youtube_results)
+
                     else:
                         self.logger.debug("No YouTube data found for: %s", track.title)
 
@@ -204,6 +215,7 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                     track=track,  # Nested Track object
                     songstats_identifiers=track.songstats_identifiers,  # Nested SongstatsIdentifiers
                     platform_stats=platform_stats,
+                    youtube_data=youtube_data,  # Optional YouTube video data
                 )
 
                 enriched_tracks.append(track_with_stats)

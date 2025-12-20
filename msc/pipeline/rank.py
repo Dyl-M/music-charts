@@ -14,6 +14,7 @@ from msc.models.ranking import PowerRankingResults
 from msc.models.stats import TrackWithStats
 from msc.pipeline.base import PipelineStage
 from msc.pipeline.observer import EventType, Observable
+from msc.storage.json_repository import JSONStatsRepository
 from msc.utils.logging import get_logger
 
 
@@ -31,17 +32,20 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
             self,
             scorer: PowerRankingScorer,
             output_dir: Path | None = None,
+            stats_repository: JSONStatsRepository | None = None,
     ) -> None:
         """Initialize ranking stage.
 
         Args:
             scorer: PowerRankingScorer instance
             output_dir: Directory for output files (default: from settings)
+            stats_repository: Optional repository for loading input tracks (enables standalone execution)
         """
         Observable.__init__(self)
         self.scorer = scorer
         self.settings = get_settings()
         self.logger = get_logger(__name__)
+        self.stats_repository = stats_repository
 
         # Determine output directory
         if output_dir is None:
@@ -56,10 +60,17 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         return "Ranking"
 
     def extract(self) -> list[TrackWithStats]:
-        """Extract enriched tracks from input (not used in this stage).
+        """Extract enriched tracks from repository for standalone execution.
 
-        This stage receives tracks from previous stage output.
+        Returns:
+            List of enriched tracks from repository, or empty list if no repository provided
         """
+        if self.stats_repository:
+            tracks = self.stats_repository.get_all()
+            self.logger.info("Loaded %d enriched tracks from repository", len(tracks))
+            return tracks
+
+        self.logger.debug("No stats repository provided, returning empty list")
         return []
 
     def transform(self, data: list[TrackWithStats]) -> PowerRankingResults:
