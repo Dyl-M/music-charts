@@ -88,7 +88,7 @@ class TestCheckpointManager:
     def test_init_creates_directory(tmp_path: Path) -> None:
         """Test manager creates checkpoint directory."""
         checkpoint_dir = tmp_path / "checkpoints"
-        manager = CheckpointManager(checkpoint_dir)
+        _manager = CheckpointManager(checkpoint_dir)
 
         assert checkpoint_dir.exists()
         assert checkpoint_dir.is_dir()
