@@ -113,7 +113,8 @@ class FileObserver(PipelineObserver):
         try:
             with open(self.file_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(event_dict, ensure_ascii=False) + "\n")
-        except (OSError, IOError, PermissionError) as error:
+
+        except OSError as error:
             self.logger.exception("Failed to write event to log file: %s", error)
 
     def get_events(self) -> list[dict[str, Any]]:
