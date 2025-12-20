@@ -16,6 +16,7 @@ from msc.pipeline.base import PipelineStage
 from msc.pipeline.observer import EventType, Observable
 from msc.storage.json_repository import JSONStatsRepository
 from msc.utils.logging import get_logger
+from msc.utils.path_utils import validate_path_within_base
 
 
 class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Observable):
@@ -209,8 +210,10 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import json
 
         try:
-            # Normalize path to prevent directory traversal
-            file_path = file_path.resolve()
+            # Validate path is within output directory
+            file_path = validate_path_within_base(
+                file_path, self.output_dir, "rankings JSON export"
+            )
             data = results.model_dump(mode="json")
 
             with open(file_path, "w", encoding="utf-8") as f:
@@ -218,7 +221,7 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
 
             self.logger.info("Exported rankings to JSON: %s", file_path)
 
-        except (OSError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, TypeError, ValueError) as error:
             self.logger.exception("Failed to export rankings to JSON: %s", error)
 
     def _export_rankings_csv(
@@ -233,8 +236,10 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import csv
 
         try:
-            # Normalize path to prevent directory traversal
-            file_path = file_path.resolve()
+            # Validate path is within output directory
+            file_path = validate_path_within_base(
+                file_path, self.output_dir, "rankings CSV export"
+            )
             with open(file_path, "w", newline="", encoding="utf-8") as f:
                 if not results.rankings:
                     return
@@ -281,7 +286,7 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
 
             self.logger.info("Exported rankings to CSV: %s", file_path)
 
-        except (OSError, csv.Error, AttributeError, KeyError) as error:
+        except (OSError, csv.Error, AttributeError, KeyError, ValueError) as error:
             self.logger.exception("Failed to export rankings to CSV: %s", error)
 
     def _export_rankings_flat(
@@ -296,8 +301,10 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import json
 
         try:
-            # Normalize path to prevent directory traversal
-            file_path = file_path.resolve()
+            # Validate path is within output directory
+            file_path = validate_path_within_base(
+                file_path, self.output_dir, "flat rankings export"
+            )
             # Convert to flat format for backward compatibility
             flat_data = []
 
@@ -323,5 +330,5 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
 
             self.logger.info("Exported flat rankings to JSON: %s", file_path)
 
-        except (OSError, json.JSONEncodeError, TypeError, AttributeError, KeyError) as error:
+        except (OSError, TypeError, AttributeError, KeyError, ValueError) as error:
             self.logger.exception("Failed to export flat rankings: %s", error)
