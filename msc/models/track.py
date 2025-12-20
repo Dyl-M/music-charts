@@ -81,6 +81,15 @@ class Track(MSCBaseModel):
         )
     ]
 
+    # Songstats identifiers (populated during extraction stage)
+    songstats_identifiers: Annotated[
+        "SongstatsIdentifiers",
+        Field(
+            default_factory=lambda: SongstatsIdentifiers(songstats_id="", songstats_title=""),
+            description="Songstats track identifiers (populated during extraction)"
+        )
+    ]
+
     @property
     def primary_artist(self) -> str:
         """First artist in artist_list.
@@ -106,6 +115,30 @@ class Track(MSCBaseModel):
             'blasterjaxx, hardwell, maddix'
         """
         return ", ".join(self.artist_list)
+
+    @property
+    def identifier(self) -> str:
+        """Unique identifier for this track.
+
+        Creates a stable identifier from primary artist, title, and year.
+        Used as the unique key for storage and retrieval.
+
+        Returns:
+            Normalized identifier string (format: "artist_title_year")
+
+        Examples:
+            >>> track = Track(
+            ...     title="Scary Monsters and Nice Sprites",
+            ...     artist_list=["skrillex"],
+            ...     year=2010
+            ... )
+            >>> track.identifier
+            'skrillex_scary_monsters_and_nice_sprites_2010'
+        """
+        # Normalize primary artist and title for stable identifier
+        normalized_artist = self.primary_artist.lower().replace(" ", "_")
+        normalized_title = self.title.lower().replace(" ", "_")
+        return f"{normalized_artist}_{normalized_title}_{self.year}"
 
     def has_genre(self, genre: str) -> bool:
         """Check if track belongs to a genre (case-insensitive).

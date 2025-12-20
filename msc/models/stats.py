@@ -277,6 +277,33 @@ class TrackWithStats(MSCBaseModel):
         )
     ]
 
+    @property
+    def identifier(self) -> str:
+        """Unique identifier for this track.
+
+        Delegates to the nested track's identifier for consistency.
+        Used as the unique key for storage and retrieval.
+
+        Returns:
+            Track identifier string
+
+        Examples:
+            >>> track_with_stats = TrackWithStats(
+            ...     track=Track(
+            ...         title="16",
+            ...         artist_list=["blasterjaxx"],
+            ...         year=2024
+            ...     ),
+            ...     songstats_identifiers=SongstatsIdentifiers(
+            ...         songstats_id="qmr6e0bx",
+            ...         songstats_title="16"
+            ...     )
+            ... )
+            >>> track_with_stats.identifier
+            'blasterjaxx_16_2024'
+        """
+        return self.track.identifier
+
     @classmethod
     def from_legacy_json(cls, data: dict[str, Any]) -> Self:
         """Load from legacy data_2024.json format.
