@@ -209,6 +209,8 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import json
 
         try:
+            # Normalize path to prevent directory traversal
+            file_path = file_path.resolve()
             data = results.model_dump(mode="json")
 
             with open(file_path, "w", encoding="utf-8") as f:
@@ -216,7 +218,7 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
 
             self.logger.info("Exported rankings to JSON: %s", file_path)
 
-        except (OSError, IOError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, json.JSONEncodeError, TypeError) as error:
             self.logger.exception("Failed to export rankings to JSON: %s", error)
 
     def _export_rankings_csv(
@@ -231,6 +233,8 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import csv
 
         try:
+            # Normalize path to prevent directory traversal
+            file_path = file_path.resolve()
             with open(file_path, "w", newline="", encoding="utf-8") as f:
                 if not results.rankings:
                     return
@@ -277,7 +281,7 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
 
             self.logger.info("Exported rankings to CSV: %s", file_path)
 
-        except (OSError, IOError, csv.Error, AttributeError, KeyError) as error:
+        except (OSError, csv.Error, AttributeError, KeyError) as error:
             self.logger.exception("Failed to export rankings to CSV: %s", error)
 
     def _export_rankings_flat(
@@ -292,6 +296,8 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import json
 
         try:
+            # Normalize path to prevent directory traversal
+            file_path = file_path.resolve()
             # Convert to flat format for backward compatibility
             flat_data = []
 
@@ -317,5 +323,5 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
 
             self.logger.info("Exported flat rankings to JSON: %s", file_path)
 
-        except (OSError, IOError, json.JSONEncodeError, TypeError, AttributeError, KeyError) as error:
+        except (OSError, json.JSONEncodeError, TypeError, AttributeError, KeyError) as error:
             self.logger.exception("Failed to export flat rankings: %s", error)
