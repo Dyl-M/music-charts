@@ -11,18 +11,15 @@ Usage:
     python _demos/sandbox_musicbee_demo.py
 """
 
-# Standard library
-from pathlib import Path
-
 # Third-party
 import libpybee
 
 # Local
 from msc.clients.musicbee import MusicBeeClient
-from msc.config.settings import Settings
+from msc.config.settings import Settings, PROJECT_ROOT
 
 # Test fixture path
-FIXTURE_PATH = Path("_tests/fixtures/test_library.xml")
+FIXTURE_PATH = PROJECT_ROOT / "_tests/fixtures/test_library.xml"
 
 
 def print_separator(title: str = "") -> None:

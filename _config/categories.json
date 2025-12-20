@@ -1,0 +1,46 @@
+{
+  "charts": [
+    "amazon_charts_total",
+    "apple_music_charts_total",
+    "soundcloud_charts_total",
+    "spotify_charts_total",
+    "tidal_charts_total",
+    "tiktok_charts_total",
+    "youtube_charts_total"
+  ],
+  "engagement": [
+    "soundcloud_engagement_rate_total",
+    "tiktok_engagement_rate_total",
+    "youtube_engagement_rate_total"
+  ],
+  "playlists": [
+    "amazon_playlists_editorial_total",
+    "apple_music_playlists_editorial_total",
+    "deezer_playlists_editorial_total",
+    "spotify_playlists_editorial_total",
+    "tidal_playlists_editorial_total",
+    "youtube_playlists_editorial_total"
+  ],
+  "popularity": [
+    "deezer_popularity_peak",
+    "spotify_popularity_peak",
+    "tidal_popularity_peak"
+  ],
+  "professional_support": [
+    "1001tracklists_unique_support",
+    "beatport_dj_charts_total"
+  ],
+  "reach": [
+    "deezer_playlist_reach_total",
+    "spotify_playlist_reach_total"
+  ],
+  "shorts": [
+    "tiktok_views_total",
+    "youtube_short_views_total"
+  ],
+  "streams": [
+    "soundcloud_streams_total",
+    "spotify_streams_total",
+    "youtube_video_views_total"
+  ]
+}

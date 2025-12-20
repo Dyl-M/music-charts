@@ -269,10 +269,11 @@ class TestPowerRankingResults:
         assert results.year == 2024
 
     @staticmethod
-    def test_rankings_min_length() -> None:
-        """Test rankings must have at least one ranking."""
-        with pytest.raises(ValidationError):
-            PowerRankingResults(rankings=[], year=2024)
+    def test_rankings_empty_list_allowed() -> None:
+        """Test that empty rankings list is allowed (e.g., when no tracks to rank)."""
+        results = PowerRankingResults(rankings=[], year=2024)
+        assert results.rankings == []
+        assert results.total_tracks == 0
 
     @staticmethod
     def test_total_tracks_property() -> None:

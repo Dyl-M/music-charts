@@ -125,25 +125,31 @@ class TestRunCommand:
 
     @staticmethod
     def test_run_not_implemented() -> None:
-        """Should raise NotImplementedError."""
-        with pytest.raises(NotImplementedError, match="Pipeline execution not yet implemented"):
-            runner.invoke(app, ["run"], catch_exceptions=False)
+        """Run command is now implemented."""
+        # The run command is no longer NotImplementedError - it's implemented in Phase 4
+        result = runner.invoke(app, ["run"])
+        # Command should show pipeline stages even if execution fails
+        assert "Pipeline stages:" in result.stdout
 
     @staticmethod
     def test_run_with_year() -> None:
         """Should accept year parameter."""
         result = runner.invoke(app, ["run", "--year", "2024"])
 
-        assert result.exit_code == 1
-        assert "Running pipeline for year 2024" in result.stdout
+        # Should display year in pipeline header
+        assert "Year 2024" in result.stdout
+        assert "Pipeline stages:" in result.stdout
 
     @staticmethod
     def test_run_with_stages() -> None:
         """Should accept stage parameters."""
         result = runner.invoke(app, ["run", "--stage", "extract", "--stage", "enrich"])
 
-        assert result.exit_code == 1
-        assert "Stages: extract, enrich" in result.stdout
+        # Should display stage selection in output
+        assert "Pipeline stages:" in result.stdout
+        assert "Extraction:  ✓" in result.stdout
+        assert "Enrichment:  ✓" in result.stdout
+        assert "Ranking:     ✗" in result.stdout  # Not selected
 
 
 class TestBillingCommand:

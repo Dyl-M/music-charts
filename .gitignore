@@ -171,7 +171,10 @@ _legacy/data/selection_2024.json
 _legacy/data/ytb_2024.json
 
 # New data structure
+_data/checkpoints/
+_data/demo
 _data/input/
+_data/log/
 _data/output/
 _data/cache/
 
@@ -181,7 +184,9 @@ _docs/commit_m_tmp.txt
 _docs/PR-DRAFT.md
 
 # Internal documentation
+_docs/CODE_REVIEW_FINDINGS.md
 _docs/IMPROVEMENTS.md
+_docs/PHASE4_IMPLEMENTATION.md
 CLAUDE.md
 
 # Ruff
