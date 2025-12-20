@@ -1021,7 +1021,8 @@ class TestRankingStage:
                 stage.load(sample_rankings)
 
     @staticmethod
-    def test_observable_events(tmp_path: Path, sample_track_with_stats: TrackWithStats, sample_rankings: PowerRankingResults) -> None:
+    def test_observable_events(tmp_path: Path, sample_track_with_stats: TrackWithStats,
+                               sample_rankings: PowerRankingResults) -> None:
         """Test that RankingStage emits correct events."""
         scorer = Mock(spec=PowerRankingScorer)
         scorer.compute_rankings.return_value = sample_rankings
