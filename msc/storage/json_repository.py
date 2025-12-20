@@ -18,6 +18,7 @@ from msc.models.track import Track
 from msc.models.stats import TrackWithStats
 from msc.storage.repository import StatsRepository, TrackRepository
 from msc.utils.logging import get_logger
+from msc.utils.path_utils import secure_write
 
 
 class JSONTrackRepository(TrackRepository):
@@ -237,17 +238,13 @@ class JSONStatsRepository(StatsRepository):
             flat: If True, use flat dictionary format for legacy compatibility
         """
         try:
-            # Normalize path to prevent directory traversal
-            file_path = file_path.resolve()
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-
             if flat:
                 data = [stats.to_flat_dict() for stats in self._stats.values()]
 
             else:
                 data = [stats.model_dump(mode="json") for stats in self._stats.values()]
 
-            with open(file_path, "w", encoding="utf-8") as f:
+            with secure_write(file_path, encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
             self.logger.info(
