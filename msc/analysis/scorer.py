@@ -72,12 +72,14 @@ class PowerRankingScorer:
             Dictionary mapping category names to metric lists
         """
         try:
+            # Normalize path to prevent directory traversal
+            config_path = config_path.resolve()
             with open(config_path, encoding="utf-8") as f:
                 config = json.load(f)
 
             self.logger.info("Loaded category config from %s", config_path)
             return config
-        except (FileNotFoundError, json.JSONDecodeError, OSError) as error:
+        except (OSError, json.JSONDecodeError) as error:
             self.logger.exception("Failed to load category config from %s: %s", config_path, error)
             # Return empty config as fallback (defensive coding)
             return {}
@@ -189,7 +191,7 @@ class PowerRankingScorer:
             normalized_category_scores[category_name] = normalized_values
 
         # Step 3: Create CategoryScore objects and compute final rankings
-        rankings_temp: list[tuple[Track, float, list[CategoryScore]]] = []
+        rankings_temp: list[tuple[TrackWithStats, float, list[CategoryScore]]] = []
 
         for track_idx, track in enumerate(tracks):
             category_scores: list[CategoryScore] = []
