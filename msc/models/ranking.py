@@ -178,7 +178,6 @@ class PowerRankingResults(MSCBaseModel):
     rankings: Annotated[
         list[PowerRanking],
         Field(
-            min_length=1,
             description="List of power rankings sorted by score (descending)"
         )
     ]
