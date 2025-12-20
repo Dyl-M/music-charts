@@ -111,7 +111,8 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 try:
                     # Convert artist string to list (MusicBee returns comma-separated string)
                     artist_str = track_data["artist"]
-                    artist_list = [a.strip() for a in artist_str.split(",")] if isinstance(artist_str, str) else [artist_str]
+                    artist_list = [a.strip() for a in artist_str.split(",")] \
+                        if isinstance(artist_str, str) else [artist_str]
 
                     track = Track(
                         title=track_data["title"],
@@ -288,7 +289,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                         EventType.WARNING,
                         stage_name="Extraction",
                         item_id=track_id,
-                        message=f"No Songstats ID found (added to review queue): {track.title} - {track.primary_artist}",
+                        message=f"No Songstats ID found (added to review queue): {track.title} - {track.primary_artist}"
                     )
 
                     self.notify(event)
