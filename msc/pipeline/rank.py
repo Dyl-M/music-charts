@@ -16,7 +16,7 @@ from msc.pipeline.base import PipelineStage
 from msc.pipeline.observer import EventType, Observable
 from msc.storage.json_repository import JSONStatsRepository
 from msc.utils.logging import get_logger
-from msc.utils.path_utils import validate_path_within_base
+from msc.utils.path_utils import secure_write
 
 
 class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Observable):
@@ -210,13 +210,14 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import json
 
         try:
-            # Validate path is within output directory
-            file_path = validate_path_within_base(
-                file_path, self.output_dir, "rankings JSON export"
-            )
             data = results.model_dump(mode="json")
 
-            with open(file_path, "w", encoding="utf-8") as f:
+            with secure_write(
+                    file_path,
+                    base_dir=self.output_dir,
+                    purpose="rankings JSON export",
+                    encoding="utf-8",
+            ) as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
             self.logger.info("Exported rankings to JSON: %s", file_path)
@@ -236,11 +237,13 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import csv
 
         try:
-            # Validate path is within output directory
-            file_path = validate_path_within_base(
-                file_path, self.output_dir, "rankings CSV export"
-            )
-            with open(file_path, "w", newline="", encoding="utf-8") as f:
+            with secure_write(
+                    file_path,
+                    base_dir=self.output_dir,
+                    purpose="rankings CSV export",
+                    newline="",
+                    encoding="utf-8",
+            ) as f:
                 if not results.rankings:
                     return
 
@@ -301,10 +304,6 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import json
 
         try:
-            # Validate path is within output directory
-            file_path = validate_path_within_base(
-                file_path, self.output_dir, "flat rankings export"
-            )
             # Convert to flat format for backward compatibility
             flat_data = []
 
@@ -325,7 +324,12 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
 
                 flat_data.append(flat_row)
 
-            with open(file_path, "w", encoding="utf-8") as f:
+            with secure_write(
+                    file_path,
+                    base_dir=self.output_dir,
+                    purpose="flat rankings export",
+                    encoding="utf-8",
+            ) as f:
                 json.dump(flat_data, f, indent=2, ensure_ascii=False)
 
             self.logger.info("Exported flat rankings to JSON: %s", file_path)
