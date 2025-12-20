@@ -14,7 +14,6 @@ Usage:
 
 # Standard library
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 # Third-party
 from pydantic import ValidationError
@@ -184,18 +183,28 @@ def demo_json_serialization() -> None:
     print(f"✓ Loaded track: {loaded_track.title} by {loaded_track.primary_artist}")
     print()
 
-    # Save to file and load back
+    # Save to file and load back (using project-relative path)
     print("Testing file I/O...")
-    with TemporaryDirectory() as tmpdir:
-        file_path = Path(tmpdir) / "track.json"
+    demo_dir = Path("_data/demo")
+    demo_dir.mkdir(parents=True, exist_ok=True)
+    file_path = demo_dir / "track_demo.json"
 
+    try:
         # Save
         track.to_json_file(file_path)
-        print(f"✓ Saved to {file_path.name}")
+        print(f"✓ Saved to {file_path}")
 
         # Load
         loaded_from_file = Track.from_json_file(file_path)
         print(f"✓ Loaded from file: {loaded_from_file.title}")
+
+    finally:
+        # Cleanup
+        if file_path.exists():
+            file_path.unlink()
+
+        if demo_dir.exists() and not any(demo_dir.iterdir()):
+            demo_dir.rmdir()
 
     print("\n✓ JSON serialization working correctly\n")
 

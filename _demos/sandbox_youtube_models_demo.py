@@ -13,12 +13,12 @@ Usage:
 
 # Standard library
 import json
-from pathlib import Path
 
 # Third-party
 from pydantic import ValidationError
 
 # Local
+from msc.config.settings import PROJECT_ROOT
 from msc.models.track import SongstatsIdentifiers
 from msc.models.youtube import YouTubeVideo, YouTubeVideoData
 
@@ -164,7 +164,7 @@ def demo_real_data_example() -> None:
     """Demonstrate with real legacy YouTube data."""
     print_separator("Real Legacy Data Example")
 
-    legacy_file = Path("_legacy/data/ytb_2024.json")
+    legacy_file = PROJECT_ROOT / "_legacy/data/ytb_2024.json"
 
     if legacy_file.exists():
         print(f"Loading first item from {legacy_file}...")

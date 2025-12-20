@@ -13,9 +13,9 @@ Usage:
 
 # Standard library
 import json
-from pathlib import Path
 
 # Local
+from msc.config.settings import PROJECT_ROOT
 from msc.models.platforms import DeezerStats, SpotifyStats
 from msc.models.stats import PlatformStats, TrackWithStats
 from msc.models.track import SongstatsIdentifiers, Track
@@ -261,7 +261,7 @@ def demo_real_data_example() -> None:
     """Demonstrate with real legacy data."""
     print_separator("Real Legacy Data Example")
 
-    legacy_file = Path("_legacy/data/data_2024.json")
+    legacy_file = PROJECT_ROOT / "_legacy/data/data_2024.json"
 
     if legacy_file.exists():
         print(f"Loading first track from {legacy_file}...")
