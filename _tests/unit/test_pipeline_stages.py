@@ -4,11 +4,10 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, PropertyMock, call, patch
+from unittest.mock import Mock, patch
 
 # Third-party
 import pytest
-from pydantic import ValidationError
 
 # Local
 from msc.analysis.scorer import PowerRankingScorer
@@ -19,10 +18,8 @@ from msc.models.stats import PlatformStats, TrackWithStats
 from msc.models.track import SongstatsIdentifiers, Track
 from msc.pipeline.enrich import EnrichmentStage
 from msc.pipeline.extract import ExtractionStage
-from msc.pipeline.observer import EventType, PipelineEvent
 from msc.pipeline.rank import RankingStage
-from msc.storage.checkpoint import CheckpointState, CheckpointManager, ManualReviewQueue
-from msc.storage.json_repository import JSONStatsRepository, JSONTrackRepository
+from msc.storage.checkpoint import CheckpointState
 
 
 # === Test Fixtures ===

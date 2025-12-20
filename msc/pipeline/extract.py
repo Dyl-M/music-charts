@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from msc.clients.musicbee import MusicBeeClient
 from msc.clients.songstats import SongstatsClient
 from msc.config.settings import get_settings
-from msc.models.track import SongstatsIdentifiers, Track
+from msc.models.track import Track
 from msc.pipeline.base import PipelineStage
 from msc.pipeline.observer import EventType, Observable
 from msc.storage.checkpoint import CheckpointManager, ManualReviewQueue

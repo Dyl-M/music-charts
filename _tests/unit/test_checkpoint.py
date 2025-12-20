@@ -3,14 +3,8 @@
 Tests CheckpointManager and ManualReviewQueue for pipeline resumability,
 state persistence, and atomic operations.
 """
-
-# Standard library
-import json
 from datetime import datetime
 from pathlib import Path
-
-# Third-party
-import pytest
 
 # Local
 from msc.storage.checkpoint import (

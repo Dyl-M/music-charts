@@ -8,10 +8,6 @@ for JSONTrackRepository and JSONStatsRepository.
 import json
 from pathlib import Path
 
-# Third-party
-import pytest
-from pydantic import ValidationError
-
 # Local
 from msc.models.stats import PlatformStats, TrackWithStats
 from msc.models.track import SongstatsIdentifiers, Track
