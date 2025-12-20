@@ -31,7 +31,7 @@ class Repository(ABC, Generic[T]):
         Args:
             item: The item to add
         """
-        ...
+        raise NotImplementedError("Subclasses must implement add()")
 
     @abstractmethod
     def get(self, identifier: str) -> T | None:
@@ -43,7 +43,7 @@ class Repository(ABC, Generic[T]):
         Returns:
             The item if found, None otherwise
         """
-        ...
+        raise NotImplementedError("Subclasses must implement get()")
 
     @abstractmethod
     def get_all(self) -> list[T]:
@@ -52,7 +52,7 @@ class Repository(ABC, Generic[T]):
         Returns:
             List of all items
         """
-        ...
+        raise NotImplementedError("Subclasses must implement get_all()")
 
     @abstractmethod
     def exists(self, identifier: str) -> bool:
@@ -64,7 +64,7 @@ class Repository(ABC, Generic[T]):
         Returns:
             True if item exists, False otherwise
         """
-        ...
+        raise NotImplementedError("Subclasses must implement exists()")
 
     @abstractmethod
     def remove(self, identifier: str) -> None:
@@ -73,12 +73,12 @@ class Repository(ABC, Generic[T]):
         Args:
             identifier: Unique identifier for the item to remove
         """
-        ...
+        raise NotImplementedError("Subclasses must implement remove()")
 
     @abstractmethod
     def clear(self) -> None:
         """Remove all items from the repository."""
-        ...
+        raise NotImplementedError("Subclasses must implement clear()")
 
     @abstractmethod
     def count(self) -> int:
@@ -87,7 +87,7 @@ class Repository(ABC, Generic[T]):
         Returns:
             Number of items
         """
-        ...
+        raise NotImplementedError("Subclasses must implement count()")
 
 
 class TrackRepository(Repository[Track]):
@@ -108,7 +108,7 @@ class TrackRepository(Repository[Track]):
         Returns:
             Track if found, None otherwise
         """
-        ...
+        raise NotImplementedError("Subclasses must implement find_by_title_artist()")
 
     @abstractmethod
     def get_unprocessed(self, processed_ids: set[str]) -> list[Track]:
@@ -120,7 +120,7 @@ class TrackRepository(Repository[Track]):
         Returns:
             List of unprocessed tracks
         """
-        ...
+        raise NotImplementedError("Subclasses must implement get_unprocessed()")
 
 
 class StatsRepository(Repository[TrackWithStats]):
@@ -137,7 +137,7 @@ class StatsRepository(Repository[TrackWithStats]):
         Args:
             items: List of items to save
         """
-        ...
+        raise NotImplementedError("Subclasses must implement save_batch()")
 
     @abstractmethod
     def export_to_json(self, file_path: Path, flat: bool = False) -> None:
@@ -147,7 +147,7 @@ class StatsRepository(Repository[TrackWithStats]):
             file_path: Path to output JSON file
             flat: If True, use flat dictionary format for legacy compatibility
         """
-        ...
+        raise NotImplementedError("Subclasses must implement export_to_json()")
 
     @abstractmethod
     def export_to_csv(self, file_path: Path) -> None:
@@ -156,7 +156,7 @@ class StatsRepository(Repository[TrackWithStats]):
         Args:
             file_path: Path to output CSV file
         """
-        ...
+        raise NotImplementedError("Subclasses must implement export_to_csv()")
 
     @abstractmethod
     def get_by_songstats_id(self, songstats_id: str) -> TrackWithStats | None:
@@ -168,4 +168,4 @@ class StatsRepository(Repository[TrackWithStats]):
         Returns:
             TrackWithStats if found, None otherwise
         """
-        ...
+        raise NotImplementedError("Subclasses must implement get_by_songstats_id()")
