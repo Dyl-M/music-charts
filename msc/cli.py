@@ -103,7 +103,6 @@ def _display_summary(orchestrator, results) -> None:
         orchestrator: Pipeline orchestrator instance
         results: Pipeline execution results
     """
-
     settings = get_settings()
     metrics = orchestrator.get_metrics()
 
