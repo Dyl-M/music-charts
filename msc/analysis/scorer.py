@@ -16,6 +16,7 @@ from msc.config.settings import get_settings
 from msc.models.ranking import CategoryScore, PowerRanking, PowerRankingResults
 from msc.models.stats import TrackWithStats
 from msc.utils.logging import get_logger
+from msc.utils.path_utils import validate_path_within_base
 
 # Platform name mapping: categories.json naming → PlatformStats field names
 PLATFORM_NAME_MAP = {
@@ -51,8 +52,11 @@ class PowerRankingScorer:
         # Load category configuration
         if category_config_path is None:
             category_config_path = self.settings.config_dir / "categories.json"
+            validate_path = True
+        else:
+            validate_path = False
 
-        self.category_config = self._load_category_config(category_config_path)
+        self.category_config = self._load_category_config(category_config_path, validate_path)
 
         # Set normalization strategy
         self.normalizer = normalizer or MinMaxNormalizer()
@@ -62,24 +66,33 @@ class PowerRankingScorer:
             self.normalizer.get_name(),
         )
 
-    def _load_category_config(self, config_path: Path) -> dict[str, list[str]]:
+    def _load_category_config(
+        self, config_path: Path, validate: bool = True
+    ) -> dict[str, list[str]]:
         """Load category configuration from JSON file.
 
         Args:
             config_path: Path to categories.json
+            validate: If True, validate path is within config directory
 
         Returns:
             Dictionary mapping category names to metric lists
         """
         try:
-            # Normalize path to prevent directory traversal
-            config_path = config_path.resolve()
+            # Validate path if using default location
+            if validate:
+                config_path = validate_path_within_base(
+                    config_path, self.settings.config_dir, "config load"
+                )
+            else:
+                # Just resolve the path for security without base validation
+                config_path = config_path.resolve()
             with open(config_path, encoding="utf-8") as f:
                 config = json.load(f)
 
             self.logger.info("Loaded category config from %s", config_path)
             return config
-        except (OSError, json.JSONDecodeError) as error:
+        except (OSError, json.JSONDecodeError, ValueError) as error:
             self.logger.exception("Failed to load category config from %s: %s", config_path, error)
             # Return empty config as fallback (defensive coding)
             return {}
