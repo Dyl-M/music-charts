@@ -185,9 +185,11 @@ _docs/PR-DRAFT.md
 
 # Internal documentation
 _docs/CODE_REVIEW_FINDINGS.md
+_docs/COVERAGE_REPORT.md
 _docs/IMPROVEMENTS.md
 _docs/PHASE4_IMPLEMENTATION.md
 CLAUDE.md
+coverage.json
 
 # Ruff
 .ruff_cache/
