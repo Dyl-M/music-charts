@@ -426,19 +426,18 @@ class TestJSONStatsRepository:
         """Test loading stats from legacy flat format."""
         repo_file = tmp_path / "stats.json"
 
-        # Create legacy flat format data
+        # Create legacy flat format data (fully flat structure)
+        # This will fail model_validate because track/identifiers/platform_stats are not nested
         test_data = [
             {
-                "track": {
-                    "title": "Test Track",
-                    "artist_list": ["Test Artist"],
-                    "year": 2024,
-                },
-                "songstats_identifiers": {
-                    "songstats_id": "123",
-                    "songstats_title": "Test Track",
-                },
-                # Flat platform stats at top level
+                # Track fields at top level (flat)
+                "title": "Test Track",
+                "artist_list": ["Test Artist"],
+                "year": 2024,
+                # Identifiers fields at top level (flat)
+                "songstats_id": "123",
+                "songstats_title": "Test Track",
+                # Platform stats at top level (flat)
                 "spotify_streams_total": 1000000,
                 "apple_music_streams_total": 500000,
             }
@@ -447,13 +446,14 @@ class TestJSONStatsRepository:
         with open(repo_file, "w", encoding="utf-8") as f:
             json.dump(test_data, f)
 
-        # Should load and convert to nested format
+        # Should fail model_validate, fall back to from_flat_dict, and load successfully
         repo = JSONStatsRepository(repo_file)
         assert repo.count() == 1
 
         stats = repo.get_all()[0]
         assert stats.track.title == "Test Track"
         assert stats.songstats_identifiers.songstats_id == "123"
+        assert stats.platform_stats.spotify.streams_total == 1000000
 
     @staticmethod
     def test_track_save_error_handling(tmp_path: Path) -> None:
