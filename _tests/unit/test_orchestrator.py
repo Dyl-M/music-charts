@@ -71,6 +71,19 @@ class TestPipelineOrchestratorInit:
             assert checkpoint_dir.exists()
 
     @staticmethod
+    def test_init_with_no_data_dir_uses_settings_default() -> None:
+        """Test orchestrator uses settings default when data_dir is None."""
+        with (
+            patch("msc.pipeline.orchestrator.MusicBeeClient"),
+            patch("msc.pipeline.orchestrator.SongstatsClient"),
+        ):
+            orchestrator = PipelineOrchestrator()  # No data_dir provided
+
+            # Should use data_dir from settings
+            assert orchestrator.data_dir is not None
+            assert orchestrator.data_dir == orchestrator.settings.data_dir
+
+    @staticmethod
     def test_init_attaches_default_observers(tmp_path: Path) -> None:
         """Test orchestrator attaches default observers."""
         with (
@@ -211,6 +224,59 @@ class TestPipelineOrchestratorRun:
             assert mock_enrich_instance.transform.called
             call_args = mock_enrich_instance.transform.call_args[0][0]
             assert len(call_args) == 1
+
+    @staticmethod
+    def test_run_ranking_only_loads_from_repository(tmp_path: Path) -> None:
+        """Test running ranking only loads enriched tracks from repository."""
+        with (
+            patch("msc.pipeline.orchestrator.MusicBeeClient"),
+            patch("msc.pipeline.orchestrator.SongstatsClient"),
+            patch("msc.pipeline.orchestrator.RankingStage") as mock_rank,
+        ):
+            mock_ranking_results = PowerRankingResults(
+                year=2024,
+                rankings=[
+                    PowerRanking(
+                        rank=1,
+                        track=Track(title="Track 1", artist_list=["Artist 1"], year=2024),
+                        category_scores=[
+                            CategoryScore(
+                                category="streams",
+                                raw_score=0.9,
+                                weight=4,
+                                weighted_score=3.6,
+                            )
+                        ],
+                        total_score=10.0,
+                    )
+                ],
+                total_tracks=1,
+            )
+            mock_rank_instance = mock_rank.return_value
+            mock_rank_instance.transform.return_value = mock_ranking_results
+
+            orchestrator = PipelineOrchestrator(data_dir=tmp_path)
+
+            # Add enriched tracks to stats repository
+            stats = TrackWithStats(
+                track=Track(title="Track 1", artist_list=["Artist 1"], year=2024),
+                songstats_identifiers=SongstatsIdentifiers(
+                    songstats_id="123", songstats_title="Track 1"
+                ),
+                platform_stats=PlatformStats(),
+            )
+            orchestrator.stats_repository.add(stats)
+
+            # Run ranking only (skip extraction and enrichment) - should load from repository
+            result = orchestrator.run(
+                run_extraction=False, run_enrichment=False, run_ranking=True
+            )
+
+            # Verify ranking was called with tracks from repository
+            assert mock_rank_instance.transform.called
+            call_args = mock_rank_instance.transform.call_args[0][0]
+            assert len(call_args) == 1
+            assert result is not None
 
     @staticmethod
     def test_run_pipeline_failure(tmp_path: Path) -> None:

@@ -980,8 +980,10 @@ class TestEnrichmentStage:
             checkpoint_manager=checkpoint_mgr,
         )
 
-        # Invalid data - will cause errors during processing which should be caught
-        result = stage._create_platform_stats({"invalid": "data"})
+        # Invalid data with wrong types - will trigger ValidationError in Pydantic
+        # (spotify_streams_total should be int, not list)
+        invalid_data = {"spotify_streams_total": ["not", "an", "integer"]}
+        result = stage._create_platform_stats(invalid_data)
 
         # Should return empty PlatformStats (defensive coding)
         assert isinstance(result, PlatformStats)
@@ -1358,7 +1360,7 @@ class TestRankingStage:
     """Tests for RankingStage."""
 
     @staticmethod
-    def test_init_default_output_dir(tmp_path: Path) -> None:
+    def test_init_default_output_dir() -> None:
         """Test initialization uses default output directory from settings."""
         scorer = Mock(spec=PowerRankingScorer)
 
@@ -1551,6 +1553,57 @@ class TestRankingStage:
         assert csv_file.exists()
 
     @staticmethod
+    def test_export_rankings_json_error_handling(tmp_path: Path, sample_rankings: PowerRankingResults) -> None:
+        """Test _export_rankings_json handles errors gracefully."""
+        scorer = Mock(spec=PowerRankingScorer)
+        output_dir = tmp_path / "rankings"
+        json_file = output_dir / "test.json"
+
+        with patch("msc.pipeline.rank.get_settings") as mock_settings:
+            mock_settings.return_value = Settings(year=2024)
+
+            stage = RankingStage(scorer=scorer, output_dir=output_dir)
+
+            # Mock secure_write to raise OSError
+            with patch("msc.pipeline.rank.secure_write", side_effect=OSError("Disk full")):
+                # Should log error but not raise (defensive coding)
+                stage._export_rankings_json(sample_rankings, json_file)
+
+    @staticmethod
+    def test_export_rankings_csv_error_handling(tmp_path: Path, sample_rankings: PowerRankingResults) -> None:
+        """Test _export_rankings_csv handles errors gracefully."""
+        scorer = Mock(spec=PowerRankingScorer)
+        output_dir = tmp_path / "rankings"
+        csv_file = output_dir / "test.csv"
+
+        with patch("msc.pipeline.rank.get_settings") as mock_settings:
+            mock_settings.return_value = Settings(year=2024)
+
+            stage = RankingStage(scorer=scorer, output_dir=output_dir)
+
+            # Mock secure_write to raise OSError
+            with patch("msc.pipeline.rank.secure_write", side_effect=OSError("Permission denied")):
+                # Should log error but not raise (defensive coding)
+                stage._export_rankings_csv(sample_rankings, csv_file)
+
+    @staticmethod
+    def test_export_rankings_flat_error_handling(tmp_path: Path, sample_rankings: PowerRankingResults) -> None:
+        """Test _export_rankings_flat handles errors gracefully."""
+        scorer = Mock(spec=PowerRankingScorer)
+        output_dir = tmp_path / "rankings"
+        flat_file = output_dir / "test_flat.json"
+
+        with patch("msc.pipeline.rank.get_settings") as mock_settings:
+            mock_settings.return_value = Settings(year=2024)
+
+            stage = RankingStage(scorer=scorer, output_dir=output_dir)
+
+            # Mock secure_write to raise OSError
+            with patch("msc.pipeline.rank.secure_write", side_effect=OSError("Write failed")):
+                # Should log error but not raise (defensive coding)
+                stage._export_rankings_flat(sample_rankings, flat_file)
+
+    @staticmethod
     def test_load_error_handling(tmp_path: Path, sample_rankings: PowerRankingResults) -> None:
         """Test load handles unexpected errors by raising exception."""
         scorer = Mock(spec=PowerRankingScorer)
@@ -1560,11 +1613,18 @@ class TestRankingStage:
 
             stage = RankingStage(scorer=scorer, output_dir=tmp_path)
 
+            # Attach observer to verify error event is sent
+            observer = Mock()
+            stage.attach(observer)
+
             # Mock _export_rankings_json to raise an unexpected error that's not caught
-            with patch.object(stage, "_export_rankings_json", side_effect=RuntimeError("Unexpected error")):
+            with patch.object(stage, "_export_rankings_json", side_effect=RuntimeError("Export failed")):
                 # Should raise exception after logging and notifying observers
-                with pytest.raises(RuntimeError):
+                with pytest.raises(RuntimeError, match="Export failed"):
                     stage.load(sample_rankings)
+
+            # Verify observer was notified of error (lines 192-198)
+            assert observer.on_error.called or observer.on_event.called
 
     @staticmethod
     def test_observable_events(tmp_path: Path, sample_track_with_stats: TrackWithStats,
