@@ -126,7 +126,7 @@ class CheckpointManager:
                 len(state.skipped_ids),
             )
 
-        except (OSError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, TypeError) as error:
             self.logger.exception("Failed to save checkpoint for %s: %s", state.stage_name, error)
             raise  # Re-raise to let caller handle failure
 
@@ -305,7 +305,7 @@ class ManualReviewQueue:
 
             self.logger.debug("Saved %d items to review queue", len(self.items))
 
-        except (OSError, json.JSONEncodeError, TypeError) as error:
+        except (OSError, TypeError) as error:
             self.logger.exception("Failed to save review queue to %s: %s", self.file_path, error)
             raise  # Re-raise to let caller handle failure
 

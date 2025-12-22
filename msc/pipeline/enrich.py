@@ -15,7 +15,7 @@ from msc.clients.songstats import SongstatsClient
 from msc.config.settings import get_settings
 from msc.models.stats import PlatformStats, TrackWithStats
 from msc.models.track import Track
-from msc.models.youtube import YouTubeVideoData
+from msc.models.youtube import YouTubeVideo, YouTubeVideoData
 from msc.pipeline.base import PipelineStage
 from msc.pipeline.observer import EventType, Observable
 from msc.storage.checkpoint import CheckpointManager
@@ -205,7 +205,15 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                     youtube_results = self.songstats.get_youtube_videos(songstats_id)
 
                     if youtube_results:
-                        youtube_data = YouTubeVideoData.from_songstats_api(youtube_results)
+                        # Convert API response to YouTubeVideoData model
+                        most_viewed_video = YouTubeVideo(**youtube_results["most_viewed"])
+                        video_ids = [video["ytb_id"] for video in youtube_results["all_sources"]]
+
+                        youtube_data = YouTubeVideoData(
+                            most_viewed=most_viewed_video,
+                            all_sources=video_ids,
+                            songstats_identifiers=track.songstats_identifiers,
+                        )
 
                     else:
                         self.logger.debug("No YouTube data found for: %s", track.title)

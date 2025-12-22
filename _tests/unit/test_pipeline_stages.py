@@ -1035,6 +1035,321 @@ class TestEnrichmentStage:
         # After reprocessing, track ID should be back in processed_ids
         assert track.identifier in checkpoint.processed_ids
 
+    @staticmethod
+    def test_transform_empty_platform_stats_continues() -> None:
+        """Test transform continues with empty stats when no platform data found."""
+        songstats = Mock()
+        songstats.get_platform_stats.return_value = {}  # Empty dict (no stats)
+        songstats.get_historical_peaks.return_value = {}
+        songstats.get_youtube_videos.return_value = []
+
+        repository = Mock()
+
+        checkpoint = CheckpointState(
+            stage_name="enrichment",
+            created_at=datetime.now(),
+            last_updated=datetime.now(),
+            processed_ids=set(),
+            failed_ids=set(),
+            metadata={},
+        )
+        checkpoint_mgr = Mock()
+        checkpoint_mgr.load_checkpoint.return_value = None
+        checkpoint_mgr.create_checkpoint.return_value = checkpoint
+        checkpoint_mgr.save_checkpoint.return_value = None
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+            include_youtube=False,
+        )
+
+        track = Track(
+            title="Test Track",
+            artist_list=["Test Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="test123",
+                songstats_title="Test Track",
+            ),
+        )
+
+        result = stage.transform([track])
+
+        # Should continue with empty stats (defensive coding)
+        assert len(result) == 1
+        # Should mark as failed but still return the track with empty stats
+        assert track.identifier in checkpoint.failed_ids
+        # Verify the result has empty platform stats
+        assert isinstance(result[0].platform_stats, PlatformStats)
+
+    @staticmethod
+    def test_transform_with_peaks_data() -> None:
+        """Test transform correctly merges peaks data."""
+        songstats = Mock()
+        songstats.get_platform_stats.return_value = {
+            "spotify_streams_total": 1000000,
+        }
+        songstats.get_historical_peaks.return_value = {
+            "spotify": {
+                "popularity": {"peak": 85, "date": "2024-01-01"}
+            }
+        }
+        songstats.get_youtube_videos.return_value = []
+
+        repository = Mock()
+
+        checkpoint = CheckpointState(
+            stage_name="enrichment",
+            created_at=datetime.now(),
+            last_updated=datetime.now(),
+            processed_ids=set(),
+            failed_ids=set(),
+            metadata={},
+        )
+        checkpoint_mgr = Mock()
+        checkpoint_mgr.load_checkpoint.return_value = None
+        checkpoint_mgr.create_checkpoint.return_value = checkpoint
+        checkpoint_mgr.save_checkpoint.return_value = None
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+            include_youtube=False,
+        )
+
+        track = Track(
+            title="Test Track",
+            artist_list=["Test Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="test123",
+                songstats_title="Test Track",
+            ),
+        )
+
+        result = stage.transform([track])
+
+        # Should merge peaks data
+        assert len(result) == 1
+        # Check that peaks were merged - spotify_popularity_peak should be 85
+        assert result[0].platform_stats.spotify.popularity_peak == 85
+        assert track.identifier in checkpoint.processed_ids
+
+    @staticmethod
+    def test_transform_youtube_no_results() -> None:
+        """Test transform when YouTube is enabled but no videos found."""
+        songstats = Mock()
+        songstats.get_platform_stats.return_value = {
+            "spotify_streams_total": 1000000,
+        }
+        songstats.get_historical_peaks.return_value = {}
+        songstats.get_youtube_videos.return_value = []  # No YouTube videos
+
+        repository = Mock()
+
+        checkpoint = CheckpointState(
+            stage_name="enrichment",
+            created_at=datetime.now(),
+            last_updated=datetime.now(),
+            processed_ids=set(),
+            failed_ids=set(),
+            metadata={},
+        )
+        checkpoint_mgr = Mock()
+        checkpoint_mgr.load_checkpoint.return_value = None
+        checkpoint_mgr.create_checkpoint.return_value = checkpoint
+        checkpoint_mgr.save_checkpoint.return_value = None
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+            include_youtube=True,  # Enable YouTube
+        )
+
+        track = Track(
+            title="Test Track",
+            artist_list=["Test Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="test123",
+                songstats_title="Test Track",
+            ),
+        )
+
+        result = stage.transform([track])
+
+        # Should complete successfully even with no YouTube data
+        assert len(result) == 1
+        assert result[0].youtube_data is None
+        assert track.identifier in checkpoint.processed_ids
+
+    @staticmethod
+    def test_transform_exception_marks_failed() -> None:
+        """Test transform exception handler marks track as failed."""
+        songstats = Mock()
+        # Raise exception when fetching platform stats
+        songstats.get_platform_stats.side_effect = RuntimeError("API connection failed")
+
+        repository = Mock()
+
+        checkpoint = CheckpointState(
+            stage_name="enrichment",
+            created_at=datetime.now(),
+            last_updated=datetime.now(),
+            processed_ids=set(),
+            failed_ids=set(),
+            metadata={},
+        )
+        checkpoint_mgr = Mock()
+        checkpoint_mgr.load_checkpoint.return_value = None
+        checkpoint_mgr.create_checkpoint.return_value = checkpoint
+        checkpoint_mgr.save_checkpoint.return_value = None
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+        )
+
+        track = Track(
+            title="Test Track",
+            artist_list=["Test Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="test123",
+                songstats_title="Test Track",
+            ),
+        )
+
+        result = stage.transform([track])
+
+        # Should not crash, should mark as failed
+        assert len(result) == 0
+        assert track.identifier in checkpoint.failed_ids
+        # Checkpoint should be saved even after failure
+        assert checkpoint_mgr.save_checkpoint.called
+
+    @staticmethod
+    def test_transform_youtube_data_found() -> None:
+        """Test transform when YouTube data is found."""
+        songstats = Mock()
+        songstats.get_platform_stats.return_value = {
+            "spotify_streams_total": 1000000,
+        }
+        songstats.get_historical_peaks.return_value = {}
+        # Return YouTube video data (dict format from Songstats API)
+        songstats.get_youtube_videos.return_value = {
+            "most_viewed": {
+                "ytb_id": "abc123",
+                "views": 1000000,
+                "channel_name": "Test Channel",
+            },
+            "all_sources": [
+                {
+                    "ytb_id": "abc123",
+                    "views": 1000000,
+                    "channel_name": "Test Channel",
+                },
+                {
+                    "ytb_id": "def456",
+                    "views": 500000,
+                    "channel_name": "Another Channel",
+                },
+            ]
+        }
+
+        repository = Mock()
+
+        checkpoint = CheckpointState(
+            stage_name="enrichment",
+            created_at=datetime.now(),
+            last_updated=datetime.now(),
+            processed_ids=set(),
+            failed_ids=set(),
+            metadata={},
+        )
+        checkpoint_mgr = Mock()
+        checkpoint_mgr.load_checkpoint.return_value = None
+        checkpoint_mgr.create_checkpoint.return_value = checkpoint
+        checkpoint_mgr.save_checkpoint.return_value = None
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+            include_youtube=True,  # Enable YouTube
+        )
+
+        track = Track(
+            title="Test Track",
+            artist_list=["Test Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="test123",
+                songstats_title="Test Track",
+            ),
+        )
+
+        result = stage.transform([track])
+
+        # Should complete successfully with YouTube data
+        assert len(result) == 1
+        assert result[0].youtube_data is not None
+        assert track.identifier in checkpoint.processed_ids
+
+    @staticmethod
+    def test_merge_peaks_invalid_platform_data() -> None:
+        """Test _merge_peaks handles invalid platform data (non-dict)."""
+        stats_data = {"spotify_streams_total": 1000000}
+        peaks_data = {
+            "spotify": {
+                "popularity": {"peak": 85, "date": "2024-01-01"}
+            },
+            "invalid_platform": "not a dict",  # Invalid entry - not a dict
+        }
+
+        EnrichmentStage._merge_peaks(stats_data, peaks_data)
+
+        # Should merge valid data and skip invalid
+        assert "spotify_popularity_peak" in stats_data
+        assert stats_data["spotify_popularity_peak"] == 85
+
+    @staticmethod
+    def test_create_platform_stats_validation_error() -> None:
+        """Test _create_platform_stats exception handler with data causing ValidationError."""
+        from pydantic import ValidationError
+
+        songstats = Mock()
+        repository = Mock()
+        checkpoint_mgr = Mock()
+
+        stage = EnrichmentStage(
+            songstats_client=songstats,
+            stats_repository=repository,
+            checkpoint_manager=checkpoint_mgr,
+        )
+
+        # Mock from_flat_dict to raise ValidationError
+        with patch("msc.pipeline.enrich.PlatformStats.from_flat_dict") as mock_from_flat:
+            # Create a proper Pydantic ValidationError
+            try:
+                # Try to create an invalid PlatformStats to get a real ValidationError
+                PlatformStats.model_validate({"invalid": "data"})
+
+            except ValidationError as ve:
+                mock_from_flat.side_effect = ve
+
+                result = stage._create_platform_stats({"some": "data"})
+
+                # Should return empty PlatformStats (defensive coding)
+                assert isinstance(result, PlatformStats)
+                # All platform stats should be None or default
+                assert result.spotify.streams_total is None
+
 
 # === RankingStage Tests ===
 
@@ -1075,6 +1390,20 @@ class TestRankingStage:
 
         result = stage.extract()
         assert result == []
+
+    @staticmethod
+    def test_extract_with_repository(sample_track_with_stats: TrackWithStats) -> None:
+        """Test extract loads tracks from repository when provided."""
+        scorer = Mock(spec=PowerRankingScorer)
+        repository = Mock()
+        repository.get_all.return_value = [sample_track_with_stats]
+
+        stage = RankingStage(scorer=scorer, stats_repository=repository)
+
+        result = stage.extract()
+        assert len(result) == 1
+        assert result[0] == sample_track_with_stats
+        repository.get_all.assert_called_once()
 
     @staticmethod
     def test_transform_empty_data() -> None:
@@ -1223,7 +1552,7 @@ class TestRankingStage:
 
     @staticmethod
     def test_load_error_handling(tmp_path: Path, sample_rankings: PowerRankingResults) -> None:
-        """Test load handles export errors gracefully (defensive coding)."""
+        """Test load handles unexpected errors by raising exception."""
         scorer = Mock(spec=PowerRankingScorer)
 
         with patch("msc.pipeline.rank.get_settings") as mock_settings:
@@ -1231,10 +1560,11 @@ class TestRankingStage:
 
             stage = RankingStage(scorer=scorer, output_dir=tmp_path)
 
-            # Mock secure_write to raise an error during export
-            with patch("msc.pipeline.rank.secure_write", side_effect=OSError("Permission denied")):
-                # Should not raise - errors are logged but not propagated (defensive coding)
-                stage.load(sample_rankings)
+            # Mock _export_rankings_json to raise an unexpected error that's not caught
+            with patch.object(stage, "_export_rankings_json", side_effect=RuntimeError("Unexpected error")):
+                # Should raise exception after logging and notifying observers
+                with pytest.raises(RuntimeError):
+                    stage.load(sample_rankings)
 
     @staticmethod
     def test_observable_events(tmp_path: Path, sample_track_with_stats: TrackWithStats,

@@ -7,6 +7,10 @@ state persistence, and atomic operations.
 # Standard library
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
+
+# Third-party
+import pytest
 
 # Local
 from msc.storage.checkpoint import (
@@ -397,3 +401,66 @@ class TestManualReviewQueue:
         # Should create empty queue
         queue = ManualReviewQueue(queue_file)
         assert queue.count() == 0
+
+    @staticmethod
+    def test_review_queue_save_error_handling(tmp_path: Path) -> None:
+        """Test review queue handles save errors."""
+        queue_file = tmp_path / "review_queue.json"
+        queue = ManualReviewQueue(queue_file)
+
+        queue.add(
+            track_id="test_id",
+            title="Test Track",
+            artist="Test Artist",
+            reason="Test reason",
+        )
+
+        # Mock Path.replace to raise OSError
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            queue.add(
+                track_id="test_id2",
+                title="Test Track 2",
+                artist="Test Artist 2",
+                reason="Test reason 2",
+            )
+
+
+class TestCheckpointManagerExceptions:
+    """Tests for CheckpointManager exception handling."""
+
+    @staticmethod
+    def test_save_checkpoint_error_handling(tmp_path: Path) -> None:
+        """Test checkpoint manager handles save errors."""
+        manager = CheckpointManager(tmp_path)
+
+        now = datetime.now()
+        state = CheckpointState(
+            stage_name="test",
+            created_at=now,
+            last_updated=now,
+            processed_ids={"test"},
+        )
+
+        # Mock Path.replace to raise OSError
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            manager.save_checkpoint(state)
+
+    @staticmethod
+    def test_clear_checkpoint_error_handling(tmp_path: Path) -> None:
+        """Test checkpoint manager handles clear errors."""
+        manager = CheckpointManager(tmp_path)
+
+        # Create a checkpoint first
+        now = datetime.now()
+        state = CheckpointState(
+            stage_name="test",
+            created_at=now,
+            last_updated=now,
+            processed_ids={"test"},
+        )
+        manager.save_checkpoint(state)
+
+        # Mock Path.unlink to raise OSError
+        with patch("pathlib.Path.unlink", side_effect=OSError("Permission denied")):
+            # Should log error but not raise
+            manager.clear_checkpoint("test")
