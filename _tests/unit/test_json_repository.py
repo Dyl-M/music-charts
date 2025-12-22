@@ -470,9 +470,8 @@ class TestJSONStatsRepository:
         )
 
         # Mock Path.replace to raise OSError
-        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")):
-            with pytest.raises(OSError):
-                repo.add(track)
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            repo.add(track)
 
     @staticmethod
     def test_stats_save_error_handling(tmp_path: Path) -> None:
@@ -496,9 +495,8 @@ class TestJSONStatsRepository:
         )
 
         # Mock Path.replace to raise OSError
-        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")):
-            with pytest.raises(OSError):
-                repo.add(stats)
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            repo.add(stats)
 
     @staticmethod
     def test_stats_load_with_flat_format_fallback(tmp_path: Path) -> None:
@@ -622,9 +620,8 @@ class TestJSONStatsRepository:
         repo.add(stats)
 
         # Mock Path.replace to raise OSError
-        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")):
-            with pytest.raises(OSError):
-                repo.remove(stats.identifier)
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            repo.remove(stats.identifier)
 
     @staticmethod
     def test_stats_clear_error_handling(tmp_path: Path) -> None:
@@ -649,6 +646,5 @@ class TestJSONStatsRepository:
         repo.add(stats)
 
         # Mock Path.replace to raise OSError
-        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")):
-            with pytest.raises(OSError):
-                repo.clear()
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            repo.clear()

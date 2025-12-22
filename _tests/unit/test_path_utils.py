@@ -111,9 +111,8 @@ class TestSecureWrite:
         base = tmp_path / "allowed"
         file_path = tmp_path / "forbidden" / "file.txt"
 
-        with pytest.raises(ValueError, match="Security error"):
-            with secure_write(file_path, base_dir=base, purpose="export", encoding="utf-8") as f:
-                f.write("test")
+        with pytest.raises(ValueError, match="Security error"), secure_write(file_path, base_dir=base, purpose="export", encoding="utf-8") as f:
+            f.write("test")
 
     @staticmethod
     def test_custom_file_mode(tmp_path: Path) -> None:

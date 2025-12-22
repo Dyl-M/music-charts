@@ -25,17 +25,19 @@ class ConcretePipelineStage(PipelineStage[list[str], list[str]]):
         """Return stage name."""
         return "Test Stage"
 
-    def extract(self) -> list[str]:
+    @staticmethod
+    def extract() -> list[str]:
         """Extract test data."""
         return ["item1", "item2"]
 
-    def transform(self, data: list[str]) -> list[str]:
+    @staticmethod
+    def transform(data: list[str]) -> list[str]:
         """Transform test data."""
         return [item.upper() for item in data]
 
     def load(self, data: list[str]) -> None:
         """Load test data."""
-        ...
+        raise NotImplementedError()
 
 
 class FailingStage(PipelineStage[list[str], list[str]]):
@@ -46,15 +48,18 @@ class FailingStage(PipelineStage[list[str], list[str]]):
         """Return stage name."""
         return "Failing Stage"
 
-    def extract(self) -> list[str]:
+    @staticmethod
+    def extract() -> list[str]:
         """Extract test data."""
         return ["item1"]
 
-    def transform(self, data: list[str]) -> list[str]:
+    @staticmethod
+    def transform(data: list[str]) -> list[str]:
         """Transform test data."""
         return data
 
-    def load(self, data: list[str]) -> None:
+    @staticmethod
+    def load(data: list[str]) -> None:
         """Raise exception during load."""
         raise RuntimeError("Load failed")
 

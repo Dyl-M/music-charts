@@ -416,14 +416,13 @@ class TestManualReviewQueue:
         )
 
         # Mock Path.replace to raise OSError
-        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")):
-            with pytest.raises(OSError):
-                queue.add(
-                    track_id="test_id2",
-                    title="Test Track 2",
-                    artist="Test Artist 2",
-                    reason="Test reason 2",
-                )
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            queue.add(
+                track_id="test_id2",
+                title="Test Track 2",
+                artist="Test Artist 2",
+                reason="Test reason 2",
+            )
 
 
 class TestCheckpointManagerExceptions:
@@ -443,9 +442,8 @@ class TestCheckpointManagerExceptions:
         )
 
         # Mock Path.replace to raise OSError
-        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")):
-            with pytest.raises(OSError):
-                manager.save_checkpoint(state)
+        with patch("pathlib.Path.replace", side_effect=OSError("Permission denied")), pytest.raises(OSError):
+            manager.save_checkpoint(state)
 
     @staticmethod
     def test_clear_checkpoint_error_handling(tmp_path: Path) -> None:
