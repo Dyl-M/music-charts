@@ -4,6 +4,8 @@ Tests PipelineStage abstract base class and Pipeline orchestrator.
 """
 
 # Standard library
+import inspect
+from abc import ABC
 from pathlib import Path
 
 # Third-party
@@ -20,24 +22,30 @@ from msc.pipeline.base import Pipeline, PipelineStage
 class ConcretePipelineStage(PipelineStage[list[str], list[str]]):
     """Concrete implementation for testing PipelineStage."""
 
+    def __init__(self, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        """Initialize with storage for loaded data."""
+        super().__init__(**kwargs)
+        self.loaded_data: list[str] | None = None
+
     @property
     def stage_name(self) -> str:
         """Return stage name."""
         return "Test Stage"
 
-    @staticmethod
-    def extract() -> list[str]:
+    def extract(self) -> list[str]:
         """Extract test data."""
+        self.logger.debug("Extracting test data")
         return ["item1", "item2"]
 
-    @staticmethod
-    def transform(data: list[str]) -> list[str]:
+    def transform(self, data: list[str]) -> list[str]:
         """Transform test data."""
+        self.logger.debug(f"Transforming {len(data)} items")
         return [item.upper() for item in data]
 
     def load(self, data: list[str]) -> None:
-        """Load test data."""
-        raise NotImplementedError()
+        """Load test data by storing it."""
+        self.logger.debug(f"Loading {len(data)} items")
+        self.loaded_data = data
 
 
 class FailingStage(PipelineStage[list[str], list[str]]):
@@ -48,19 +56,19 @@ class FailingStage(PipelineStage[list[str], list[str]]):
         """Return stage name."""
         return "Failing Stage"
 
-    @staticmethod
-    def extract() -> list[str]:
+    def extract(self) -> list[str]:
         """Extract test data."""
+        self.logger.debug("Extracting test data")
         return ["item1"]
 
-    @staticmethod
-    def transform(data: list[str]) -> list[str]:
+    def transform(self, data: list[str]) -> list[str]:
         """Transform test data."""
+        self.logger.debug("Transforming data")
         return data
 
-    @staticmethod
-    def load(data: list[str]) -> None:
+    def load(self, data: list[str]) -> None:
         """Raise exception during load."""
+        self.logger.error("Load operation failed")
         raise RuntimeError("Load failed")
 
 
@@ -127,11 +135,21 @@ class TestPipelineStage:
 
     @staticmethod
     def test_abstract_methods_raise_not_implemented() -> None:
-        """Test abstract methods raise NotImplementedError."""
-        # Cannot instantiate abstract class directly - intentional test
-        with pytest.raises(TypeError):
-            # noinspection PyAbstractClass
-            PipelineStage()  # type: ignore[abstract]
+        """Test PipelineStage is abstract and cannot be instantiated."""
+        # Verify it's an abstract base class
+        assert issubclass(PipelineStage, ABC)
+
+        # Verify it has abstract methods
+        assert hasattr(PipelineStage, "__abstractmethods__")
+        abstract_methods = PipelineStage.__abstractmethods__
+        assert len(abstract_methods) > 0
+
+        # Verify the expected abstract methods are present
+        expected_abstract = {"stage_name", "extract", "transform", "load"}
+        assert expected_abstract.issubset(abstract_methods)
+
+        # Verify concrete implementation is required
+        assert inspect.isabstract(PipelineStage)
 
 
 # === Pipeline Tests ===
