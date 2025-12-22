@@ -371,3 +371,56 @@ class TrackWithStats(MSCBaseModel):
             songstats_identifiers=SongstatsIdentifiers(**identifiers_data),
             platform_stats=PlatformStats.from_flat_dict(stats_data),
         )
+
+    @classmethod
+    def from_flat_dict(cls, data: dict[str, Any]) -> Self:
+        """Load from fully flat dictionary format.
+
+        Converts a completely flat structure where track, identifier, and
+        platform stats fields are all at the top level.
+
+        Args:
+            data: Flat dictionary with all fields at top level.
+
+        Returns:
+            TrackWithStats instance.
+
+        Examples:
+            >>> flat_data = {
+            ...     "title": "16",
+            ...     "artist_list": ["Test Artist"],
+            ...     "year": 2024,
+            ...     "songstats_id": "qmr6e0bx",
+            ...     "songstats_title": "16",
+            ...     "spotify_streams_total": 3805083,
+            ... }
+            >>> track = TrackWithStats.from_flat_dict(flat_data)
+            >>> track.track.title
+            '16'
+        """
+        # Extract track fields
+        track_data = {
+            "title": data.get("title"),
+            "artist_list": data.get("artist_list", []),
+            "year": data.get("year"),
+            "genre": data.get("genre", []),
+            "label": data.get("label", []),
+            "grouping": data.get("grouping"),
+            "search_query": data.get("search_query") or data.get("request"),
+        }
+
+        # Extract identifier fields
+        identifiers_data = {
+            "songstats_id": data.get("songstats_id"),
+            "songstats_title": data.get("songstats_title"),
+            "isrc": data.get("isrc"),
+            "spotify_id": data.get("spotify_id"),
+        }
+
+        # Extract platform stats (all fields with platform prefixes)
+        # PlatformStats.from_flat_dict will handle extracting these
+        return cls(
+            track=Track(**track_data),
+            songstats_identifiers=SongstatsIdentifiers(**identifiers_data),
+            platform_stats=PlatformStats.from_flat_dict(data),
+        )
