@@ -54,8 +54,20 @@ def main(
         ] = False,
 ) -> None:
     """Music Charts CLI - Analyze track performance across streaming platforms."""
-    log_level: Literal["DEBUG", "INFO"] = "DEBUG" if verbose else "INFO"
-    setup_logging(level=log_level)
+    settings = get_settings()
+
+    # Configure logging
+    # - File always logs INFO (or DEBUG if verbose)
+    # - Console only shows ERROR by default (or INFO/DEBUG if verbose)
+    file_level: Literal["DEBUG", "INFO"] = "DEBUG" if verbose else "INFO"
+    console_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "DEBUG" if verbose else "ERROR"
+    log_file = settings.data_dir / "logs" / "pipeline.log"
+
+    setup_logging(
+        level=file_level,
+        console_level=console_level,
+        log_file=log_file,
+    )
 
 
 def _determine_stages(stages: list[str] | None) -> tuple[bool, bool, bool]:
@@ -207,10 +219,15 @@ def run(
     _display_pipeline_config(year, run_extraction, run_enrichment, run_ranking, no_youtube)
 
     try:
+        # Detect verbose mode from logging configuration
+        # (verbose flag from main callback sets DEBUG level)
+        import logging
+        is_verbose = logging.getLogger().level == logging.DEBUG
+
         # Initialize orchestrator
         orchestrator = PipelineOrchestrator(
             include_youtube=not no_youtube,
-            verbose=False,
+            verbose=is_verbose,
         )
 
         # Reset if requested
