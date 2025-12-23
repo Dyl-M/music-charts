@@ -55,7 +55,6 @@ class TestErrorHandlerRegistry:
         # Define custom exception
         class CustomError(Exception):
             """Custom test exception."""
-            pass
 
         # Register handler
         @ErrorHandler.register(CustomError)
@@ -75,7 +74,6 @@ class TestErrorHandlerRegistry:
 
         class TestError(Exception):
             """Test exception for handler testing."""
-            pass
 
         @ErrorHandler.register(TestError)
         def my_handler(_error: TestError) -> str:
@@ -152,7 +150,6 @@ class TestErrorHandlerHandle:
 
         class UnknownError(Exception):
             """Unknown exception type for testing."""
-            pass
 
         error = UnknownError("Something went wrong")
         result = ErrorHandler.handle(error)
