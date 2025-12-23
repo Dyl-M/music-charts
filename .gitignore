@@ -171,12 +171,13 @@ _legacy/data/selection_2024.json
 _legacy/data/ytb_2024.json
 
 # New data structure
+_data/cache/
 _data/checkpoints/
 _data/demo
 _data/input/
-_data/log/
+_data/log*
 _data/output/
-_data/cache/
+_data/runs/
 
 # Claude.ai configuration files
 .claude/

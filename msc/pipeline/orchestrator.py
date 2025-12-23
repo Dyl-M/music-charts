@@ -5,6 +5,7 @@ for progress tracking and error handling.
 """
 
 # Standard library
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -46,14 +47,16 @@ class PipelineOrchestrator(Observable):
             checkpoint_dir: Path | None = None,
             include_youtube: bool = True,
             verbose: bool = False,
+            run_id: str | None = None,
     ) -> None:
         """Initialize pipeline orchestrator.
 
         Args:
             data_dir: Directory for data files (default: from settings)
-            checkpoint_dir: Directory for checkpoints (default: data_dir / "checkpoints")
+            checkpoint_dir: Directory for checkpoints (default: run_dir / "checkpoints")
             include_youtube: Whether to fetch YouTube data
             verbose: Enable verbose logging
+            run_id: Unique identifier for this run (default: timestamp-based)
         """
         super().__init__()
         self.settings = get_settings()
@@ -66,8 +69,17 @@ class PipelineOrchestrator(Observable):
         self.data_dir = data_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
+        # Create run ID and run directory
+        if run_id is None:
+            run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        self.run_id = run_id
+        self.run_dir = self.data_dir / "runs" / f"{self.settings.year}_{self.run_id}"
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+
+        # Checkpoints are now per-run (stored in run directory)
         if checkpoint_dir is None:
-            checkpoint_dir = self.data_dir / "checkpoints"
+            checkpoint_dir = self.run_dir / "checkpoints"
 
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -83,16 +95,18 @@ class PipelineOrchestrator(Observable):
         )
 
         # Initialize repositories
+        # Tracks repository now in run directory
         self.track_repository = JSONTrackRepository(
-            self.data_dir / "tracks.json"
+            self.run_dir / "tracks.json"
         )
         self.stats_repository = JSONStatsRepository(
-            self.data_dir / "output/enriched_tracks.json"
+            self.data_dir / "output" / "enriched_tracks.json"
         )
 
         # Initialize checkpoint and review queue
         self.checkpoint_mgr = CheckpointManager(self.checkpoint_dir)
-        self.review_queue = ManualReviewQueue(self.data_dir / "manual_review.json")
+        # Manual review queue now in run directory
+        self.review_queue = ManualReviewQueue(self.run_dir / "manual_review.json")
 
         # Initialize scorer
         self.scorer = PowerRankingScorer()
@@ -111,8 +125,10 @@ class PipelineOrchestrator(Observable):
         console_observer = ConsoleObserver(verbose=self.verbose)
         self.attach(console_observer)
 
-        # File observer for event log
-        log_file = self.data_dir / "log/pipeline_events.jsonl"
+        # File observer for event log (in logs directory)
+        log_dir = self.data_dir / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / f"pipeline_events_{self.run_id}.jsonl"
         file_observer = FileObserver(log_file)
         self.attach(file_observer)
 
@@ -159,9 +175,15 @@ class PipelineOrchestrator(Observable):
                 "enrichment": run_enrichment,
                 "ranking": run_ranking,
                 "include_youtube": self.include_youtube,
+                "run_id": self.run_id,
+                "run_dir": str(self.run_dir),
             },
         )
         self.notify(event)
+
+        # Log run information
+        self.logger.info("Run ID: %s", self.run_id)
+        self.logger.info("Run directory: %s", self.run_dir)
 
         try:
             results: PowerRankingResults | None = None

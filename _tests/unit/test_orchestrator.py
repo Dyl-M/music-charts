@@ -32,9 +32,13 @@ class TestPipelineOrchestratorInit:
             orchestrator = PipelineOrchestrator(data_dir=tmp_path)
 
             assert orchestrator.data_dir == tmp_path
-            assert orchestrator.checkpoint_dir == tmp_path / "checkpoints"
+            # Checkpoints are now per-run (in run directory)
+            assert orchestrator.checkpoint_dir == orchestrator.run_dir / "checkpoints"
+            assert orchestrator.checkpoint_dir.exists()
             assert orchestrator.include_youtube is True
             assert orchestrator.verbose is False
+            assert orchestrator.run_id is not None
+            assert orchestrator.run_dir.exists()
 
             # Check clients were initialized
             mock_mb.assert_called_once()
