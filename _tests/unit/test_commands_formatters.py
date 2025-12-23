@@ -2,6 +2,8 @@
 
 # Standard library
 from pathlib import Path
+
+# Third-party
 from rich.panel import Panel
 from rich.table import Table
 
