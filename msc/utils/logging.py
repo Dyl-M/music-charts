@@ -3,6 +3,7 @@
 # Standard library
 import logging
 import sys
+from pathlib import Path
 from typing import Literal
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -11,23 +12,48 @@ LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 def setup_logging(
         level: LogLevel = "INFO",
         format_string: str | None = None,
+        console_level: LogLevel | None = None,
+        log_file: Path | None = None,
 ) -> None:
     """Configure the root logger with consistent formatting.
 
     Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+        level: Base logging level for file output (DEBUG, INFO, WARNING, ERROR, CRITICAL).
         format_string: Custom format string. Uses default if None.
+        console_level: Separate level for console output. If None, uses `level`.
+        log_file: Optional file path for file logging. If None, no file logging.
     """
     if format_string is None:
         format_string = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 
-    logging.basicConfig(
-        level=getattr(logging, level),
-        format=format_string,
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[logging.StreamHandler(sys.stdout)],
-        force=True,
+    # Set root logger to most verbose level (file or console)
+    root_level = level
+    if console_level:
+        # Use whichever is more verbose (lower level number)
+        root_level = level if getattr(logging, level) <= getattr(logging, console_level) else console_level
+
+    # Clear existing handlers
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.setLevel(getattr(logging, root_level))
+
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(getattr(logging, console_level or level))
+    console_handler.setFormatter(
+        logging.Formatter(format_string, datefmt="%Y-%m-%d %H:%M:%S")
     )
+    root_logger.addHandler(console_handler)
+
+    # File handler (if specified)
+    if log_file:
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
+        file_handler.setLevel(getattr(logging, level))
+        file_handler.setFormatter(
+            logging.Formatter(format_string, datefmt="%Y-%m-%d %H:%M:%S")
+        )
+        root_logger.addHandler(file_handler)
 
     # Reduce noise from third-party libraries
     logging.getLogger("urllib3").setLevel(logging.WARNING)
