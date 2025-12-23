@@ -15,6 +15,7 @@ from msc.commands.exporters import DataExporter
 from msc.commands.formatters import ExportFormatter, QuotaFormatter, ValidationFormatter
 from msc.commands.validators import FileValidator
 from msc.config.settings import get_settings
+from msc.models.stats import TrackWithStats
 from msc.utils.logging import setup_logging
 
 app = typer.Typer(
@@ -511,7 +512,7 @@ def clean(
         raise typer.Exit(1)
 
 
-def _has_platform_data(track: Any, platform_attr: str, stat_attr: str) -> bool:
+def _has_platform_data(track: TrackWithStats, platform_attr: str, stat_attr: str) -> bool:
     """Check if track has data for a specific platform stat.
 
     Args:
