@@ -251,6 +251,8 @@ class TestValidateCommand:
         from msc.config.settings import get_settings
 
         settings = get_settings()
+        # Ensure output directory exists
+        settings.output_dir.mkdir(parents=True, exist_ok=True)
         test_file = settings.output_dir / "test_validate.json"
 
         try:
