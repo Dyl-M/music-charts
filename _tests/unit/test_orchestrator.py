@@ -99,6 +99,105 @@ class TestPipelineOrchestratorInit:
             # Should have 4 default observers
             assert len(orchestrator._observers) == 4
 
+    @staticmethod
+    def test_find_latest_run_returns_none_when_no_runs_exist(tmp_path: Path) -> None:
+        """Test _find_latest_run returns None when no runs exist."""
+        with (
+            patch("msc.pipeline.orchestrator.MusicBeeClient"),
+            patch("msc.pipeline.orchestrator.SongstatsClient"),
+        ):
+            orchestrator = PipelineOrchestrator(data_dir=tmp_path, new_run=True)
+
+            # Clear the run directory that was just created
+            import shutil
+            runs_dir = tmp_path / "runs"
+            if runs_dir.exists():
+                shutil.rmtree(runs_dir)
+
+            result = orchestrator._find_latest_run(2025)
+            assert result is None
+
+    @staticmethod
+    def test_find_latest_run_finds_most_recent(tmp_path: Path) -> None:
+        """Test _find_latest_run finds the most recent run for a year."""
+        with (
+            patch("msc.pipeline.orchestrator.MusicBeeClient"),
+            patch("msc.pipeline.orchestrator.SongstatsClient"),
+        ):
+            # Create test run directories manually FIRST
+            runs_dir = tmp_path / "runs"
+            runs_dir.mkdir(parents=True, exist_ok=True)
+
+            (runs_dir / "2025_20251201_120000").mkdir()
+            (runs_dir / "2025_20251215_140000").mkdir()
+            (runs_dir / "2025_20251220_160000").mkdir()  # Latest
+            (runs_dir / "2024_20241231_235959").mkdir()  # Different year
+
+            # Create orchestrator with new_run=False (should find latest)
+            # This will automatically resume from the latest run
+            orchestrator = PipelineOrchestrator(
+                data_dir=tmp_path,
+                new_run=False,
+            )
+
+            # The orchestrator should have resumed from the latest run
+            assert orchestrator.run_id == "20251220_160000"
+
+    @staticmethod
+    def test_init_resumes_latest_run_by_default(tmp_path: Path) -> None:
+        """Test orchestrator resumes from latest run by default."""
+        with (
+            patch("msc.pipeline.orchestrator.MusicBeeClient"),
+            patch("msc.pipeline.orchestrator.SongstatsClient"),
+        ):
+            # Create existing run directory
+            runs_dir = tmp_path / "runs"
+            runs_dir.mkdir(parents=True, exist_ok=True)
+            existing_run = "20251220_120000"
+            (runs_dir / f"2025_{existing_run}").mkdir()
+
+            # Initialize without new_run flag (default: resume)
+            orchestrator = PipelineOrchestrator(data_dir=tmp_path, new_run=False)
+
+            # Should resume from existing run
+            assert orchestrator.run_id == existing_run
+            assert orchestrator.run_dir == runs_dir / f"2025_{existing_run}"
+
+    @staticmethod
+    def test_init_creates_new_run_with_new_run_flag(tmp_path: Path) -> None:
+        """Test orchestrator creates new run when new_run=True."""
+        with (
+            patch("msc.pipeline.orchestrator.MusicBeeClient"),
+            patch("msc.pipeline.orchestrator.SongstatsClient"),
+        ):
+            # Create existing run directory
+            runs_dir = tmp_path / "runs"
+            runs_dir.mkdir(parents=True, exist_ok=True)
+            existing_run = "20251220_120000"
+            (runs_dir / f"2025_{existing_run}").mkdir()
+
+            # Initialize with new_run flag
+            orchestrator = PipelineOrchestrator(data_dir=tmp_path, new_run=True)
+
+            # Should create new run (different from existing)
+            assert orchestrator.run_id != existing_run
+            assert orchestrator.run_dir != runs_dir / f"2025_{existing_run}"
+
+    @staticmethod
+    def test_init_creates_new_run_when_none_exist(tmp_path: Path) -> None:
+        """Test orchestrator creates new run when no runs exist."""
+        with (
+            patch("msc.pipeline.orchestrator.MusicBeeClient"),
+            patch("msc.pipeline.orchestrator.SongstatsClient"),
+        ):
+            # No existing runs
+            orchestrator = PipelineOrchestrator(data_dir=tmp_path, new_run=False)
+
+            # Should create new run
+            assert orchestrator.run_id is not None
+            assert orchestrator.run_dir.exists()
+            assert orchestrator.run_dir.name.startswith("2025_")
+
 
 class TestPipelineOrchestratorRun:
     """Tests for PipelineOrchestrator run method."""

@@ -517,6 +517,113 @@ Any additional context or related information
 
 ---
 
+## Manual Review Workflow
+
+### Filling in Missing Songstats IDs
+
+When tracks fail to find Songstats IDs automatically during extraction, they are added to the manual review queue. You can manually add the Songstats IDs and resume the pipeline from where it left off.
+
+#### Workflow Steps
+
+**1. Run the pipeline**
+
+```bash
+msc run --year 2025
+```
+
+The pipeline creates a run directory: `_data/runs/2025_YYYYMMDD_HHMMSS/`
+
+**2. Check failed tracks**
+
+Open the manual review file to see which tracks need manual IDs:
+```
+_data/runs/2025_YYYYMMDD_HHMMSS/manual_review.json
+```
+
+**3. Find Songstats IDs**
+
+For each failed track:
+- Go to [Songstats](https://songstats.com/)
+- Search for the track manually
+- Copy the ID from the URL: `https://songstats.com/track/<songstats_id>/...`
+
+**4. Add to extraction checkpoint**
+
+Open the checkpoint file:
+```
+_data/runs/2025_YYYYMMDD_HHMMSS/checkpoints/extraction_checkpoint.json
+```
+
+Add the track to the checkpoint's `processed_ids` array and update the tracks.json file.
+
+**Alternative: Edit tracks.json directly**
+
+Open the tracks repository:
+```
+_data/runs/2025_YYYYMMDD_HHMMSS/tracks.json
+```
+
+Find the track in the JSON array and add the Songstats ID:
+```json
+{
+  "title": "Track Name",
+  "artist_list": ["Artist Name"],
+  "year": 2025,
+  "songstats_identifiers": {
+    "songstats_id": "12345678",
+    "songstats_title": "Track Name",
+    "isrc": null
+  }
+}
+```
+
+**5. Resume the pipeline**
+
+By default, the pipeline automatically resumes from the most recent run for the year:
+
+```bash
+msc run --year 2025
+```
+
+The pipeline will:
+- ✅ Find the latest run directory (`2025_YYYYMMDD_HHMMSS`)
+- ✅ Load existing checkpoint with processed IDs
+- ✅ Skip already-processed tracks (including manually added ones)
+- ✅ Continue enrichment/ranking from where it left off
+
+#### CLI Flags
+
+- **Default behavior**: Resumes from most recent run for the year
+  ```bash
+  msc run --year 2025
+  ```
+
+- **Force new run**: Create fresh run directory instead of resuming
+  ```bash
+  msc run --year 2025 --new-run
+  ```
+
+- **Reset pipeline**: Clear all checkpoints and start from scratch
+  ```bash
+  msc run --year 2025 --reset
+  ```
+
+#### Implementation Details
+
+**Automatic Run Resumption** (orchestrator.py:74-92):
+- Pipeline searches for most recent run directory matching the year pattern
+- Run directories format: `_data/runs/{year}_{YYYYMMDD_HHMMSS}/`
+- Sorts by timestamp and automatically resumes from latest
+- Only creates new run if `--new-run` flag is used or no existing runs found
+
+**Checkpoint Persistence**:
+- Each run has its own checkpoint directory: `_data/runs/{year}_{run_id}/checkpoints/`
+- Checkpoints track `processed_ids`, `failed_ids`, and metadata
+- Extraction stage skips tracks already in `processed_ids` (extract.py:199-218)
+- Manual edits to tracks.json are preserved across resumptions
+
+---
+
 ## Resolution Tracking
 
 | Issue ID  | Priority    | Status   | Assigned | Target Version |

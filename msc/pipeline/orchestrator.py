@@ -48,6 +48,7 @@ class PipelineOrchestrator(Observable):
             include_youtube: bool = True,
             verbose: bool = False,
             run_id: str | None = None,
+            new_run: bool = False,
     ) -> None:
         """Initialize pipeline orchestrator.
 
@@ -56,7 +57,8 @@ class PipelineOrchestrator(Observable):
             checkpoint_dir: Directory for checkpoints (default: run_dir / "checkpoints")
             include_youtube: Whether to fetch YouTube data
             verbose: Enable verbose logging
-            run_id: Unique identifier for this run (default: timestamp-based)
+            run_id: Unique identifier for this run (default: auto-detect latest or create new)
+            new_run: If True, force creation of new run directory instead of resuming latest
         """
         super().__init__()
         self.settings = get_settings()
@@ -69,9 +71,25 @@ class PipelineOrchestrator(Observable):
         self.data_dir = data_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create run ID and run directory
+        # Determine run ID and run directory
         if run_id is None:
-            run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            if new_run:
+                # Force new run
+                run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+                self.logger.info("Creating new run: %s", run_id)
+
+            else:
+                # Try to find latest run for this year
+                latest_run = self._find_latest_run(self.settings.year)
+
+                if latest_run:
+                    run_id = latest_run
+                    self.logger.info("Resuming latest run: %s", run_id)
+
+                else:
+                    # No existing runs, create new
+                    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    self.logger.info("No existing runs found, creating new: %s", run_id)
 
         self.run_id = run_id
         self.run_dir = self.data_dir / "runs" / f"{self.settings.year}_{self.run_id}"
@@ -118,6 +136,47 @@ class PipelineOrchestrator(Observable):
 
         # Attach default observers
         self._setup_observers()
+
+    def _find_latest_run(self, year: int) -> str | None:
+        """Find the most recent run directory for the given year.
+
+        Args:
+            year: Year to search for
+
+        Returns:
+            Run ID (timestamp portion) of the latest run, or None if no runs exist
+        """
+        runs_dir = self.data_dir / "runs"
+        if not runs_dir.exists():
+            return None
+
+        # Find all run directories matching the year pattern
+        year_prefix = f"{year}_"
+        matching_runs = []
+
+        try:
+            for run_dir in runs_dir.iterdir():
+                if run_dir.is_dir() and run_dir.name.startswith(year_prefix):
+                    # Extract run_id (timestamp portion after year_)
+                    run_id = run_dir.name[len(year_prefix):]
+                    matching_runs.append(run_id)
+
+        except OSError as error:
+            self.logger.warning("Failed to scan runs directory: %s", error)
+            return None
+
+        if not matching_runs:
+            return None
+
+        # Sort by timestamp (run_id format: YYYYMMDD_HHMMSS)
+        # Most recent will be last
+        matching_runs.sort()
+        latest_run_id = matching_runs[-1]
+
+        self.logger.debug("Found %d existing runs for year %d, latest: %s",
+                          len(matching_runs), year, latest_run_id)
+
+        return latest_run_id
 
     def _setup_observers(self) -> None:
         """Setup default observers for pipeline monitoring."""

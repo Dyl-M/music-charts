@@ -190,6 +190,14 @@ def run(
             ),
         ] = False,
 
+        new_run: Annotated[
+            bool,
+            typer.Option(
+                "--new-run",
+                help="Force creation of new run directory instead of resuming latest run.",
+            ),
+        ] = False,
+
         playlist: Annotated[
             str,
             typer.Option(
@@ -201,10 +209,14 @@ def run(
 ) -> None:
     """Run the music charts pipeline.
 
+    By default, resumes from the most recent run directory for the given year.
+    Use --new-run to force creation of a fresh run directory.
+
     Examples:
-        msc run --year 2025
-        msc run --year 2025 --stage extract --stage enrich
-        msc run --year 2025 --reset  # Start from scratch
+        msc run --year 2025                    # Resume latest 2025 run or create new
+        msc run --year 2025 --new-run          # Force new run directory
+        msc run --year 2025 --stage extract    # Resume and run extraction only
+        msc run --year 2025 --reset            # Start from scratch
     """
     # Local import to avoid circular dependencies
     from msc.pipeline.orchestrator import PipelineOrchestrator
@@ -228,6 +240,7 @@ def run(
         orchestrator = PipelineOrchestrator(
             include_youtube=not no_youtube,
             verbose=is_verbose,
+            new_run=new_run,
         )
 
         # Reset if requested
