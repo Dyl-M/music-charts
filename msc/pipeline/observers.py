@@ -19,6 +19,7 @@ from rich.progress import (
     TaskID,
     TextColumn,
     TimeElapsedColumn,
+    TimeRemainingColumn,
 )
 
 # Local
@@ -142,9 +143,11 @@ class ProgressBarObserver(PipelineObserver):
             BarColumn(),
             MofNCompleteColumn(),
             TimeElapsedColumn(),
+            TimeRemainingColumn(),
             console=Console(),
         )
         self.tasks: dict[str, TaskID] = {}
+        self.current_items: dict[str, str] = {}
         self.started = False
 
     def on_event(self, event: PipelineEvent) -> None:
@@ -193,6 +196,35 @@ class ProgressBarObserver(PipelineObserver):
             if task and task.total is not None:
                 self.progress.update(task_id, completed=task.total)
 
+    def on_item_processing(self, event: PipelineEvent) -> None:
+        """Update progress bar with current item being processed.
+
+        Args:
+            event: Pipeline event with item information
+        """
+        if event.stage_name and event.stage_name in self.tasks:
+            task_id = self.tasks[event.stage_name]
+
+            # Extract current item display from metadata or item_id
+            if event.metadata and "current_item" in event.metadata:
+                item_display = event.metadata["current_item"]
+
+            elif event.item_id:
+                item_display = event.item_id
+
+            else:
+                item_display = "Processing..."
+
+            # Truncate long names to avoid terminal overflow
+            if len(item_display) > 40:
+                item_display = item_display[:37] + "..."
+
+            # Update description with current item
+            self.current_items[event.stage_name] = item_display
+            self.progress.update(
+                task_id, description=f"[cyan]{event.stage_name}[/cyan] → {item_display}"
+            )
+
     def on_item_completed(self, event: PipelineEvent) -> None:
         """Advance the progress bar."""
         if event.stage_name and event.stage_name in self.tasks:
@@ -200,9 +232,21 @@ class ProgressBarObserver(PipelineObserver):
             self.progress.advance(task_id, 1)
 
     def on_item_failed(self, event: PipelineEvent) -> None:
-        """Advance the progress bar (count failed items too)."""
+        """Advance progress bar and briefly show error.
+
+        Args:
+            event: Pipeline event with error information
+        """
         if event.stage_name and event.stage_name in self.tasks:
             task_id = self.tasks[event.stage_name]
+
+            # Show error briefly in description
+            if event.error:
+                error_msg = str(event.error)[:35]  # Truncate long errors
+                self.progress.update(
+                    task_id, description=f"[red]{event.stage_name}[/red] ✗ {error_msg}"
+                )
+
             self.progress.advance(task_id, 1)
 
     def close(self) -> None:
