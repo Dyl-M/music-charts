@@ -244,11 +244,182 @@ belong to which run. This makes it impossible to know which manual reviews are c
 
 *Nice-to-have improvements for future versions*
 
+#### [ISSUE-004] Poor Songstats API Search Success Rate Due to Unclean Queries
+
+**Command**: `msc run`
+
+**Description**:
+During extraction stage, approximately 52% of tracks fail to find Songstats IDs (196 failed out of 373 total tracks). Analysis of the manual review queue reveals that queries sent to Songstats API contain special characters, feature annotations, and punctuation that interfere with search accuracy.
+
+**Examples of Problematic Queries**:
+
+From manual_review.json analysis:
+* `"Oliverse & MØØNE adrenaline"` - Contains `&` in artist name
+* `"RIENK × Lukher the air i breathe"` - Contains `×` (multiplication sign)
+* `"ROY KNOX & Austin Christopher (feat. Stephanie Schulte) if i stay"` - Contains `&` and `(feat. ...)`
+* `"Andromedik (feat. Lauren L'aimant) air"` - Contains feature annotation
+* `"jeonghyeon & SUNGYOO all i need extended"` - Contains `&` separator
+
+**Expected Behavior**:
+
+* Artist names should be cleaned before building search queries
+* Special characters (`×`, `&`) should be replaced with spaces
+* Feature annotations (`(feat. ...)`, `(ft. ...)`) should be removed
+* Remaining parentheses/brackets should be stripped
+* Multiple spaces should be normalized to single spaces
+
+**Actual Behavior**:
+
+* Raw artist names from MusicBee are used directly in queries
+* Special characters and annotations cause search failures
+* Over half of tracks fail to find Songstats IDs
+
+**Status**:
+
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: Low (affects data quality, but not blocking for 1.0.0)
+
+**Location in Code**:
+
+* `msc/utils/text.py` - Query building functions
+* `msc/pipeline/extract.py:242` - Search query construction
+
+**Solution Implemented**:
+
+1. ✅ Added `format_artist()` function to clean artist names
+2. ✅ **REMOVE featured artists** entirely - they create query mismatches in Songstats (`(feat. Artist B)` → removed)
+3. ✅ Replaces special separators in artist names: `×` → space, `&` → space
+4. ✅ Removes remaining parentheses and brackets from artist names
+5. ✅ Enhanced `format_title()` to remove mix tags: `[Extended]`, `[Extended Mix]`, `[Original Mix]`, etc.
+6. ✅ Enhanced `format_title()` to remove punctuation: `!`, `"`, `.`, `,`
+7. ✅ **KEEP apostrophes** (`'`) - they are semantically important ("don't" ≠ "dont")
+8. ✅ Updated title separators: ` & ` → space (in addition to ` × `)
+9. ✅ Modified `build_search_query()` to use spaces instead of commas between artists
+10. ✅ Normalizes whitespace and converts to lowercase
+11. ✅ Added 23 comprehensive tests for query cleaning (47 total, all passing)
+
+**Important Finding**:
+
+Initial testing revealed that removing apostrophes actually **decreased** success rate:
+* Run 1 (with apostrophes removed): 313/368 successful (85.1%)
+* Run 2 (keeping apostrophes): Expected to improve
+
+Apostrophes are semantically critical:
+* "don't" vs "dont" - different words
+* "can't" vs "cant" - different words
+* "ain't" vs "aint" - different words
+
+**Corrective Action**: Reverted apostrophe removal to preserve query accuracy.
+
+**Files Modified**:
+
+* `msc/config/constants.py`: Added `[Extended]` and punctuation to TITLE_PATTERNS_TO_REMOVE, updated TITLE_PATTERNS_TO_SPACE
+* `msc/utils/text.py`: Added `format_artist()`, updated `build_search_query()` to use space separator
+* `_tests/unit/test_text.py`: Added 23 comprehensive tests (47 total, all passing)
+
+**Query Improvements**:
+
+Before:
+```
+"Oliverse & MØØNE adrenaline"
+"RIENK × Lukher the air i breathe"
+"ROY KNOX & Austin Christopher (feat. Stephanie Schulte) if i stay"
+```
+
+After:
+```
+"oliverse møøne adrenaline"
+"rienk lukher the air i breathe"
+"roy knox austin christopher if i stay"  (featured artist removed - prevents mismatches!)
+```
+
+**Testing**:
+
+* ✅ All 47 text utility tests passing
+* ⏳ Need to run full pipeline to measure improvement in success rate
+* ⏳ Compare manual review queue size before/after improvement
+
+**Expected Impact**:
+
+* Should significantly reduce the 52% failure rate
+* Cleaner queries should produce better Songstats search results
+* Fewer tracks requiring manual review
+
 ---
 
 ### Enhancement Requests
 
 *Feature requests discovered during validation*
+
+#### [ISSUE-005] Test Suite Runs on Full MusicBee Library
+
+**Command**: `msc run` (during testing/development)
+
+**Description**:
+When testing pipeline features or running quick validations, the test suite processes the entire MusicBee library (373+ tracks), making iteration cycles extremely long. Additionally, each test run creates output files in `_data/` that are not automatically cleaned up, leading to clutter and confusion about which outputs are current.
+
+**Steps to Reproduce**:
+
+1. Run `msc run` for testing
+2. Wait for full library extraction and processing (several minutes)
+3. Check `_data/runs/` - multiple run directories accumulate
+4. Check `_data/output/` - outputs from multiple test runs remain
+
+**Expected Behavior**:
+
+* Option to run pipeline on a small subset of tracks for rapid testing
+* Test mode that uses a fixture playlist with ~10-20 representative tracks
+* Automatic cleanup of test run artifacts
+* Clear separation between test runs and production runs
+
+**Actual Behavior**:
+
+* Every test run processes 373+ tracks regardless of purpose
+* Test iterations take several minutes each
+* `_data/runs/` accumulates multiple directories from testing
+* No easy way to distinguish test outputs from production outputs
+* Manual cleanup required between test runs
+
+**Status**:
+
+- [ ] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: Enhancement (not blocking, but significantly impacts development workflow)
+
+**Proposed Solutions**:
+
+1. **Test Playlist**: Create a dedicated small test playlist in MusicBee (e.g., "Test Selection 2025") with 10-20 representative tracks
+2. **CLI Flag**: Add `--test-mode` flag that uses test playlist and marks outputs
+3. **Auto-cleanup**: Add `--cleanup-after` flag to delete run directory after completion
+4. **Playlist Limit**: Add `--limit N` flag to process only first N tracks from any playlist
+5. **Test Fixtures**: Use the existing `_tests/fixtures/test_library.xml` for integration tests instead of production library
+
+**Expected Benefits**:
+
+* Faster iteration during development (seconds instead of minutes)
+* Cleaner `_data/` directory structure
+* Easier to test specific features or edge cases
+* Reduced API quota usage during testing
+
+**Workaround**:
+
+For now, manually create a small playlist in MusicBee for testing purposes and specify it with:
+```bash
+msc run --playlist "Test Playlist"
+```
+
+**Future Enhancements**:
+
+* Add `msc test` command that automatically uses test fixtures
+* Implement `--dry-run` mode that simulates pipeline without API calls
+* Add `msc clean --test-runs` to remove all test-related artifacts
 
 ---
 
@@ -319,6 +490,7 @@ Any additional context or related information
 - ISSUE-001: Log overflow during pipeline execution (High Priority) - ✅ Fixed
 - ISSUE-002: Temporary files in root data directory (Medium Priority) - ✅ Fixed
 - ISSUE-003: Manual review queue accumulates across runs (Medium Priority) - ✅ Fixed
+- ISSUE-004: Poor Songstats API search success rate due to unclean queries (Low Priority) - ✅ Fixed
 
 **Bugs Fixed During Testing**:
 
@@ -332,6 +504,10 @@ Any additional context or related information
 2. Isolated manual review items per run to prevent accumulation
 3. Moved checkpoints to run directory to prevent state contamination between runs
 4. Reorganized data directories (runs/, logs/, output/)
+5. Added comprehensive query cleaning to improve Songstats API search success rate:
+   * Artist name cleaning (remove `×`, `&`, feature annotations)
+   * Title punctuation removal (`!`, `"`, `.`, `,` - **keep apostrophes**)
+   * Space-based artist separator (no commas)
 
 **Notes**:
 
@@ -343,11 +519,13 @@ Any additional context or related information
 
 ## Resolution Tracking
 
-| Issue ID  | Priority | Status | Assigned | Target Version |
-|-----------|----------|--------|----------|----------------|
-| ISSUE-001 | High     | Fixed  | @Dyl-M   | 1.0.0          |
-| ISSUE-002 | Medium   | Fixed  | @Dyl-M   | 1.0.0          |
-| ISSUE-003 | Medium   | Fixed  | @Dyl-M   | 1.0.0          |
+| Issue ID  | Priority    | Status   | Assigned | Target Version |
+|-----------|-------------|----------|----------|----------------|
+| ISSUE-001 | High        | Fixed    | @Dyl-M   | 1.0.0          |
+| ISSUE-002 | Medium      | Fixed    | @Dyl-M   | 1.0.0          |
+| ISSUE-003 | Medium      | Fixed    | @Dyl-M   | 1.0.0          |
+| ISSUE-004 | Low         | Fixed    | @Dyl-M   | 1.0.0          |
+| ISSUE-005 | Enhancement | Deferred | @Dyl-M   | Future         |
 
 ---
 

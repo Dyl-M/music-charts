@@ -74,6 +74,7 @@ CATEGORY_WEIGHTS: dict[StatCategory, int] = {
 # Title formatting patterns for API search
 TITLE_PATTERNS_TO_REMOVE: tuple[str, ...] = (
     "[Extended Mix]",
+    "[Extended]",
     "[Original Mix]",
     "[Remix]",
     "[Extended Version]",
@@ -83,11 +84,15 @@ TITLE_PATTERNS_TO_REMOVE: tuple[str, ...] = (
     "?",
     "(",
     ")",
+    "!",
+    '"',
+    ".",
+    ",",
 )
 
 TITLE_PATTERNS_TO_SPACE: tuple[str, ...] = (
     " × ",
-    ", ",
+    " & ",
 )
 
 # API endpoints
