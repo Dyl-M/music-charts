@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Third-party
-import pytest
 from typer.testing import CliRunner
 
 # Local
@@ -152,7 +151,7 @@ class TestRunCommand:
         assert "Ranking:     ✗" in result.stdout  # Not selected
 
     @staticmethod
-    def test_run_with_reset_confirmed(tmp_path: Path) -> None:
+    def test_run_with_reset_confirmed() -> None:
         """Should reset pipeline when confirmed."""
         with patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orch_class:
             mock_orch = mock_orch_class.return_value
@@ -204,15 +203,27 @@ class TestBillingCommand:
     """Tests for the billing command."""
 
     @staticmethod
-    def test_billing_not_implemented() -> None:
-        """Should raise NotImplementedError after loading key."""
-        # Mock the API key loading
-        with patch("msc.cli.get_settings") as mock_settings:
+    def test_billing_success() -> None:
+        """Should display quota information successfully."""
+        # Mock the settings and client
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.clients.songstats.SongstatsClient") as mock_client_class:
             mock_instance = mock_settings.return_value
             mock_instance.get_songstats_key.return_value = "test_key_12345"
 
-            with pytest.raises(NotImplementedError, match="Billing check not yet implemented"):
-                runner.invoke(app, ["billing"], catch_exceptions=False)
+            # Mock the client and its get_quota method
+            mock_client = Mock()
+            mock_client.get_quota.return_value = {
+                "requests_used": 100,
+                "requests_limit": 1000,
+                "reset_date": "2025-01-01",
+            }
+            mock_client_class.return_value = mock_client
+
+            result = runner.invoke(app, ["billing"])
+
+            assert result.exit_code == 0
+            assert "Songstats API Quota" in result.stdout or "100" in result.stdout
 
     @staticmethod
     def test_billing_missing_api_key() -> None:
@@ -233,14 +244,43 @@ class TestValidateCommand:
     """Tests for the validate command."""
 
     @staticmethod
-    def test_validate_not_implemented(tmp_path: Path) -> None:
-        """Should raise NotImplementedError."""
-        # Create a test file
-        test_file = tmp_path / "test.json"
-        test_file.write_text('{"test": "data"}', encoding="utf-8")
+    def test_validate_success() -> None:
+        """Should validate a valid file successfully."""
+        # Create a valid Track JSON file with required fields
+        import json
+        from msc.config.settings import get_settings
 
-        with pytest.raises(NotImplementedError, match="Schema validation not yet implemented"):
-            runner.invoke(app, ["validate", str(test_file)], catch_exceptions=False)
+        settings = get_settings()
+        # Ensure output directory exists
+        settings.output_dir.mkdir(parents=True, exist_ok=True)
+        test_file = settings.output_dir / "test_validate.json"
+
+        try:
+            test_data = [{
+                "title": "Test Song",
+                "artist_list": ["Artist"],
+                "year": 2025,
+                "genre": [],
+                "label": [],
+                "grouping": None,
+                "search_query": None,
+                "songstats_identifiers": {
+                    "songstats_id": "",
+                    "songstats_title": "",
+                    "isrc": None
+                }
+            }]
+            test_file.write_text(json.dumps(test_data), encoding="utf-8")
+
+            result = runner.invoke(app, ["validate", str(test_file)])
+
+            assert result.exit_code == 0
+            assert "Validation passed" in result.stdout or "valid" in result.stdout.lower()
+
+        finally:
+            # Clean up test file
+            if test_file.exists():
+                test_file.unlink()
 
     @staticmethod
     def test_validate_file_not_found() -> None:

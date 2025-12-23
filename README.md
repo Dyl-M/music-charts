@@ -15,24 +15,24 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 ## Status
 
-**Current:** Phase 4 (Pipeline Migration) ✅ **Complete** - Full ETL pipeline with clean architecture patterns
-- **3 pipeline stages** (Extract, Enrich, Rank) with checkpoint resumability
-- **3 analysis modules** (Normalizers, Scorer, Strategy Pattern)
-- **3 storage modules** (Repository Pattern, Checkpoint, Manual Review Queue)
-- **4 observer implementations** (Console, File, Progress, Metrics)
-- **17 demo scripts** showcasing all components (clients, models, pipeline, analysis)
-- **653 tests** with comprehensive coverage across all phases
+**Current:** Phase 5 (CLI & Polish) ✅ **Complete** - Professional-grade CLI with comprehensive features
+- **7 CLI commands:** `run`, `billing`, `validate`, `export`, `clean`, `stats`, `init`
+- **Error handling infrastructure:** Custom exceptions with helpful multi-line suggestions
+- **Display formatters:** Rich tables and panels for quota, validation errors, export summaries
+- **File validation:** Auto-detection and validation against Pydantic models
+- **Data export:** CSV, ODS (LibreOffice), and HTML formats with statistics
+- **Cache management:** Statistics and cleanup with dry-run mode
+- **Enhanced progress bars:** ETA, current item display, error visibility
 
 **Completed Phases:**
+- Phase 4 (Pipeline Migration) ✅ Complete - Full ETL pipeline with clean architecture
 - Phase 3 (Data Models) ✅ Complete - 17 models (Track, PlatformStats, PowerRanking, etc.)
-- Phase 2 (API Clients) ✅ Complete - 3 clients with (MusicBee, Songstats, YouTube)
+- Phase 2 (API Clients) ✅ Complete - 3 clients (MusicBee, Songstats, YouTube)
 - Phase 1 (Foundation) ✅ Complete - Config, utils, base classes (100% coverage)
 
 **Package Manager:** [uv](https://github.com/astral-sh/uv) for faster dependency resolution and reproducible builds
 
 **Legacy:** Original ETL scripts archived in `_legacy/` for reference
-
-**Next:** Phase 5 - CLI & Polish (Full CLI implementation, progress bars, documentation)
 
 ## Installation
 
@@ -54,23 +54,84 @@ pip install -e ".[dev]"
 
 ## Quick Start
 
-### New CLI (In Development)
+### Initialize Project
 
 ```bash
-# Initialize directory structure
+# Create directory structure
 msc init
-
-# Check Songstats API quota
-msc billing
-
-# Run pipeline (not yet implemented)
-msc run --year 2025
 ```
 
-### Legacy Pipeline
+### Run Full Pipeline
 
 ```bash
-# Run pipeline stages sequentially
+# Run all stages (extract, enrich, rank)
+msc run --year 2025
+
+# Run specific stages only
+msc run --year 2025 --stage extract --stage enrich
+
+# Skip YouTube enrichment
+msc run --year 2025 --no-youtube
+
+# Reset and start fresh
+msc run --year 2025 --reset
+
+# Custom playlist
+msc run --year 2025 --playlist "My Custom Playlist"
+```
+
+### Check API Quota
+
+```bash
+# View Songstats API usage and remaining quota
+msc billing
+```
+
+### Export Data
+
+```bash
+# Export to CSV (default)
+msc export --year 2025
+
+# Export to ODS (LibreOffice/OpenOffice)
+msc export --year 2025 --format ods --output rankings.ods
+
+# Export to HTML
+msc export --year 2025 --format html --output report.html
+```
+
+### Validate Data Files
+
+```bash
+# Validate any JSON data file (auto-detects format)
+msc validate _data/output/2025/stats.json
+msc validate _data/output/2025/rankings.json
+```
+
+### View Statistics
+
+```bash
+# Display dataset statistics
+msc stats --year 2025
+```
+
+### Clean Cache
+
+```bash
+# Dry run (shows what would be deleted)
+msc clean
+
+# Actually delete cache files
+msc clean --no-dry-run
+
+# Delete files older than 7 days
+msc clean --no-dry-run --older-than 7
+```
+
+### Legacy Pipeline (Archived)
+
+```bash
+# Run pipeline stages sequentially (legacy method)
 cd _legacy/src && python data-mining-prep.py       # Stage 1: Extract & search
 cd _legacy/src && python data-mining-sstats.py     # Stage 2: Fetch platform stats
 cd _legacy/src && python data-mining-completion.py # Stage 3: YouTube enrichment

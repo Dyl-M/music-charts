@@ -27,6 +27,7 @@ dependencies = [
     "google-auth>=2.41.0, <2.42.0",
     "google-auth-oauthlib>=1.2.3",
     "libpybee>=0.2.1",
+    "odfpy>=1.4.1",
     "pandas>=2.3.0",
     "plotly>=6.5.0",
     "pydantic>=2.10.0",
