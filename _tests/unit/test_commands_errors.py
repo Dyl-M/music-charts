@@ -1,8 +1,5 @@
 """Unit tests for CLI error handlers."""
 
-# Third-party
-import pytest
-
 # Local
 from msc.commands.errors import (
     CLIError,
@@ -55,7 +52,6 @@ class TestErrorHandlerRegistry:
     @staticmethod
     def test_register_handler() -> None:
         """Should register custom error handler."""
-
         # Define custom exception
         class CustomError(Exception):
             pass

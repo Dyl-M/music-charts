@@ -7,9 +7,6 @@ using rich library components for professional terminal output.
 # Standard library
 from pathlib import Path
 from typing import Any, Union
-
-# Third-party
-from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
