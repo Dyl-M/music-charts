@@ -103,31 +103,39 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
 
             for track_data in raw_tracks:
                 # Check year
-                year = track_data.get("year")
+                year = track_data.year
                 if year != self.settings.year:
                     continue
 
                 # Create Track model
                 try:
                     # Convert artist string to list (MusicBee returns comma-separated string)
-                    artist_str = track_data["artist"]
+                    artist_str = track_data.artist
                     artist_list = [a.strip() for a in artist_str.split(",")] \
                         if isinstance(artist_str, str) else [artist_str]
 
+                    # Get optional fields with fallback
+                    label = getattr(track_data, "label", None)
+                    genre = getattr(track_data, "genre", None)
+
+                    # Handle label/genre - they may be strings or already lists
+                    label_list = [label] if label and not isinstance(label, list) else (label if label else [])
+                    genre_list = [genre] if genre and not isinstance(genre, list) else (genre if genre else [])
+
                     track = Track(
-                        title=track_data["title"],
+                        title=track_data.title,
                         artist_list=artist_list,
                         year=year,
-                        label=[track_data.get("label")] if track_data.get("label") else [],
-                        genre=[track_data.get("genre")] if track_data.get("genre") else [],
+                        label=label_list,
+                        genre=genre_list,
                         # songstats_identifiers will default to empty SongstatsIdentifiers
                     )
                     tracks.append(track)
 
-                except (ValidationError, KeyError, TypeError) as error:
+                except (ValidationError, KeyError, TypeError, AttributeError) as error:
                     self.logger.exception(
                         "Failed to create Track model for: %s - %s",
-                        track_data.get("title"),
+                        getattr(track_data, "title", "Unknown"),
                         error,
                     )
 
