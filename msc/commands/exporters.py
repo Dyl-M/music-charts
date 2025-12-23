@@ -27,6 +27,7 @@ class ExportResult:
         file_size_bytes: Size of output file in bytes
         duration_seconds: Time taken for export operation
     """
+
     success: bool
     file_path: Path
     row_count: int

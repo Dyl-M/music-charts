@@ -152,7 +152,7 @@ class TestFileValidatorValidateFile:
         test_file.write_text(json.dumps(data), encoding="utf-8")
 
         validator = FileValidator()
-        result = validator.validate_file(test_file)
+        result = validator.validate_file(test_file, base_dir=tmp_path)
 
         assert result.is_valid is True
         assert result.model_name == "Track"
@@ -167,7 +167,7 @@ class TestFileValidatorValidateFile:
         test_file.write_text(json.dumps(data), encoding="utf-8")
 
         validator = FileValidator()
-        result = validator.validate_file(test_file)
+        result = validator.validate_file(test_file, base_dir=tmp_path)
 
         assert result.is_valid is False
         assert result.model_name == "Track"
@@ -181,19 +181,20 @@ class TestFileValidatorValidateFile:
         test_file.write_text(json.dumps(data), encoding="utf-8")
 
         validator = FileValidator()
-        result = validator.validate_file(test_file)
+        result = validator.validate_file(test_file, base_dir=tmp_path)
 
         assert result.is_valid is False
         assert result.model_name == "Unknown"
         assert result.error_count == 1
 
     @staticmethod
-    def test_validate_file_not_found() -> None:
+    def test_validate_file_not_found(tmp_path: Path) -> None:
         """Should raise FileNotFoundError for missing file."""
         validator = FileValidator()
+        nonexistent_file = tmp_path / "nonexistent.json"
 
         with pytest.raises(FileNotFoundError):
-            validator.validate_file(Path("/nonexistent/file.json"))
+            validator.validate_file(nonexistent_file, base_dir=tmp_path)
 
     @staticmethod
     def test_validate_invalid_json(tmp_path: Path) -> None:
@@ -204,7 +205,7 @@ class TestFileValidatorValidateFile:
         validator = FileValidator()
 
         with pytest.raises(json.JSONDecodeError):
-            validator.validate_file(test_file)
+            validator.validate_file(test_file, base_dir=tmp_path)
 
 
 class TestFileValidatorValidateData:

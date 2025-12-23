@@ -14,9 +14,11 @@ from typing import Any, Callable
 from pydantic import ValidationError
 
 # Local
+from msc.config.settings import get_settings
 from msc.models.ranking import PowerRankingResults
 from msc.models.stats import TrackWithStats
 from msc.models.track import Track
+from msc.utils.path_utils import validate_path_within_base
 
 
 @dataclass(frozen=True)
@@ -115,11 +117,17 @@ class FileValidator:
 
         return "Unknown"
 
-    def validate_file(self, file_path: Path) -> ValidationResult:
+    def validate_file(
+            self,
+            file_path: Path,
+            base_dir: Path | None = None,
+    ) -> ValidationResult:
         """Validate JSON file against appropriate model.
 
         Args:
             file_path: Path to JSON file
+            base_dir: Optional base directory for path validation.
+                     If None, uses project root for security.
 
         Returns:
             ValidationResult with validation status and errors
@@ -127,9 +135,22 @@ class FileValidator:
         Raises:
             FileNotFoundError: If file doesn't exist
             json.JSONDecodeError: If file is not valid JSON
+            ValueError: If file path is outside allowed directory
         """
+        # Validate file path is within allowed directory for security
+        if base_dir is None:
+            # Use project root as default for CLI usage
+            settings = get_settings()
+            base_dir = settings.data_dir.parent
+
+        validated_path = validate_path_within_base(
+            Path(file_path),
+            base_dir,
+            "validation"
+        )
+
         # Load JSON
-        with open(file_path, encoding="utf-8") as f:
+        with open(validated_path, encoding="utf-8") as f:
             data = json.load(f)
 
         # Auto-detect file type

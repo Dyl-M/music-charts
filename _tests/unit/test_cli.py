@@ -244,31 +244,41 @@ class TestValidateCommand:
     """Tests for the validate command."""
 
     @staticmethod
-    def test_validate_success(tmp_path: Path) -> None:
+    def test_validate_success() -> None:
         """Should validate a valid file successfully."""
         # Create a valid Track JSON file with required fields
         import json
-        test_file = tmp_path / "test.json"
-        test_data = [{
-            "title": "Test Song",
-            "artist_list": ["Artist"],
-            "year": 2025,
-            "genre": [],
-            "label": [],
-            "grouping": None,
-            "search_query": None,
-            "songstats_identifiers": {
-                "songstats_id": "",
-                "songstats_title": "",
-                "isrc": None
-            }
-        }]
-        test_file.write_text(json.dumps(test_data), encoding="utf-8")
+        from msc.config.settings import get_settings
 
-        result = runner.invoke(app, ["validate", str(test_file)])
+        settings = get_settings()
+        test_file = settings.output_dir / "test_validate.json"
 
-        assert result.exit_code == 0
-        assert "Validation passed" in result.stdout or "valid" in result.stdout.lower()
+        try:
+            test_data = [{
+                "title": "Test Song",
+                "artist_list": ["Artist"],
+                "year": 2025,
+                "genre": [],
+                "label": [],
+                "grouping": None,
+                "search_query": None,
+                "songstats_identifiers": {
+                    "songstats_id": "",
+                    "songstats_title": "",
+                    "isrc": None
+                }
+            }]
+            test_file.write_text(json.dumps(test_data), encoding="utf-8")
+
+            result = runner.invoke(app, ["validate", str(test_file)])
+
+            assert result.exit_code == 0
+            assert "Validation passed" in result.stdout or "valid" in result.stdout.lower()
+
+        finally:
+            # Clean up test file
+            if test_file.exists():
+                test_file.unlink()
 
     @staticmethod
     def test_validate_file_not_found() -> None:

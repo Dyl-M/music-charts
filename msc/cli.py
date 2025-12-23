@@ -511,6 +511,34 @@ def clean(
         raise typer.Exit(1)
 
 
+def _count_platform_tracks(data: list) -> dict[str, int]:
+    """Count tracks with data on each platform.
+
+    Args:
+        data: List of TrackWithStats objects
+
+    Returns:
+        Dictionary mapping platform names to track counts
+    """
+    return {
+        "Spotify": sum(
+            1 for t in data if t.platform_stats.spotify and t.platform_stats.spotify.streams
+        ),
+        "Apple Music": sum(
+            1 for t in data if t.platform_stats.apple_music and t.platform_stats.apple_music.streams
+        ),
+        "YouTube": sum(
+            1 for t in data if t.platform_stats.youtube and t.platform_stats.youtube.views
+        ),
+        "Deezer": sum(
+            1 for t in data if t.platform_stats.deezer and t.platform_stats.deezer.fans
+        ),
+        "TikTok": sum(
+            1 for t in data if t.platform_stats.tiktok and t.platform_stats.tiktok.views
+        ),
+    }
+
+
 @app.command()
 def stats(
         year: Annotated[
@@ -553,19 +581,9 @@ def stats(
             )
             raise typer.Exit(1)
 
-        # Calculate basic statistics
+        # Calculate statistics
         total_tracks = len(data)
-
-        # Count tracks with data on each platform
-        platform_counts = {
-            "Spotify": sum(
-                1 for t in data if t.platform_stats.spotify is not None and t.platform_stats.spotify.streams),
-            "Apple Music": sum(
-                1 for t in data if t.platform_stats.apple_music is not None and t.platform_stats.apple_music.streams),
-            "YouTube": sum(1 for t in data if t.platform_stats.youtube is not None and t.platform_stats.youtube.views),
-            "Deezer": sum(1 for t in data if t.platform_stats.deezer is not None and t.platform_stats.deezer.fans),
-            "TikTok": sum(1 for t in data if t.platform_stats.tiktok is not None and t.platform_stats.tiktok.views),
-        }
+        platform_counts = _count_platform_tracks(data)
 
         # Display statistics
         typer.echo(f"\n=== Dataset Statistics - {year} ===\n")

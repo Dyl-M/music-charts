@@ -54,6 +54,7 @@ class TestErrorHandlerRegistry:
         """Should register custom error handler."""
         # Define custom exception
         class CustomError(Exception):
+            """Custom test exception."""
             pass
 
         # Register handler
@@ -73,6 +74,7 @@ class TestErrorHandlerRegistry:
         """Should return the original handler function after registration."""
 
         class TestError(Exception):
+            """Test exception for handler testing."""
             pass
 
         @ErrorHandler.register(TestError)
@@ -149,6 +151,7 @@ class TestErrorHandlerHandle:
         """Should provide generic help for unknown errors."""
 
         class UnknownError(Exception):
+            """Unknown exception type for testing."""
             pass
 
         error = UnknownError("Something went wrong")
