@@ -278,10 +278,9 @@ def run(
 
 @app.command()
 def billing() -> None:
-    """Check Songstats API billing and quota status.
+    """Check Songstats API billing and usage status.
 
-    Displays current API usage, remaining quota, and reset date.
-    Warns if usage exceeds 80% of monthly limit.
+    Displays current month API usage, billing costs, and comparison with previous month.
 
     Examples:
         msc billing
@@ -305,16 +304,6 @@ def billing() -> None:
         table = QuotaFormatter.format_billing_table(quota_data)
         console = Console()
         console.print(table)
-
-        # Warn if usage is high (>= 80%)
-        requests_used = quota_data.get("requests_used", 0)
-        requests_limit = quota_data.get("requests_limit", 0)
-        usage_pct = (requests_used / requests_limit) * 100 if requests_limit > 0 else 0.0
-
-        if usage_pct >= 80:
-            console.print(
-                f"\n⚠️  [bold yellow]Warning: {usage_pct:.1f}% of monthly quota used[/bold yellow]"
-            )
 
     except Exception as error:
         help_text = ErrorHandler.handle(error)
