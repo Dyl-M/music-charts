@@ -206,7 +206,12 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                 if self.include_youtube:
                     youtube_results = self.songstats.get_youtube_videos(songstats_id)
 
-                    if youtube_results:
+                    # Check if YouTube data is valid (all required fields present and not None)
+                    most_viewed = youtube_results.get("most_viewed") if youtube_results else None
+                    if (most_viewed
+                            and most_viewed.get("ytb_id")
+                            and most_viewed.get("views") is not None
+                            and most_viewed.get("channel_name")):
                         # Convert API response to YouTubeVideoData model
                         most_viewed_video = YouTubeVideo(**youtube_results["most_viewed"])
                         video_ids = [video["ytb_id"] for video in youtube_results["all_sources"]]

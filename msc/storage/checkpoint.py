@@ -317,7 +317,7 @@ class ManualReviewQueue:
             reason: str,
             metadata: dict[str, Any] | None = None,
     ) -> None:
-        """Add an item to the review queue.
+        """Add an item to the review queue with deduplication.
 
         Args:
             track_id: Track identifier
@@ -326,6 +326,11 @@ class ManualReviewQueue:
             reason: Reason for manual review
             metadata: Additional metadata
         """
+        # Check if track_id already exists in queue (deduplication)
+        if any(existing.track_id == track_id for existing in self.items):
+            self.logger.debug("Track already in review queue, skipping: %s", track_id)
+            return
+
         item = ManualReviewItem(
             track_id=track_id,
             title=title,

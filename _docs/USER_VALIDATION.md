@@ -71,28 +71,29 @@ channel_name
 **Status**:
 
 - [x] Planned
-- [ ] In Progress
-- [ ] Fixed
+- [x] In Progress
+- [x] Fixed
 - [ ] Deferred
 
 **Priority**: Critical (causes track enrichment to fail unnecessarily)
 
 **Location in Code**:
 
-- `msc/pipeline/enrich.py:211` - Attempts to create YouTubeVideo from empty dict
-- `msc/pipeline/enrich.py:207-218` - YouTube data processing block
+- `msc/pipeline/enrich.py:209-211` - YouTube data validation check
+- `msc/pipeline/enrich.py:207-223` - YouTube data processing block
 
 **Root Cause**:
 
-The code assumes `youtube_results["most_viewed"]` is always a valid dict with required fields:
+The code checked `if youtube_results:` but an empty dict like `{"most_viewed": {}, "all_sources": []}` is truthy in
+Python, so it passed the check and tried to create YouTubeVideo from the empty dict, causing Pydantic validation errors.
+
+Before:
 
 ```python
 if youtube_results:
     # Convert API response to YouTubeVideoData model
     most_viewed_video = YouTubeVideo(**youtube_results["most_viewed"])  # FAILS if empty!
 ```
-
-When Songstats API returns `{"most_viewed": {}, "all_sources": []}`, the code crashes.
 
 **Impact**:
 
@@ -101,10 +102,45 @@ When Songstats API returns `{"most_viewed": {}, "all_sources": []}`, the code cr
 - Increases failed track count unnecessarily
 - Reduces overall enrichment success rate
 
-**Solution Needed**:
+**Solution Implemented**:
 
-Add validation to check if `most_viewed` dict contains required fields before creating YouTubeVideo model. If empty,
-skip YouTube enrichment but continue with platform stats.
+1. ✅ Added comprehensive validation to check ALL required YouTubeVideo fields
+2. ✅ Check that `ytb_id`, `views`, and `channel_name` all exist and are not None
+3. ✅ Special handling for `views` field which can be None (causing int validation error)
+4. ✅ Only create YouTubeVideo model if all required fields are valid
+5. ✅ Skip YouTube enrichment gracefully if any field is missing/invalid
+6. ✅ Continue processing track with platform stats even if YouTube data is incomplete
+7. ✅ Log debug message when YouTube data is not found
+
+After:
+
+```python
+# Check if YouTube data is valid (all required fields present and not None)
+most_viewed = youtube_results.get("most_viewed") if youtube_results else None
+if (most_viewed
+        and most_viewed.get("ytb_id")
+        and most_viewed.get("views") is not None  # Explicit None check for int field!
+        and most_viewed.get("channel_name")):
+    # Convert API response to YouTubeVideoData model
+    most_viewed_video = YouTubeVideo(**youtube_results["most_viewed"])
+    # ... rest of processing
+else:
+    self.logger.debug("No YouTube data found for: %s", track.title)
+```
+
+**Files Modified**:
+
+- `msc/pipeline/enrich.py:209-214` - Added comprehensive YouTube data validation
+
+**Two Types of Failures Fixed**:
+
+1. **Empty dict**: `{"most_viewed": {}, "all_sources": []}` - Missing all fields
+2. **Partial data with None values**: `{"most_viewed": {"ytb_id": "abc", "views": None, "channel_name": "X"}}` - Field exists but value is None
+
+**Testing**:
+
+- ✅ All 22 enrichment stage tests passing
+- ✅ Both empty dict and None value cases handled
 
 **Related Files**:
 
@@ -272,20 +308,22 @@ grep -c "kirara_magic_aim_tech" manual_review.json
 **Status**:
 
 - [x] Planned
-- [ ] In Progress
-- [ ] Fixed
+- [x] In Progress
+- [x] Fixed
 - [ ] Deferred
 
 **Priority**: High (significantly impacts manual review workflow usability)
 
 **Location in Code**:
 
-- `msc/storage/checkpoint.py:338` - `ManualReviewQueue.add()` appends without checking duplicates
+- `msc/storage/checkpoint.py:329-332` - Deduplication check in `ManualReviewQueue.add()`
 - `msc/pipeline/extract.py` - Adds failed tracks to queue during search process
 
 **Root Cause**:
 
-The `ManualReviewQueue.add()` method simply appends items without checking if the track_id already exists:
+The `ManualReviewQueue.add()` method was simply appending items without checking if the track_id already exists.
+
+Before:
 
 ```python
 def add(self, item: ManualReviewItem) -> None:
@@ -305,20 +343,37 @@ added to the queue multiple times.
 - Poor user experience for manual validation workflow
 - Confusion about how many tracks actually need review
 
-**Solution Needed**:
+**Solution Implemented**:
 
-Add deduplication logic to `ManualReviewQueue.add()`:
+1. ✅ Added deduplication check in `ManualReviewQueue.add()` method
+2. ✅ Check if track_id already exists before appending
+3. ✅ Log debug message when duplicate is skipped
+4. ✅ Return early if duplicate found (no save operation needed)
+
+After:
 
 ```python
-def add(self, item: ManualReviewItem) -> None:
-    """Add item to queue (with deduplication)."""
-    # Check if track_id already exists
-    if not any(existing.track_id == item.track_id for existing in self.items):
-        self.items.append(item)
-        self._save()
+def add(self, track_id: str, title: str, artist: str, reason: str, ...) -> None:
+    """Add an item to the review queue with deduplication."""
+    # Check if track_id already exists in queue (deduplication)
+    if any(existing.track_id == track_id for existing in self.items):
+        self.logger.debug("Track already in review queue, skipping: %s", track_id)
+        return
+
+    # Create and append item
+    item = ManualReviewItem(...)
+    self.items.append(item)
+    self._save()
 ```
 
-Or use a dict internally keyed by track_id instead of a list for automatic deduplication.
+**Files Modified**:
+
+- `msc/storage/checkpoint.py:329-332` - Added deduplication check
+
+**Testing**:
+
+- ✅ All 9 existing ManualReviewQueue tests passing
+- ✅ Deduplication logic verified in code review
 
 **Related Files**:
 
@@ -1073,8 +1128,8 @@ The pipeline will:
 | ISSUE-004 | Low         | Fixed    | @Dyl-M   | 1.0.0          |
 | ISSUE-005 | Enhancement | Deferred | @Dyl-M   | Future         |
 | ISSUE-006 | Critical    | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-007 | Critical    | Planned  | @Dyl-M   | 1.0.0          |
-| ISSUE-008 | High        | Planned  | @Dyl-M   | 1.0.0          |
+| ISSUE-007 | Critical    | Fixed    | @Dyl-M   | 1.0.0          |
+| ISSUE-008 | High        | Fixed    | @Dyl-M   | 1.0.0          |
 | ISSUE-009 | High        | Fixed    | @Dyl-M   | 1.0.0          |
 
 ---
