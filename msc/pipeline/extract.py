@@ -102,32 +102,48 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
             tracks: list[Track] = []
 
             for track_data in raw_tracks:
+                # Handle both dict and object (libpybee.Track) formats
+                if isinstance(track_data, dict):
+                    year = track_data.get("year")
+                    artist_list = track_data.get("artist_list", [])
+                    title = track_data.get("title", "")
+                    grouping = track_data.get("grouping")
+                    genre = track_data.get("genre")
+
+                else:
+                    year = track_data.year
+                    artist_list = getattr(track_data, "artist_list", [])
+                    title = track_data.title
+                    grouping = getattr(track_data, "grouping", None)
+                    genre = getattr(track_data, "genre", None)
+
                 # Check year
-                year = track_data.year
                 if year != self.settings.year:
                     continue
 
                 # Create Track model
                 try:
-                    # Convert artist string to list (MusicBee returns comma-separated string)
-                    artist_str = track_data.artist
-                    artist_list = [a.strip() for a in artist_str.split(",")] \
-                        if isinstance(artist_str, str) else [artist_str]
+                    # Use native artist_list from libpybee (no manual parsing needed)
+                    # Fallback to empty list if not available
+                    if not artist_list:
+                        artist_list = []
 
                     # Get optional fields with fallback
-                    label = getattr(track_data, "label", None)
-                    genre = getattr(track_data, "genre", None)
+                    # Note: In this MusicBee setup, record labels are stored in the 'grouping' field
+                    # Authoritative labels are now in songstats_identifiers.songstats_labels
 
-                    # Handle label/genre - they may be strings or already lists
-                    label_list = [label] if label and not isinstance(label, list) else (label if label else [])
+                    # Handle genre - may be string or list
                     genre_list = [genre] if genre and not isinstance(genre, list) else (genre if genre else [])
 
+                    # libpybee returns grouping as a list natively - use directly
+                    grouping_list = grouping if grouping else []
+
                     track = Track(
-                        title=track_data.title,
+                        title=title,
                         artist_list=artist_list,
                         year=year,
-                        label=label_list,
                         genre=genre_list,
+                        grouping=grouping_list,  # Store as list (supports multiple values)
                         # songstats_identifiers will default to empty SongstatsIdentifiers
                     )
                     tracks.append(track)
@@ -135,7 +151,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 except (ValidationError, KeyError, TypeError, AttributeError) as error:
                     self.logger.exception(
                         "Failed to create Track model for: %s - %s",
-                        getattr(track_data, "title", "Unknown"),
+                        title if 'title' in locals() else "Unknown",
                         error,
                     )
 
@@ -235,6 +251,9 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
 
             self.notify(event)
 
+            # Initialize query to None (will be set if query building succeeds)
+            query = None
+
             try:
                 # Build search query
                 formatted_title = format_title(track.title)
@@ -247,15 +266,71 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 if search_results:
                     # Found Songstats ID
                     result = search_results[0]
+                    songstats_id = result.get("songstats_track_id", "")
+
+                    # Extract artist list from Songstats API (for comparison with MusicBee)
+                    songstats_artists = result.get("artists", [])
+                    if isinstance(songstats_artists, list):
+                        # API returns list of dicts like [{"name": "Artist"}]
+                        songstats_artists = [
+                            artist["name"] if isinstance(artist, dict) else str(artist)
+                            for artist in songstats_artists
+                        ]
+                    else:
+                        songstats_artists = []
+
+                    # Extract label list from Songstats API (authoritative source)
+                    songstats_labels = result.get("labels", [])
+                    if isinstance(songstats_labels, list):
+                        # API returns list of dicts like [{"name": "Label"}]
+                        songstats_labels = [
+                            label["name"] if isinstance(label, dict) else str(label)
+                            for label in songstats_labels
+                        ]
+                    else:
+                        songstats_labels = []
+
+                    # Fetch full track info to get ISRC (not available in search results)
+                    isrc = None
+                    if songstats_id:
+                        track_info = self.songstats.get_track_info(songstats_id)
+                        if track_info:
+                            # ISRC is under track_info.links (available for several streaming platforms)
+                            # Extract from the first platform that has it (ISRC is universal)
+                            track_info_data = track_info.get("track_info", {})
+                            links = track_info_data.get("links", [])
+
+                            for link in links:
+                                if isinstance(link, dict) and link.get("isrc"):
+                                    isrc = link["isrc"]
+                                    self.logger.debug(
+                                        "Found ISRC for %s from %s: %s",
+                                        songstats_id,
+                                        link.get("platform", "unknown"),
+                                        isrc
+                                    )
+                                    break
+
+                            if not isrc:
+                                self.logger.debug("No ISRC found for %s", songstats_id)
 
                     # Update identifiers immutably (Track is frozen)
                     updated_identifiers = track.songstats_identifiers.model_copy(
                         update={
-                            "songstats_id": result.get("songstats_track_id", ""),
+                            "songstats_id": songstats_id,
                             "songstats_title": result.get("title", ""),
+                            "isrc": isrc,  # From get_track_info() endpoint
+                            "songstats_artists": songstats_artists,
+                            "songstats_labels": songstats_labels,
                         }
                     )
-                    track = track.model_copy(update={"songstats_identifiers": updated_identifiers})
+
+                    track = track.model_copy(
+                        update={
+                            "songstats_identifiers": updated_identifiers,
+                            "search_query": query,  # Store the search query used
+                        }
+                    )
 
                     self.logger.info(
                         "Found Songstats ID for '%s - %s': %s",
@@ -280,6 +355,9 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 else:
                     # No Songstats ID found - add to manual review queue
                     self.logger.warning("No Songstats ID found for: %s - %s", track.primary_artist, track.title)
+
+                    # Store search_query even when search fails (for debugging)
+                    track = track.model_copy(update={"search_query": query})
 
                     self.review_queue.add(
                         track_id=track_id,
@@ -307,6 +385,10 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
 
             except Exception as error:
                 self.logger.exception("Failed to search Songstats for: %s", track_id)
+
+                # Store search_query if it was built before error
+                if query:
+                    track = track.model_copy(update={"search_query": query})
 
                 # Add to manual review queue
                 self.review_queue.add(

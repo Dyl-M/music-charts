@@ -1,4 +1,4 @@
-# User Validation for Version 1.0.0
+**# User Validation for Version 1.0.0
 
 This document tracks user validation testing for the music-charts CLI before the 1.0.0 "release".
 
@@ -135,7 +135,8 @@ else:
 **Two Types of Failures Fixed**:
 
 1. **Empty dict**: `{"most_viewed": {}, "all_sources": []}` - Missing all fields
-2. **Partial data with None values**: `{"most_viewed": {"ytb_id": "abc", "views": None, "channel_name": "X"}}` - Field exists but value is None
+2. **Partial data with None values**: `{"most_viewed": {"ytb_id": "abc", "views": None, "channel_name": "X"}}` - Field
+   exists but value is None
 
 **Testing**:
 
@@ -562,6 +563,862 @@ Hundreds of log lines flood the console:
 
 ---
 
+#### [ISSUE-010] Empty Fields in Extracted Track Data
+
+**Command**: `msc run`
+
+**Description**:
+Multiple fields in the extracted tracks data (`tracks.json`) are consistently empty/null across all tracks, indicating
+that data is not being properly extracted from MusicBee or fetched from Songstats API. This affects data completeness
+and potential analysis capabilities.
+
+**Affected Fields**:
+
+1. **`label`** (list): Always `[]` - Should contain record label(s) from MusicBee
+2. **`grouping`** (string): Always `null` - MusicBee custom grouping field
+3. **`search_query`** (string): Always `null` - Should store the query used for Songstats search (debugging/tracking)
+4. **`isrc`** (string): Always `null` - Should contain ISRC code from Songstats API response
+
+**Steps to Reproduce**:
+
+1. Run `msc run --year 2025`
+2. Open `_data/runs/2025_YYYYMMDD_HHMMSS/tracks.json`
+3. Examine any track entry
+4. Observe that `label`, `grouping`, `search_query`, and `isrc` fields are empty/null
+
+**Expected Behavior**:
+
+- **`label`**: Should extract record label information from MusicBee library XML (`<key>Publisher</key>` tag)
+- **`grouping`**: Should extract MusicBee grouping field if present (`<key>Grouping</key>` tag)
+- **`search_query`**: Should store the actual search query used to find the track in Songstats (for
+  debugging/transparency)
+- **`isrc`**: Should extract ISRC code from Songstats API search results (available in track metadata)
+
+**Actual Behavior**:
+
+```json
+{
+  "title": "When A Fire Starts To Burn [Chime Flip]",
+  "artist_list": [
+    "Disclosure"
+  ],
+  "year": 2025,
+  "genre": [
+    "Dubstep / Brostep / Riddim"
+  ],
+  "label": [],
+  // ❌ Always empty
+  "grouping": null,
+  // ❌ Always null
+  "search_query": null,
+  // ❌ Always null
+  "songstats_identifiers": {
+    "songstats_id": "em0th986",
+    "songstats_title": "When A Fire Starts To Burn (Chime Flip)",
+    "isrc": null
+    // ❌ Always null
+  }
+}
+```
+
+**Status**:
+
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data completeness and analytical capabilities)
+
+**Current Status (2025-12-24)**:
+
+✅ **Completed**:
+
+1. `search_query` field - Now populated with Songstats search query
+2. `grouping` field - Now uses native `list` from libpybee (no wrapping bug)
+3. `artist_list` field - Now uses native `list` from libpybee (see ISSUE-014)
+
+⚠️ **Partially Complete**:
+
+3. `label` field - Populated but redundant with `grouping` (both use MusicBee data)
+
+❌ **Not Working**:
+
+4. `isrc` field - Still returning `null` despite code to extract from Songstats API
+
+**Sub-Issues Created**:
+
+- See ISSUE-011: Label/Grouping Redundancy and Missing Songstats Metadata
+- See ISSUE-012: Track Identifier Should Use UUID Instead of String Concatenation
+
+**Location in Code**:
+
+- `msc/clients/musicbee.py:150-180` - Track extraction from XML (missing label/grouping extraction)
+- `msc/pipeline/extract.py:242-260` - Search query construction (not stored in track)
+- `msc/pipeline/extract.py:270-290` - Songstats search result processing (ISRC not extracted)
+
+**Root Cause Analysis**:
+
+1. **`label` field**: MusicBeeClient likely not reading the `<key>Publisher</key>` or `<key>Label</key>` tag from
+   library XML
+2. **`grouping` field**: MusicBeeClient not reading the `<key>Grouping</key>` tag from library XML
+3. **`search_query` field**: ExtractionStage builds search query but doesn't store it in the Track model before saving
+4. **`isrc` field**: Songstats API returns ISRC in search results, but ExtractionStage doesn't extract and store it in
+   SongstatsIdentifiers
+
+**Impact**:
+
+- Missing record label information reduces analytical capabilities (e.g., label-based rankings, independent vs major
+  label analysis)
+- Missing grouping field loses user-defined categorization from MusicBee
+- Missing search_query makes it difficult to debug failed searches or understand matching logic
+- Missing ISRC prevents cross-referencing with other music databases and official music identification systems
+
+**Terminology Clarification**:
+
+**Important**: There's a naming confusion between two different concepts:
+
+1. **`label`** (plural in code): Track model field representing **record label(s)** (e.g., "Monstercat", "OWSLA", "
+   mau5trap")
+    - Source: MusicBee library XML (`<key>Publisher</key>` tag)
+    - Purpose: Identifies which record label released the track
+    - Example: `["Monstercat", "Universal Music"]`
+
+2. **`grouping`**: MusicBee custom field for user-defined **grouping/categorization**
+    - Source: MusicBee library XML (`<key>Grouping</key>` tag)
+    - Purpose: User-defined categorization (e.g., "Favorites", "Workout", "Chill")
+    - Example: `"Best of 2025"` or `"Festival Anthems"`
+
+Both fields describe different concepts despite confusing naming:
+
+- `label` = Music business entity (record label company)
+- `grouping` = User-defined category (personal organization)
+
+**Proposed Solution**:
+
+**✅ LIBPYBEE NATIVE SUPPORT DISCOVERED** (2025-12-24)
+
+Investigation of libpybee documentation (https://dyl-m.github.io/libpybee/references/track/) reveals that the Track
+class provides native support for both fields:
+
+- **`artist_list` (list)** - Native artist list ✅ (eliminates need for manual parsing)
+- **`grouping` (list)** - Native list support ✅ (not a string!)
+
+**Implementation Update Based on Native Support**:
+
+1. ✅ **artist_list field**:
+    - Use `track.artist_list` directly from libpybee (see ISSUE-014 for details)
+    - No need for manual splitting on commas/ampersands
+
+2. ✅ **grouping field**:
+    - Use `track.grouping` directly from libpybee (already returns list)
+    - Current code incorrectly wraps it in another list: `[grouping] if grouping...`
+    - **FIX NEEDED**: Remove list wrapping, use native list directly
+
+3. ✅ **label field**:
+    - Update `MusicBeeClient._parse_track()` to extract `<key>Publisher</key>` or `<key>Label</key>` tag
+    - Store as list in Track.label field
+    - Handle multiple labels if separated by semicolons/commas
+
+3. ✅ **search_query field**:
+    - Store the built search query in Track.search_query before saving to repository
+    - Update in ExtractionStage after successful/failed search
+
+4. ✅ **isrc field**:
+    - Extract ISRC from Songstats API search results
+    - Check if `result.get("isrc")` exists in search response
+    - Store in SongstatsIdentifiers.isrc field
+
+**Files to Modify**:
+
+- `msc/clients/musicbee.py` - Add label/grouping extraction
+- `msc/pipeline/extract.py` - Store search_query and extract ISRC from API results
+
+**Testing Requirements**:
+
+- Verify label extraction from MusicBee XML with Publisher tag
+- Verify grouping extraction from MusicBee XML with Grouping tag
+- Verify search_query is stored for both successful and failed searches
+- Verify ISRC extraction from Songstats API response when available
+- Update unit tests to verify all fields are populated
+
+**Related Files**:
+
+- Run directory: `_data/runs/2025_20251224_113317/tracks.json`
+- MusicBee library: Path from `MSC_MUSICBEE_LIBRARY` env var
+
+---
+
+#### [ISSUE-011] Label/Grouping Redundancy and Missing Songstats Metadata
+
+**Command**: `msc run`
+
+**Description**:
+After implementing ISSUE-010 fixes, three new data quality issues were discovered in `tracks.json`:
+
+1. **`label` and `grouping` are redundant** - Both fields contain the same MusicBee grouping data, making one field
+   unnecessary
+2. **ISRC still not populated** - Despite code to extract ISRC from Songstats API, field remains `null`
+3. **Missing Songstats artist metadata** - No field to store the artist list returned by Songstats API for comparison
+   with MusicBee data
+
+**Steps to Reproduce**:
+
+1. Run `msc run --year 2025` (after ISSUE-010 fixes)
+2. Open `_data/runs/2025_YYYYMMDD_HHMMSS/tracks.json`
+3. Examine track entries
+4. Observe redundant label/grouping and missing ISRC/songstats_artists
+
+**Expected Behavior**:
+
+**Field Separation**:
+
+- `label`: Should contain record labels from **Songstats API** (authoritative source)
+- `grouping`: Should contain user-defined grouping from **MusicBee** only
+- `songstats_identifiers.isrc`: Should contain ISRC code from Songstats API
+- `songstats_identifiers.songstats_artists`: Should contain artist list from Songstats API
+
+**Purpose**:
+
+- Compare MusicBee artist names vs Songstats canonical artist names
+- Compare MusicBee labels (user-entered) vs Songstats labels (authoritative)
+- Enable data quality validation and discrepancy detection
+- Use ISRC for cross-referencing with external music databases
+
+**Actual Behavior**:
+
+```json
+{
+  "title": "When A Fire Starts To Burn [Chime Flip]",
+  "artist_list": [
+    "Disclosure"
+  ],
+  // From MusicBee
+  "year": 2025,
+  "genre": [
+    "Dubstep / Brostep / Riddim"
+  ],
+  "label": [
+    "[NO LABELS]"
+  ],
+  // ❌ From MusicBee (redundant with grouping)
+  "grouping": [
+    "[NO LABELS]"
+  ],
+  // ✅ From MusicBee (correct)
+  "search_query": "disclosure when a fire starts to burn chime flip",
+  "songstats_identifiers": {
+    "songstats_id": "em0th986",
+    "songstats_title": "When A Fire Starts To Burn (Chime Flip)",
+    "isrc": null
+    // ❌ Should have ISRC from API
+    // ❌ Missing: "songstats_artists": ["Disclosure"]
+    // ❌ Missing: "songstats_labels": ["..."]
+  }
+}
+```
+
+**Status**:
+
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data quality and comparison capabilities)
+
+**Solution Implemented (2025-12-24)**:
+
+✅ **1. Added Songstats Metadata Fields**:
+
+- **`SongstatsIdentifiers.songstats_artists`** - Artist list from Songstats API for comparison with MusicBee data
+- **`SongstatsIdentifiers.songstats_labels`** - Record labels from Songstats API (authoritative source)
+
+✅ **2. Fixed ISRC Extraction**:
+
+- ISRC is located in `track_info.links[]` array (available from multiple streaming platforms)
+- Extract from first platform that provides it (ISRC is universal across platforms)
+- Uses `get_track_info()` endpoint instead of search endpoint
+- Added debug logging to show which platform provided the ISRC
+
+✅ **3. Removed Redundant Label Field**:
+
+- Removed `Track.label` field (redundant with `songstats_labels`)
+- Kept `Track.grouping` field (user's local label organization from MusicBee)
+- Authoritative labels now in `songstats_identifiers.songstats_labels`
+
+**Files Modified**:
+
+- `msc/models/track.py:65-67,217-223` - Removed `label` field, added `songstats_artists` and `songstats_labels` to
+  SongstatsIdentifiers
+- `msc/pipeline/extract.py:131-147,269-315` - Removed label assignment, extract artist/label lists from API, fixed ISRC
+  extraction from `track_info.links[]`
+
+**Implementation Notes**:
+
+- Both artist/label fields handle API responses that may return lists of dicts (e.g., `[{"name": "Artist"}]`)
+- Extract only the `"name"` field from each dict, or convert to string if not a dict
+- Fields default to empty lists for backward compatibility
+- ISRC extraction loops through all platform links and takes first available ISRC
+- Adds 1 additional API call per track (329 tracks × 2 = 658 API calls vs 329)
+
+**Proposed Solution**:
+
+**1. Restructure `label` field**:
+
+- ✅ Keep `Track.label` as list of record labels
+- ✅ Populate from MusicBee grouping field (current behavior)
+- ✅ Add `SongstatsIdentifiers.songstats_labels` field for Songstats API labels
+- ✅ Enable comparison: MusicBee labels vs Songstats authoritative labels
+
+**2. Fix ISRC extraction**:
+
+- ✅ Investigate why `result.get("isrc")` returns `None`
+- ✅ Check Songstats API response structure for ISRC location
+- ✅ May need to use different API endpoint or field path
+- ✅ Add logging to debug ISRC extraction
+
+**3. Add Songstats artist metadata**:
+
+- ✅ Add `SongstatsIdentifiers.songstats_artists` field (list[str])
+- ✅ Extract from Songstats API search results
+- ✅ Store artist list returned by Songstats for the track
+- ✅ Enable comparison: MusicBee artists vs Songstats canonical artists
+
+**Implementation Details**:
+
+**SongstatsIdentifiers model update** (msc/models/track.py):
+
+```python
+class SongstatsIdentifiers(MSCBaseModel):
+    songstats_id: str
+    songstats_title: str
+    isrc: str | None = None
+    songstats_artists: list[str] = Field(default_factory=list)  # NEW
+    songstats_labels: list[str] = Field(default_factory=list)  # NEW
+```
+
+**Extraction stage update** (msc/pipeline/extract.py):
+
+```python
+# Extract from Songstats search result
+result = search_results[0]
+updated_identifiers = track.songstats_identifiers.model_copy(
+    update={
+        "songstats_id": result.get("songstats_track_id", ""),
+        "songstats_title": result.get("title", ""),
+        "isrc": result.get("isrc"),  # Investigate correct field path
+        "songstats_artists": result.get("artists", []),  # NEW
+        "songstats_labels": result.get("labels", []),  # NEW
+    }
+)
+```
+
+**Files to Modify**:
+
+- `msc/models/track.py:178-200` - Add songstats_artists and songstats_labels to SongstatsIdentifiers
+- `msc/pipeline/extract.py:265-271` - Extract additional fields from API response
+
+**Testing Requirements**:
+
+- Verify ISRC is populated when available in API response
+- Verify songstats_artists list matches API response
+- Verify songstats_labels list matches API response
+- Test backward compatibility with old JSON files (default to empty lists)
+
+**Related Files**:
+
+- `_data/runs/2025_20251224_113317/tracks.json` - Current data showing redundancy
+
+---
+
+#### [ISSUE-012] Track Identifier Should Use UUID Instead of String Concatenation
+
+**Command**: `msc run`, `msc export`
+
+**Description**:
+The current track identifier (`track_id` in exports, `Track.identifier` property) uses string concatenation of artist,
+title, and year (e.g., `"disclosure_when_a_fire_starts_to_burn_[chime_flip]_2025"`). This creates long, unwieldy
+identifiers that are not ideal for database keys, API endpoints, or URL parameters.
+
+**Current Implementation**:
+
+```python
+@property
+def identifier(self) -> str:
+    """Format: artist_title_year"""
+    normalized_artist = self.primary_artist.lower().replace(" ", "_")
+    normalized_title = self.title.lower().replace(" ", "_")
+    return f"{normalized_artist}_{normalized_title}_{self.year}"
+```
+
+**Example Output**:
+
+```
+"disclosure_when_a_fire_starts_to_burn_[chime_flip]_2025"  # 52 characters!
+```
+
+**Steps to Reproduce**:
+
+1. Run `msc run --year 2025`
+2. Check `_data/output/power_rankings_2025_flat.json`
+3. Observe `track_id` field with long concatenated strings
+
+**Expected Behavior**:
+
+- Track identifier should be a compact UUID (e.g., `"a1b2c3d4"` or full UUID)
+- Identifier should be stable across runs for the same track
+- Identifier should be deterministic (same track → same UUID)
+- Identifier should be suitable for use as database key, URL parameter, or API endpoint
+- Human-readable track info should be in separate fields (title, artist, year)
+
+**Actual Behavior**:
+
+- Track identifier is a long concatenated string
+- Can be 40-60+ characters long
+- Contains special characters (`[`, `]`, `_`, etc.)
+- Not suitable for URLs or compact identifiers
+- Makes JSON files harder to read and debug
+
+**Status**:
+
+- [x] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data structure and export formats)
+
+**Proposed Solutions**:
+
+**Option 1: Deterministic UUID from Content Hash** ✅ Recommended
+
+Use a hash of artist+title+year to generate a stable, deterministic UUID:
+
+```python
+import uuid
+import hashlib
+
+
+@property
+def identifier(self) -> str:
+    """Generate deterministic UUID from track content."""
+    # Create stable hash from core track identifiers
+    content = f"{self.primary_artist.lower()}|{self.title.lower()}|{self.year}"
+    content_hash = hashlib.sha256(content.encode()).digest()
+
+    # Generate UUID5 (namespace-based, deterministic)
+    track_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, content)
+    return str(track_uuid)[:8]  # Short form: "a1b2c3d4"
+```
+
+**Benefits**:
+
+- ✅ Stable: Same track always gets same UUID
+- ✅ Compact: 8-character identifier (vs 40-60 chars)
+- ✅ Deterministic: Reproducible across runs
+- ✅ Suitable for URLs, database keys, APIs
+
+**Option 2: Songstats ID as Primary Identifier**
+
+Use the Songstats ID directly (already available after extraction):
+
+```python
+@property
+def identifier(self) -> str:
+    """Use Songstats ID if available, fallback to UUID."""
+    if self.songstats_identifiers.songstats_id:
+        return self.songstats_identifiers.songstats_id  # e.g., "em0th986"
+    # Fallback for tracks without Songstats ID
+    return self._generate_uuid()
+```
+
+**Benefits**:
+
+- ✅ Uses authoritative external ID
+- ✅ Already 8 characters (compact)
+- ✅ Enables direct Songstats API lookups
+- ❌ Not available before extraction stage
+- ❌ Tracks without Songstats ID need fallback
+
+**Impact**:
+
+**Breaking Changes**:
+
+- All exports will have different track_id format
+- Checkpoints use identifier as key - will need migration
+- Manual review queue uses identifier - will need update
+
+**Migration Path**:
+
+1. Add new UUID field alongside existing identifier initially
+2. Update export formats to use UUID as primary key
+3. Keep old identifier as `track_identifier_legacy` for reference
+4. Provide migration script for old checkpoints
+
+**Files to Modify**:
+
+- `msc/models/track.py:120-142` - Update `identifier` property
+- `msc/storage/json_repository.py` - Update repository key usage
+- `msc/storage/checkpoint.py` - Update checkpoint tracking
+- `_tests/unit/test_track_model.py` - Update identifier tests
+
+**Testing Requirements**:
+
+- Verify UUID generation is deterministic (same track → same UUID)
+- Verify UUID is stable across pipeline runs
+- Verify backward compatibility with old data files
+- Test export formats with new identifier format
+- Verify checkpoint resumability with new identifiers
+
+**Related Files**:
+
+- `_data/output/power_rankings_2025_flat.json` - Shows current long identifiers
+
+---
+
+#### [ISSUE-013] False Positive Songstats Matches Need Similarity Validation
+
+**Command**: `msc run`
+
+**Description**:
+The Songstats API search is returning false positive matches where the track returned does not actually match the track
+being searched for. These false positives occur when Songstats finds a track with similar keywords but different
+content (e.g., karaoke versions, different remixes, cover versions).
+
+**Steps to Reproduce**:
+
+1. Run `msc run --year 2025`
+2. Open `_data/runs/2025_YYYYMMDD_HHMMSS/tracks.json`
+3. Search for tracks where `songstats_title` differs significantly from `title`
+4. Verify by checking the Songstats page for the track
+
+**Expected Behavior**:
+
+- Songstats search should only match tracks that are the same or very similar versions
+- A similarity validation should reject matches that are:
+    - Different versions (Karaoke, Instrumental, etc.)
+    - Different remixes when searching for a specific remix
+    - Completely different tracks with similar keywords
+    - Cover versions when searching for originals
+- Similarity threshold should be configurable
+- Failed similarity checks should log warnings and add tracks to manual review
+
+**Actual Behavior**:
+
+**Example 1: Karaoke Version Mismatch**
+
+```json
+{
+  "title": "Our Time [Extended Mix]",
+  "artist_list": [
+    "Afrojack",
+    "Martin Garrix",
+    "David Guetta & Amél"
+  ],
+  "songstats_identifiers": {
+    "songstats_id": "...",
+    "songstats_title": "Our Time - Karaoke Version Originally Performed by Afrojack, Martin Garrix, David Guetta & Amél"
+    // ❌ This is a KARAOKE VERSION, not the Extended Mix EDM track!
+  }
+}
+```
+
+- Songstats returns karaoke versions, instrumental versions, or other variants
+- No validation that the returned track matches the requested version
+- Users get incorrect data for tracks without noticing
+- Power rankings include wrong tracks with wrong statistics
+
+**Status**:
+
+- [x] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data accuracy and rankings validity)
+
+**Proposed Solution**:
+
+**1. Implement Similarity Validation After Search**:
+
+Add validation logic in `ExtractionStage.transform()` after receiving Songstats search results:
+
+```python
+# After getting search result
+result = search_results[0]
+
+# Validate similarity between search and result
+if not self._validate_track_match(track, result):
+    self.logger.warning(
+        "Similarity check failed for %s - %s (Songstats: '%s')",
+        track.primary_artist,
+        track.title,
+        result.get("title", ""),
+    )
+    # Add to manual review instead of accepting match
+    self.review_queue.add(
+        track_id=track_id,
+        title=track.title,
+        artist=track.primary_artist,
+        reason="Failed similarity check - potential false positive",
+        metadata={"songstats_title": result.get("title", ""), "query": query},
+    )
+    continue  # Skip this track, don't store bad match
+```
+
+**2. Similarity Validation Algorithm**:
+
+```python
+def _validate_track_match(self, track: Track, result: dict) -> bool:
+    """Validate that Songstats result matches the searched track.
+ 
+    Args:
+        track: Original track from MusicBee
+        result: Search result from Songstats API
+ 
+    Returns:
+        True if match is valid, False if likely false positive
+    """
+    songstats_title = result.get("title", "").lower()
+    search_title = track.title.lower()
+
+    # Reject obvious mismatches (karaoke, instrumental, cover versions)
+    reject_keywords = ["karaoke", "instrumental", "acapella", "backing track", "originally performed"]
+    if any(keyword in songstats_title for keyword in reject_keywords):
+        return False
+
+    # Calculate title similarity (Levenshtein or fuzzy matching)
+    title_similarity = self._calculate_similarity(search_title, songstats_title)
+
+    # Calculate artist similarity
+    search_artists = set(a.lower() for a in track.artist_list)
+    result_artists = set(a.lower() for a in result.get("artists", []))
+    artist_overlap = len(search_artists & result_artists) / max(len(search_artists), 1)
+
+    # Require both title and artist similarity above threshold
+    TITLE_THRESHOLD = 0.75  # 75% similarity required
+    ARTIST_THRESHOLD = 0.5  # At least 50% artist overlap
+
+    return title_similarity >= TITLE_THRESHOLD and artist_overlap >= ARTIST_THRESHOLD
+```
+
+**3. Add Configuration for Thresholds**:
+
+Add to `msc/config/constants.py`:
+
+```python
+# Songstats match validation
+SIMILARITY_TITLE_THRESHOLD = 0.75
+SIMILARITY_ARTIST_THRESHOLD = 0.5
+REJECT_KEYWORDS = ["karaoke", "instrumental", "acapella", "backing track", "originally performed", "cover version"]
+```
+
+**Libraries to Use**:
+
+- `rapidfuzz` or `python-Levenshtein` for string similarity
+- Or built-in `difflib.SequenceMatcher` (no external dependency)
+
+**Files to Modify**:
+
+- `msc/pipeline/extract.py:260-290` - Add similarity validation after search
+- `msc/config/constants.py` - Add thresholds and reject keywords
+- `msc/utils/text.py` - Add similarity calculation functions
+
+**Testing Requirements**:
+
+- Test with known false positive cases (karaoke versions, etc.)
+- Verify threshold tuning doesn't reject valid matches
+- Test edge cases (remixes with different names, featuring artists)
+- Verify manual review queue receives rejected matches
+
+**Related Files**:
+
+- `_data/runs/2025_20251224_113317/tracks.json` - Contains false positive example
+
+---
+
+#### [ISSUE-014] Artist List Not Splitting on Ampersand (`&`) Separator
+
+**Command**: `msc run`
+
+**Description**:
+The artist list extraction is only splitting on commas (`,`) but not on ampersands (`&`), resulting in multiple artists
+being grouped together as a single artist entry. This affects data quality and makes artist-based analysis inaccurate.
+
+**Steps to Reproduce**:
+
+1. Run `msc run --year 2025`
+2. Open `_data/runs/2025_YYYYMMDD_HHMMSS/tracks.json`
+3. Search for tracks with multiple artists
+4. Observe that artists separated by `&` are not split
+
+**Expected Behavior**:
+
+- Artist strings should be split on both `,` and ` & ` (with spaces)
+- Each artist should be a separate element in `artist_list`
+- Featured artists in `(feat. Artist)` should be handled appropriately
+- Libpybee may provide native support for artist lists (needs investigation)
+
+**Actual Behavior**:
+
+**Example 1: Multiple Artists Not Split**
+
+```json
+{
+  "title": "Our Time [Extended Mix]",
+  "artist_list": [
+    "Afrojack",
+    // ✅ Correct
+    "Martin Garrix",
+    // ✅ Correct
+    "David Guetta & Amél"
+    // ❌ Should be ["David Guetta", "Amél"]
+  ]
+}
+```
+
+**Example 2: Featured Artist Not Split**
+
+```json
+{
+  "title": "Inside Our Hearts [Extended Mix]",
+  "artist_list": [
+    "Martin Garrix & Alesso (feat. Shaun Farrugia)"
+    // ❌ Should be ["Martin Garrix", "Alesso", "Shaun Farrugia"]
+  ]
+}
+```
+
+- Artists separated by ` & ` remain as one string
+- Featured artists `(feat. ...)` are not extracted
+- Inconsistent artist counts affect analysis
+- Artist-based rankings are inaccurate
+
+**Status**:
+
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data accuracy and artist-based analysis)
+
+**Solution Implemented (2025-12-24)**:
+
+✅ Used libpybee's native `artist_list` attribute directly - no more manual string parsing needed!
+
+**Files Modified**:
+
+- `msc/pipeline/extract.py:108,114,125-128` - Now uses `track.artist_list` from libpybee natively
+- Removed manual parsing with `split(",")`
+- All artist separators (`,`, `&`, `×`, etc.) now handled by libpybee automatically
+
+**Root Cause**:
+
+The current code in `msc/pipeline/extract.py:126-127` only splits on commas:
+
+```python
+# Convert artist string to list (MusicBee returns comma-separated string)
+artist_list = [a.strip() for a in artist_str.split(",")]
+if isinstance(artist_str, str) else[artist_str]
+```
+
+This doesn't handle:
+
+- ` & ` separator (with spaces)
+- `×` separator
+- Featured artists `(feat. ...)`, `(ft. ...)`, `(with ...)`
+
+**Proposed Solution**:
+
+**✅ CONFIRMED: Libpybee Has Native `artist_list` Support**
+
+Investigation of libpybee documentation (https://dyl-m.github.io/libpybee/references/track/) confirms that the Track
+class provides:
+
+- `artist` (str) - Single artist string (legacy/display format)
+- **`artist_list` (list)** - Native list of artists ✅
+- `grouping` (list) - Already returns a list (not a string!) ✅
+
+**Recommended Implementation**:
+Use `track.artist_list` instead of manually parsing `track.artist` string.
+
+**Option 2: Enhanced Splitting Logic**
+
+If libpybee doesn't provide native list, enhance the splitting logic:
+
+```python
+def split_artists(artist_str: str) -> list[str]:
+    """Split artist string on multiple separators.
+ 
+    Handles:
+    - Comma separator: "Artist A, Artist B"
+    - Ampersand separator: "Artist A & Artist B"
+    - Multiplication sign: "Artist A × Artist B"
+    - Featured artists: "Artist A (feat. Artist B)"
+ 
+    Args:
+        artist_str: Artist string from MusicBee
+ 
+    Returns:
+        List of individual artist names
+    """
+    import re
+
+    # First split on commas
+    artists = artist_str.split(",")
+
+    # Then split each part on & and ×
+    result = []
+    for artist in artists:
+        # Remove featured artist annotations (already handled in format_artist)
+        # Split on & or ×
+        parts = re.split(r'\s+&\s+|\s+×\s+', artist)
+        result.extend([p.strip() for p in parts if p.strip()])
+
+    return result
+```
+
+**Implementation Location**:
+
+```python
+# In msc/pipeline/extract.py around line 125-127
+try:
+    # Convert artist string to list
+    artist_list = split_artists(artist_str) if isinstance(artist_str, str) else [artist_str]
+
+    # Clean each artist name
+    artist_list = [format_artist(a) for a in artist_list]
+```
+
+**Files to Modify**:
+
+- `msc/pipeline/extract.py:125-127` - Replace simple split with enhanced logic
+- `msc/utils/text.py` - Add `split_artists()` function
+- `_tests/unit/test_text.py` - Add tests for artist splitting
+
+**Testing Requirements**:
+
+- Test splitting on `,` separator: "A, B" → ["A", "B"]
+- Test splitting on ` & ` separator: "A & B" → ["A", "B"]
+- Test splitting on ` × ` separator: "A × B" → ["A", "B"]
+- Test combined: "A, B & C" → ["A", "B", "C"]
+- Test featured artists: "A (feat. B)" → ["A", "B"] or ["A"] (depending on requirements)
+- Test edge cases: "A & B, C & D" → ["A", "B", "C", "D"]
+
+**Investigation Needed**:
+
+- Check if libpybee provides native `track.artists` (plural) attribute
+- If yes, use native support
+- If no, implement enhanced splitting logic
+
+**Related Files**:
+
+- `_data/runs/2025_20251224_113317/tracks.json` - Contains examples of unsplit artists
+
+---
+
 ### Medium Priority Issues
 
 *Issues that should be addressed soon after release*
@@ -966,7 +1823,7 @@ Any additional context or related information
 - [ ] `msc stats`
 - [ ] `msc clean`
 - [ ] `msc export`
-- [x] `msc run` ⚠️ Works but has UX issues (ISSUE-001)
+- [x] `msc run`
 
 **Issues Found**:
 
@@ -1120,17 +1977,22 @@ The pipeline will:
 
 ## Resolution Tracking
 
-| Issue ID  | Priority    | Status   | Assigned | Target Version |
-|-----------|-------------|----------|----------|----------------|
-| ISSUE-001 | High        | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-002 | Medium      | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-003 | Medium      | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-004 | Low         | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-005 | Enhancement | Deferred | @Dyl-M   | Future         |
-| ISSUE-006 | Critical    | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-007 | Critical    | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-008 | High        | Fixed    | @Dyl-M   | 1.0.0          |
-| ISSUE-009 | High        | Fixed    | @Dyl-M   | 1.0.0          |
+| Issue ID  | Priority       | Status     | Target Version |
+|-----------|----------------|------------|----------------|
+| ISSUE-001 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-002 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
+| ISSUE-003 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
+| ISSUE-004 | 🔵 Low         | ✅ Fixed    | 1.0.0          |
+| ISSUE-005 | 📈 Enhancement | ⏳ Deferred | Future         |
+| ISSUE-006 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
+| ISSUE-007 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
+| ISSUE-008 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-009 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-010 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-011 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-012 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-013 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 
 ---
 
@@ -1144,4 +2006,4 @@ For 1.0.0 release approval:
 - [ ] README reflects accurate usage for 1.0.0
 - [ ] All CLI commands tested end-to-end
 - [ ] Error messages are clear and actionable
-- [ ] Help text is accurate and comprehensive
+- [ ] Help text is accurate and comprehensive**

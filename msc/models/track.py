@@ -1,10 +1,10 @@
 """Track metadata models."""
 
 # Standard library
-from typing import Annotated
+from typing import Annotated, Any
 
 # Third-party
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, field_validator
 
 # Local
 from msc.models.base import MSCBaseModel
@@ -22,8 +22,7 @@ class Track(MSCBaseModel):
         artist_list: List of artist names (min 1 required).
         year: Release year (1900-2100).
         genre: Genre tags (default: empty list).
-        label: Record labels (default: empty list).
-        grouping: MusicBee grouping field (optional).
+        grouping: MusicBee grouping field (default: empty list). For my usage, it serves to list labels locally.
         search_query: Original search query for Songstats (optional,
             alias="request" for backward compatibility).
 
@@ -33,7 +32,7 @@ class Track(MSCBaseModel):
         ...     artist_list=["blasterjaxx", "hardwell", "maddix"],
         ...     year=2024,
         ...     genre=["hard techno"],
-        ...     label=["revealed"]
+        ...     grouping=["revealed"]
         ... )
         >>> track.primary_artist
         'blasterjaxx'
@@ -62,13 +61,9 @@ class Track(MSCBaseModel):
         list[str],
         Field(default_factory=list, description="Genre tags")
     ]
-    label: Annotated[
-        list[str],
-        Field(default_factory=list, description="Record labels")
-    ]
     grouping: Annotated[
-        str | None,
-        Field(default=None, description="MusicBee grouping field")
+        list[str],
+        Field(default_factory=list, description="MusicBee grouping field (supports multiple values)")
     ]
 
     # Search metadata
@@ -89,6 +84,25 @@ class Track(MSCBaseModel):
             description="Songstats track identifiers (populated during extraction)"
         )
     ]
+
+    @classmethod
+    @field_validator("grouping", mode="before")
+    def validate_grouping(cls, v: Any) -> list[str]:
+        """Convert None to empty list for backward compatibility with old data.
+
+        Args:
+            v: The grouping value (can be None, str, or list[str])
+
+        Returns:
+            List of grouping values
+        """
+        if v is None:
+            return []
+
+        if isinstance(v, str):
+            return [v]
+
+        return v
 
     @property
     def primary_artist(self) -> str:
@@ -170,6 +184,8 @@ class SongstatsIdentifiers(MSCBaseModel):
         songstats_title: Track title in Songstats database
             (alias="s_title" for backward compatibility).
         isrc: International Standard Recording Code (optional).
+        songstats_artists: Artist names from Songstats API (optional, for comparison with MusicBee).
+        songstats_labels: Record labels from Songstats API (optional, authoritative source).
 
     Examples:
         >>> ids = SongstatsIdentifiers(
@@ -196,4 +212,12 @@ class SongstatsIdentifiers(MSCBaseModel):
     isrc: Annotated[
         str | None,
         Field(default=None, description="International Standard Recording Code")
+    ]
+    songstats_artists: Annotated[
+        list[str],
+        Field(default_factory=list, description="Artist names from Songstats API")
+    ]
+    songstats_labels: Annotated[
+        list[str],
+        Field(default_factory=list, description="Record labels from Songstats API")
     ]
