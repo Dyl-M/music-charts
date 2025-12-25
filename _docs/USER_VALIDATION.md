@@ -1604,7 +1604,24 @@ to be investigated.
 
 **Actual Behavior**:
 
-*To be documented after investigation*
+The `msc export` command has multiple critical issues:
+
+1. **Wrong file path** (`msc/cli.py:408`):
+    - Tries to load from: `settings.year_output_dir / "stats.json"` (e.g., `_data/output/2025/stats.json`)
+    - Should load from: `settings.output_dir / "enriched_tracks.json"` (e.g., `_data/output/enriched_tracks.json`)
+    - Results in file not found or loading wrong data
+
+2. **Missing data flattening method**:
+    - `TrackWithStats` model lacks `to_flat_dict()` method for proper CSV export
+    - When exporting to CSV, nested Pydantic models are converted to string representations
+    - Results in CSV cells containing Python dict strings like: `{'songstats_id': 'xxx', 'api_track_id': 'xxx'}`
+    - Instead of proper flat columns: `songstats_id, api_track_id`
+
+3. **Nested structures not properly flattened**:
+    - `TrackWithStats` has nested structure: `track`, `songstats_identifiers`, `platform_stats`, `youtube_data`
+    - Each platform in `platform_stats` has nested objects (e.g., `spotify.streams_total`, `youtube.video_views_total`)
+    - Export shows nested dicts as strings instead of creating flat column structure
+    - Makes exported data unreadable and unusable for analysis
 
 **Status**:
 
@@ -1633,8 +1650,14 @@ to be investigated.
 **Command**: `msc stats`
 
 **Description**:
-The `msc stats` command is not working properly during user validation testing. The exact error and failure mode need to
-be investigated.
+The `msc stats` command has multiple critical issues that prevent it from working correctly:
+
+1. **Incorrect file path**: Tries to load `_data/output/2025/stats.json` instead of `_data/output/enriched_tracks.json`
+2. **Incorrect attribute names**: Uses wrong attribute names when checking platform data (e.g., `streams` instead of
+   `streams_total`)
+3. **Incorrect platform coverage logic**: Shows 100% coverage for all platforms due to checking `is not None` on fields
+   that default to `0`
+4. **Missing proper platform presence check**: Needs to verify actual data availability, not just non-None values
 
 **Steps to Reproduce**:
 
@@ -1650,7 +1673,50 @@ be investigated.
 
 **Actual Behavior**:
 
-*To be documented after investigation*
+The `msc stats` command has multiple critical issues:
+
+1. **Wrong file path** (`msc/cli.py:598-599`):
+    - Tries to load from: `settings.year_output_dir / "stats.json"` (e.g., `_data/output/2025/stats.json`)
+    - Should load from: `settings.output_dir / "enriched_tracks.json"` (e.g., `_data/output/enriched_tracks.json`)
+    - Results in file not found (0 tracks loaded)
+
+2. **Wrong platform attribute names** (`msc/cli.py:559-565`):
+    - Uses `"streams"` instead of `"streams_total"` for Spotify
+    - Uses `"views"` instead of `"video_views_total"` for YouTube
+    - Uses `"fans"` instead of `"playlist_reach_total"` for Deezer
+    - Results in platform objects not being found (always None)
+
+3. **Flawed platform presence detection** (`msc/cli.py:545-546`):
+   ```python
+   platform = getattr(track.platform_stats, platform_attr, None)
+   return platform is not None and getattr(platform, stat_attr, None) is not None
+   ```
+    - Logic checks `is not None` which returns `True` for `0` values
+    - Platform stats default to `0`, not `None`, for missing data
+    - Results in false 100% coverage for all platforms (counts tracks with 0 streams as "has data")
+
+4. **Missing proper data availability check**:
+    - Current logic only checks if a single field is not None
+    - Should check if ANY field in the platform object has meaningful non-zero data
+    - Example: A track with 0 Spotify streams, 0 followers should count as "no Spotify data"
+
+5. **Missing popularity_peak data**:
+    - Investigation shows 0 tracks have popularity_peak fields populated
+    - Despite enrichment code that calls `get_historical_peaks()` and merges peaks
+    - All popularity_peak fields show None or 0 across entire dataset
+    - Indicates API call may be failing silently or merge logic not working
+
+**User-reported symptoms**:
+
+- "stats kinda returns nothing (0 track retrieved, while it's false)"
+- "Stats shows 100% coverage for all platforms"
+
+**Data verification** (from enriched_tracks.json):
+
+- Total tracks in file: 329
+- Tracks with Spotify streams > 0: 319 (97.0%)
+- Tracks with YouTube views > 0: 312 (94.8%)
+- But stats command shows: 0 tracks loaded, 0% coverage (wrong file path)
 
 **Status**:
 
@@ -2415,27 +2481,27 @@ The pipeline will:
 
 ## Resolution Tracking
 
-| Issue ID  | Priority       | Status       | Target Version |
-|-----------|----------------|--------------|----------------|
-| ISSUE-001 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-002 | 🟠 Medium      | ✅ Fixed      | 1.0.0          |
-| ISSUE-003 | 🟠 Medium      | ✅ Fixed      | 1.0.0          |
-| ISSUE-004 | 🔵 Low         | ✅ Fixed      | 1.0.0          |
-| ISSUE-005 | 📈 Enhancement | ⏳ Deferred   | Future         |
-| ISSUE-006 | ☢️ Critical    | ✅ Fixed      | 1.0.0          |
-| ISSUE-007 | ☢️ Critical    | ✅ Fixed      | 1.0.0          |
-| ISSUE-008 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-009 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-010 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-011 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-012 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-013 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-014 | 🔴 High        | ✅ Fixed      | 1.0.0          |
-| ISSUE-015 | 🔴 High        | 📋 Planned   | 1.0.0          |
-| ISSUE-016 | 🔴 High        | 📋 Planned   | 1.0.0          |
-| ISSUE-017 | 🔴 High        | 📋 Planned   | 1.0.0          |
-| ISSUE-018 | 🔴 High        | 📋 Planned   | 1.0.0          |
-| ISSUE-019 | 🔴 High        | 📋 Planned   | 1.0.0          |
+| Issue ID  | Priority       | Status     | Target Version |
+|-----------|----------------|------------|----------------|
+| ISSUE-001 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-002 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
+| ISSUE-003 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
+| ISSUE-004 | 🔵 Low         | ✅ Fixed    | 1.0.0          |
+| ISSUE-005 | 📈 Enhancement | ⏳ Deferred | Future         |
+| ISSUE-006 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
+| ISSUE-007 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
+| ISSUE-008 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-009 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-010 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-011 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-012 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-013 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| ISSUE-015 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-016 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-017 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-018 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-019 | 🔴 High        | 📋 Planned | 1.0.0          |
 
 ---
 

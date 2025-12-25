@@ -172,10 +172,8 @@ _legacy/data/ytb_2024.json
 
 # New data structure
 _data/cache/
-_data/checkpoints/
 _data/demo
-_data/input/
-_data/log*
+_data/logs/
 _data/output/
 _data/runs/
 
