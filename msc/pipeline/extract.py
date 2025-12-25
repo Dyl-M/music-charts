@@ -6,6 +6,7 @@ and handles checkpoint resumability and manual review queue.
 
 # Standard library
 from datetime import datetime
+from typing import Any
 
 # Third-party
 from pydantic import ValidationError
@@ -248,6 +249,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 stage_name="Extraction",
                 item_id=track_id,
                 message=f"Searching Songstats: {track.title} - {track.primary_artist}",
+                metadata={"current_item": track.title},
             )
 
             self.notify(event)
@@ -499,7 +501,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
         # Return sorted list for consistent ordering
         return sorted(unique_artists)
 
-    def _validate_track_match(self, track: Track, result: dict[str, any]) -> tuple[bool, str]:
+    def _validate_track_match(self, track: Track, result: dict[str, Any]) -> tuple[bool, str]:
         """Validate that Songstats result matches the searched track.
 
         Only checks for reject keywords (karaoke, instrumental, etc.).

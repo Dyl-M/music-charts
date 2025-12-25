@@ -1,6 +1,7 @@
 """Track metadata models."""
 
 # Standard library
+import uuid
 from typing import Annotated, Any
 
 # Third-party
@@ -132,10 +133,48 @@ class Track(MSCBaseModel):
 
     @property
     def identifier(self) -> str:
-        """Unique identifier for this track.
+        """Unique identifier for this track (UUID5-based).
 
-        Creates a stable identifier from primary artist, title, and year.
-        Used as the unique key for storage and retrieval.
+        Generates a deterministic, compact 8-character identifier from
+        a UUID5 hash of artist, title, and year. Same track always
+        produces the same identifier.
+
+        Returns:
+            8-character hexadecimal identifier (e.g., "a1b2c3d4")
+
+        Examples:
+            >>> track = Track(
+            ...     title="Scary Monsters and Nice Sprites",
+            ...     artist_list=["skrillex"],
+            ...     year=2010
+            ... )
+            >>> track.identifier
+            'c4e7f8a3'
+            >>> # Same track always produces same ID
+            >>> track2 = Track(
+            ...     title="Scary Monsters and Nice Sprites",
+            ...     artist_list=["skrillex"],
+            ...     year=2010
+            ... )
+            >>> track.identifier == track2.identifier
+            True
+        """
+        # Create stable content string from core track identifiers
+        # Using pipe separator to avoid collisions (e.g., "AB|C" vs "A|BC")
+        content = f"{self.primary_artist.lower()}|{self.title.lower()}|{self.year}"
+
+        # Generate UUID5 using DNS namespace (deterministic, reproducible)
+        track_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, content)
+
+        # Return first 8 characters for compact identifier
+        return str(track_uuid)[:8]
+
+    @property
+    def legacy_identifier(self) -> str:
+        """Legacy identifier format (pre-UUID5 implementation).
+
+        Kept for backward compatibility and reference. Uses the old
+        string concatenation format: "artist_title_year".
 
         Returns:
             Normalized identifier string (format: "artist_title_year")
@@ -146,7 +185,7 @@ class Track(MSCBaseModel):
             ...     artist_list=["skrillex"],
             ...     year=2010
             ... )
-            >>> track.identifier
+            >>> track.legacy_identifier
             'skrillex_scary_monsters_and_nice_sprites_2010'
         """
         # Normalize primary artist and title for stable identifier

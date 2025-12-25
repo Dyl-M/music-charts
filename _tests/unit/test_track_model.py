@@ -16,7 +16,7 @@ from msc.models.track import SongstatsIdentifiers, Track
 
 class TestTrack:
     """Tests for Track model."""
-    
+
     @staticmethod
     def test_create_valid_track() -> None:
         """Test creating a valid Track instance."""
@@ -28,88 +28,82 @@ class TestTrack:
         assert track.title == "16"
         assert track.artist_list == ["blasterjaxx", "hardwell", "maddix"]
         assert track.year == 2024
-    
+
     @staticmethod
     def test_title_required() -> None:
         """Test that title is required."""
         with pytest.raises(ValidationError) as exc_info:
             Track(artist_list=["artist"], year=2024)
-        
+
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("title",) for e in errors)
-    
+
     @staticmethod
     def test_artist_list_required() -> None:
         """Test that artist_list is required."""
         with pytest.raises(ValidationError) as exc_info:
             Track(title="Test", year=2024)
-        
+
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("artist_list",) for e in errors)
-    
+
     @staticmethod
     def test_artist_list_min_length() -> None:
         """Test that artist_list must have at least one artist."""
         with pytest.raises(ValidationError) as exc_info:
             Track(title="Test", artist_list=[], year=2024)
-        
+
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("artist_list",) for e in errors)
         assert any("at least 1" in str(e["msg"]).lower() for e in errors)
-    
+
     @staticmethod
     def test_year_validation_min() -> None:
         """Test year minimum validation."""
         with pytest.raises(ValidationError) as exc_info:
             Track(title="Test", artist_list=["artist"], year=1899)
-        
+
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("year",) for e in errors)
-    
+
     @staticmethod
     def test_year_validation_max() -> None:
         """Test year maximum validation."""
         with pytest.raises(ValidationError) as exc_info:
             Track(title="Test", artist_list=["artist"], year=2101)
-        
+
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("year",) for e in errors)
-    
+
     @staticmethod
     def test_year_validation_boundaries() -> None:
         """Test year boundary values are valid."""
         # Min boundary
         track_min = Track(title="Test", artist_list=["artist"], year=1900)
         assert track_min.year == 1900
-        
+
         # Max boundary
         track_max = Track(title="Test", artist_list=["artist"], year=2100)
         assert track_max.year == 2100
-    
+
     @staticmethod
     def test_default_genre_empty_list() -> None:
         """Test genre defaults to empty list."""
         track = Track(title="Test", artist_list=["artist"], year=2024)
         assert track.genre == []
-    
+
     @staticmethod
-    def test_default_label_empty_list() -> None:
-        """Test label defaults to empty list."""
+    def test_default_grouping_empty_list() -> None:
+        """Test grouping defaults to empty list."""
         track = Track(title="Test", artist_list=["artist"], year=2024)
-        assert track.label == []
-    
-    @staticmethod
-    def test_grouping_optional() -> None:
-        """Test grouping is optional and defaults to None."""
-        track = Track(title="Test", artist_list=["artist"], year=2024)
-        assert track.grouping is None
-    
+        assert track.grouping == []
+
     @staticmethod
     def test_search_query_optional() -> None:
         """Test search_query is optional and defaults to None."""
         track = Track(title="Test", artist_list=["artist"], year=2024)
         assert track.search_query is None
-    
+
     @staticmethod
     def test_search_query_alias() -> None:
         """Test search_query can be set via 'request' alias."""
@@ -121,7 +115,7 @@ class TestTrack:
             search_query="artist Test"
         )
         assert track1.search_query == "artist Test"
-        
+
         # Using alias
         track2 = Track(
             title="Test",
@@ -170,6 +164,128 @@ class TestTrack:
         assert track.all_artists_string == "artist"
 
     @staticmethod
+    def test_identifier_is_uuid_based() -> None:
+        """Test identifier generates UUID5-based ID."""
+        track = Track(
+            title="Scary Monsters and Nice Sprites",
+            artist_list=["skrillex"],
+            year=2010
+        )
+        # Should be 8-character hexadecimal string
+        assert len(track.identifier) == 8
+        assert all(c in "0123456789abcdef" for c in track.identifier)
+
+    @staticmethod
+    def test_identifier_is_deterministic() -> None:
+        """Test identifier is deterministic (same track = same ID)."""
+        track1 = Track(
+            title="Scary Monsters and Nice Sprites",
+            artist_list=["skrillex"],
+            year=2010
+        )
+        track2 = Track(
+            title="Scary Monsters and Nice Sprites",
+            artist_list=["skrillex"],
+            year=2010
+        )
+        # Same track should always produce same identifier
+        assert track1.identifier == track2.identifier
+
+    @staticmethod
+    def test_identifier_is_stable_across_runs() -> None:
+        """Test identifier remains stable across multiple instantiations."""
+        # Create same track multiple times
+        identifiers = [
+            Track(
+                title="16",
+                artist_list=["blasterjaxx", "hardwell", "maddix"],
+                year=2024
+            ).identifier
+            for _ in range(5)
+        ]
+        # All should be identical
+        assert len(set(identifiers)) == 1
+
+    @staticmethod
+    def test_identifier_differs_for_different_tracks() -> None:
+        """Test different tracks produce different identifiers."""
+        track1 = Track(
+            title="Track One",
+            artist_list=["artist"],
+            year=2024
+        )
+        track2 = Track(
+            title="Track Two",
+            artist_list=["artist"],
+            year=2024
+        )
+        track3 = Track(
+            title="Track One",
+            artist_list=["different artist"],
+            year=2024
+        )
+        track4 = Track(
+            title="Track One",
+            artist_list=["artist"],
+            year=2023  # Different year
+        )
+        # All should have different identifiers
+        ids = {track1.identifier, track2.identifier, track3.identifier, track4.identifier}
+        assert len(ids) == 4
+
+    @staticmethod
+    def test_identifier_case_insensitive() -> None:
+        """Test identifier is case-insensitive."""
+        track1 = Track(
+            title="Test Track",
+            artist_list=["Artist Name"],
+            year=2024
+        )
+        track2 = Track(
+            title="test track",
+            artist_list=["artist name"],
+            year=2024
+        )
+        # Same content in different cases should produce same identifier
+        assert track1.identifier == track2.identifier
+
+    @staticmethod
+    def test_legacy_identifier_format() -> None:
+        """Test legacy_identifier uses old string concatenation format."""
+        track = Track(
+            title="Scary Monsters and Nice Sprites",
+            artist_list=["skrillex"],
+            year=2010
+        )
+        # Should use old format: "artist_title_year"
+        assert track.legacy_identifier == "skrillex_scary_monsters_and_nice_sprites_2010"
+
+    @staticmethod
+    def test_legacy_identifier_vs_new_identifier() -> None:
+        """Test legacy and new identifiers are different formats."""
+        track = Track(
+            title="Test Track",
+            artist_list=["Artist Name"],
+            year=2024
+        )
+        # Legacy should be long string, new should be 8-char UUID
+        assert len(track.legacy_identifier) > 8
+        assert len(track.identifier) == 8
+        assert track.legacy_identifier != track.identifier
+
+    @staticmethod
+    def test_identifier_with_special_characters() -> None:
+        """Test identifier handles special characters in title/artist."""
+        track = Track(
+            title="Track (feat. Artist)",
+            artist_list=["Artist & Co."],
+            year=2024
+        )
+        # Should still generate valid 8-char hex identifier
+        assert len(track.identifier) == 8
+        assert all(c in "0123456789abcdef" for c in track.identifier)
+
+    @staticmethod
     def test_has_genre_method() -> None:
         """Test has_genre method for exact match."""
         track = Track(
@@ -213,8 +329,7 @@ class TestTrack:
             title="Test",
             artist_list=["artist"],
             year=2024,
-            genre=["techno"],
-            label=["label"]
+            genre=["techno"]
         )
         json_str = track.model_dump_json()
         assert isinstance(json_str, str)
@@ -240,15 +355,13 @@ class TestTrack:
             "title": "Test",
             "artist_list": ["artist1", "artist2"],
             "year": 2024,
-            "genre": ["techno"],
-            "label": ["label"]
+            "genre": ["techno"]
         }
         track = Track(**data)
         assert track.title == "Test"
         assert track.artist_list == ["artist1", "artist2"]
         assert track.year == 2024
         assert track.genre == ["techno"]
-        assert track.label == ["label"]
 
     @staticmethod
     def test_model_dump_excludes_none() -> None:
@@ -257,12 +370,12 @@ class TestTrack:
             title="Test",
             artist_list=["artist"],
             year=2024
-            # grouping and search_query are None
+            # search_query is None
         )
         data = track.model_dump(exclude_none=True)
-        assert "grouping" not in data
         assert "search_query" not in data
         assert "title" in data
+        assert "grouping" in data  # grouping defaults to [], not None
 
     @staticmethod
     def test_validate_path_within_project() -> None:
@@ -328,7 +441,7 @@ class TestTrack:
             assert output_path.parent.exists()
 
     @staticmethod
-    def test_to_json_file_rejects_path_traversal(tmp_path: Path) -> None:
+    def test_to_json_file_rejects_path_traversal() -> None:
         """Test to_json_file rejects path traversal attempts."""
         track = Track(
             title="Test",
@@ -386,16 +499,14 @@ class TestTrack:
             artist_list=["blasterjaxx", "hardwell", "maddix"],
             year=2024,
             genre=["hard techno"],
-            label=["revealed"],
-            grouping="Electronic",
+            grouping=["revealed"],
             search_query="blasterjaxx, hardwell, maddix 16"
         )
         assert track.title == "16"
         assert track.artist_list == ["blasterjaxx", "hardwell", "maddix"]
         assert track.year == 2024
         assert track.genre == ["hard techno"]
-        assert track.label == ["revealed"]
-        assert track.grouping == "Electronic"
+        assert track.grouping == ["revealed"]
         assert track.search_query == "blasterjaxx, hardwell, maddix 16"
 
 

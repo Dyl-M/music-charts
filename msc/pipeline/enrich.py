@@ -158,6 +158,7 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                 stage_name="Enrichment",
                 item_id=track_id,
                 message=f"Fetching stats: {track.title} - {track.primary_artist}",
+                metadata={"current_item": track.title},
             )
 
             self.notify(event)

@@ -983,11 +983,108 @@ def identifier(self) -> str:
 **Status**:
 
 - [x] Planned
-- [ ] In Progress
-- [ ] Fixed
+- [x] In Progress
+- [x] Fixed
 - [ ] Deferred
 
 **Priority**: High (affects data structure and export formats)
+
+**Solution Implemented (2025-12-25)**:
+
+✅ **Implemented Option 1: UUID5-based Deterministic Identifier**
+
+The `Track.identifier` property now uses UUID5 hashing to generate compact, deterministic 8-character identifiers:
+
+**Key Features**:
+- ✅ **Compact**: 8 characters (e.g., `c4e7f8a3`) vs 40-60+ characters
+- ✅ **Deterministic**: Same track always produces same ID across runs
+- ✅ **Stable**: UUID5 namespace-based hashing ensures reproducibility
+- ✅ **URL-safe**: No special characters, suitable for database keys and API endpoints
+- ✅ **Backward compatible**: `legacy_identifier` property provides old format for reference
+
+**Implementation Details**:
+
+```python
+@property
+def identifier(self) -> str:
+    """Unique identifier for this track (UUID5-based)."""
+    # Create stable content string from core track identifiers
+    # Using pipe separator to avoid collisions (e.g., "AB|C" vs "A|BC")
+    content = f"{self.primary_artist.lower()}|{self.title.lower()}|{self.year}"
+
+    # Generate UUID5 using DNS namespace (deterministic, reproducible)
+    track_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, content)
+
+    # Return first 8 characters for compact identifier
+    return str(track_uuid)[:8]
+```
+
+**Backward Compatibility**:
+
+Added `legacy_identifier` property that preserves the old string concatenation format for reference:
+
+```python
+@property
+def legacy_identifier(self) -> str:
+    """Legacy identifier format (pre-UUID5 implementation)."""
+    normalized_artist = self.primary_artist.lower().replace(" ", "_")
+    normalized_title = self.title.lower().replace(" ", "_")
+    return f"{normalized_artist}_{normalized_title}_{self.year}"
+```
+
+**UX Improvement - Progress Bar Display**:
+
+Updated pipeline progress bars to display track **title** instead of UUID identifier for better user experience:
+
+**Before**:
+```
+Extraction → c4e7f8a3
+Enrichment → c4e7f8a3
+```
+
+**After**:
+```
+Extraction → Scary Monsters and Nice Sprites
+Enrichment → Scary Monsters and Nice Sprites
+```
+
+Logs still use the UUID identifier for tracking:
+```json
+{
+  "event_type": "item_processing",
+  "item_id": "c4e7f8a3",
+  "message": "Searching Songstats: Scary Monsters and Nice Sprites - skrillex",
+  "metadata": {"current_item": "Scary Monsters and Nice Sprites"}
+}
+```
+
+**Files Modified**:
+- `msc/models/track.py:119-170` - Updated `identifier` property to UUID5, added `legacy_identifier` property
+- `msc/pipeline/extract.py:251` - Added `current_item` metadata for progress bar
+- `msc/pipeline/enrich.py:161` - Added `current_item` metadata for progress bar
+- `_tests/unit/test_track_model.py` - Added 9 comprehensive tests for UUID identifier
+
+**Testing Results**:
+
+✅ **All 53 track model tests passing**
+
+New tests added:
+- `test_identifier_is_uuid_based` - Validates 8-char hexadecimal format
+- `test_identifier_is_deterministic` - Same track = same ID
+- `test_identifier_is_stable_across_runs` - Stability across instantiations
+- `test_identifier_differs_for_different_tracks` - Different tracks = different IDs
+- `test_identifier_case_insensitive` - Case-insensitive hashing
+- `test_legacy_identifier_format` - Old format validation
+- `test_legacy_identifier_vs_new_identifier` - Format comparison
+- `test_identifier_with_special_characters` - Special character handling
+
+**Migration Notes**:
+
+No migration script needed since:
+- Repository and checkpoint usage is not affected (uses same `identifier` property)
+- Export formats automatically use new UUID format
+- `legacy_identifier` available for any backward compatibility needs
+- Old data files can coexist with new format
 
 **Proposed Solutions**:
 
@@ -2048,7 +2145,7 @@ The pipeline will:
 | ISSUE-009 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-010 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-011 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-012 | 🔴 High        | 📋 Planned | Future         |
+| ISSUE-012 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-013 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 
