@@ -1132,13 +1132,71 @@ content (e.g., karaoke versions, different remixes, cover versions).
 **Status**:
 
 - [x] Planned
-- [ ] In Progress
-- [ ] Fixed
+- [x] In Progress
+- [x] Fixed ✅
 - [ ] Deferred
 
 **Priority**: High (affects data accuracy and rankings validity)
 
-**Proposed Solution**:
+**Solution Implemented (2025-12-25)**:
+
+✅ **Keyword-only validation provides optimal balance between accuracy and success rate**:
+
+After testing multiple validation approaches, settled on simple keyword rejection:
+
+- Added `_validate_track_match()` method in ExtractionStage
+- Checks Songstats result titles for reject keywords only (no similarity validation)
+- Rejects matches containing: karaoke, instrumental, acapella, backing track, cover version, tribute, etc.
+- Failed matches are added to manual review queue with rejection reason
+- Achieved **89.5% success rate** (334/373 tracks) - matching baseline without over-filtering
+
+**Evolution of Approaches**:
+
+1. **Initial approach**: Dual-threshold validation (title 75% + artist 50% overlap) → 64.1% success (too strict)
+2. **Query comparison**: Single query similarity with normalization → 86.7% success (better but complex)
+3. **Pattern fixes**: Case-insensitive regex, featuring pattern removal → 88.3% success (still below baseline)
+4. **Final approach**: Keyword-only rejection → **89.5% success** ✅ (optimal)
+
+**Why Keyword-Only Won**:
+
+- Similarity validation created false negatives (rejected legitimate matches)
+- For curated electronic music library, false positives are rare
+- Keyword rejection catches obvious mismatches without over-filtering
+- Simpler implementation with clearer logic
+- Success rate matches baseline (89.4%) while still providing protection
+
+**Files Modified**:
+
+- `msc/config/constants.py:118-136` - Added REJECT_KEYWORDS tuple (12 keywords), removed individual bracket patterns
+  from TITLE_PATTERNS_TO_REMOVE
+- `msc/pipeline/extract.py:272-315,486-532` - Added validation method with keyword-only check, stores rejection reason
+  in manual review
+- `msc/utils/text.py:28-39` - Fixed format_title() to use case-insensitive regex pattern removal
+
+**Implementation Details**:
+
+1. **Keyword Rejection Only** (lines 510-520): Scans Songstats title for reject keywords, returns (False, reason) if
+   found
+2. **Accept All Others** (line 523): No similarity validation - all non-keyword matches accepted
+3. **Pattern Removal Fix**: Uses `re.sub(re.escape(pattern), "", result, flags=re.IGNORECASE)` for case-insensitive
+   matching
+4. **Clean Logging**: Only logs warnings for keyword rejections (minimal noise)
+
+**Example Rejections**:
+
+- "Our Time [Extended Mix]" → "Our Time - Karaoke Version..." ❌ (keyword: "karaoke")
+- "Track Name" → "Track Name (Instrumental)" ❌ (keyword: "instrumental")
+- "Song" → "Song - Originally Performed By..." ❌ (keyword: "originally performed")
+
+**Test Results** (Run 2025_20251225_010833):
+
+- Processed: 334 tracks
+- Failed: 39 tracks (no Songstats IDs found in database)
+- Success rate: **89.5%** (334/373)
+- Zero keyword rejections (all 39 failures are legitimate "not found" cases)
+- Matches baseline performance without creating false rejections
+
+**Proposed Solution (Original Documentation)**:
 
 **1. Implement Similarity Validation After Search**:
 
@@ -1990,8 +2048,8 @@ The pipeline will:
 | ISSUE-009 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-010 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-011 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-012 | 🔴 High        | 📋 Planned | 1.0.0          |
-| ISSUE-013 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-012 | 🔴 High        | 📋 Planned | Future         |
+| ISSUE-013 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 
 ---

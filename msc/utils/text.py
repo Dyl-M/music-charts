@@ -27,11 +27,14 @@ def format_title(track_title: str) -> str:
     """
     result = track_title
 
+    # Remove patterns case-insensitively (title may already be lowercased)
     for pattern in TITLE_PATTERNS_TO_REMOVE:
-        result = result.replace(pattern, "")
+        # Use regex with IGNORECASE flag for case-insensitive replacement
+        result = re.sub(re.escape(pattern), "", result, flags=re.IGNORECASE)
 
     for pattern in TITLE_PATTERNS_TO_SPACE:
-        result = result.replace(pattern, " ")
+        # Use regex with IGNORECASE flag for case-insensitive replacement
+        result = re.sub(re.escape(pattern), " ", result, flags=re.IGNORECASE)
 
     return result.strip().lower()
 

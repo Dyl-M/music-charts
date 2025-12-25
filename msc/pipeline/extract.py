@@ -13,6 +13,7 @@ from pydantic import ValidationError
 # Local
 from msc.clients.musicbee import MusicBeeClient
 from msc.clients.songstats import SongstatsClient
+from msc.config.constants import REJECT_KEYWORDS
 from msc.config.settings import get_settings
 from msc.models.track import Track
 from msc.pipeline.base import PipelineStage
@@ -266,6 +267,54 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 if search_results:
                     # Found Songstats ID
                     result = search_results[0]
+
+                    # Validate for reject keywords only (ISSUE-013)
+                    is_valid, reject_reason = self._validate_track_match(track, result)
+                    if not is_valid:
+                        # Contains reject keyword - likely false positive (karaoke, instrumental, etc.)
+                        self.logger.warning(
+                            "Rejected match for '%s - %s': %s (Songstats: '%s')",
+                            track.primary_artist,
+                            track.title,
+                            reject_reason,
+                            result.get("title", ""),
+                        )
+
+                        # Store search_query for debugging
+                        track = track.model_copy(update={"search_query": query})
+
+                        # Add to manual review queue
+                        self.review_queue.add(
+                            track_id=track_id,
+                            title=track.title,
+                            artist=track.primary_artist,
+                            reason=f"Rejected: {reject_reason}",
+                            metadata={
+                                "query": query,
+                                "songstats_title": result.get("title", ""),
+                                "songstats_id": result.get("songstats_track_id", ""),
+                            },
+                        )
+
+                        # Mark as failed in checkpoint
+                        checkpoint.failed_ids.add(track_id)
+
+                        # Notify warning
+                        event = self.create_event(
+                            EventType.WARNING,
+                            stage_name="Extraction",
+                            item_id=track_id,
+                            message=f"Rejected match ({reject_reason}): {result.get('title', 'Unknown')}"
+                        )
+
+                        self.notify(event)
+
+                        # Add to results without Songstats ID
+                        enriched_tracks.append(track)
+
+                        # Continue to next track (skip processing this false positive)
+                        continue
+
                     songstats_id = result.get("songstats_track_id", "")
 
                     # Extract artist list from Songstats API (for comparison with MusicBee)
@@ -432,6 +481,54 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
 
         self.notify(event)
         return enriched_tracks
+
+    @staticmethod
+    def _normalize_artists(artists: list[str]) -> list[str]:
+        """Normalize artist list for comparison.
+
+        Removes duplicates (case-insensitive) and sorts alphabetically.
+
+        Args:
+            artists: List of artist names
+
+        Returns:
+            Normalized list (deduplicated, lowercase, sorted)
+        """
+        # Deduplicate case-insensitively using a set (lowercase)
+        unique_artists = {artist.lower() for artist in artists if artist}
+        # Return sorted list for consistent ordering
+        return sorted(unique_artists)
+
+    def _validate_track_match(self, track: Track, result: dict[str, any]) -> tuple[bool, str]:
+        """Validate that Songstats result matches the searched track.
+
+        Only checks for reject keywords (karaoke, instrumental, etc.).
+        Similarity validation disabled to maximize match success rate.
+
+        Args:
+            track: Original track from MusicBee
+            result: Search result from Songstats API
+
+        Returns:
+            Tuple of (is_valid, reason) where:
+                - is_valid: True if match is valid, False if contains reject keyword
+                - reason: Rejection reason (keyword found) or empty string
+        """
+        songstats_title = result.get("title", "").lower()
+
+        # Reject obvious mismatches (karaoke, instrumental, cover versions)
+        for keyword in REJECT_KEYWORDS:
+            if keyword in songstats_title:
+                self.logger.debug(
+                    "Rejecting match for '%s' - contains keyword '%s' in title: %s",
+                    track.title,
+                    keyword,
+                    songstats_title,
+                )
+                return False, f"Contains reject keyword: '{keyword}'"
+
+        # Accept all other matches (no similarity validation)
+        return True, ""
 
     def load(self, data: list[Track]) -> None:
         """Save enriched tracks to repository.

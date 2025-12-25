@@ -79,6 +79,7 @@ TITLE_PATTERNS_TO_REMOVE: tuple[str, ...] = (
     "[Remix]",
     "[Extended Version]",
     "[Club Edit]",
+    "(DnB)"
     "[",
     "]",
     "?",
@@ -114,3 +115,19 @@ DEFAULT_HEADERS = {
     "Accept-Encoding": "",
     "Accept": "application/json",
 }
+
+# Keywords that indicate false positive matches
+REJECT_KEYWORDS: tuple[str, ...] = (
+    "karaoke",
+    "instrumental",
+    "acapella",
+    "a cappella",
+    "backing track",
+    "originally performed",
+    "cover version",
+    "tribute",
+    "piano version",
+    "acoustic version",
+    "8-bit",
+    "ringtone",
+)
