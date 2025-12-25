@@ -404,8 +404,8 @@ def export(
         settings = get_settings()
         settings.year = year
 
-        # Determine stats file path
-        stats_file = settings.year_output_dir / "stats.json"
+        # Determine enriched tracks file path
+        stats_file = settings.output_dir / "enriched_tracks.json"
 
         if not stats_file.exists():
             typer.echo(
@@ -531,23 +531,32 @@ def clean(
         raise typer.Exit(1)
 
 
-def _has_platform_data(track: TrackWithStats, platform_attr: str, stat_attr: str) -> bool:
-    """Check if track has data for a specific platform stat.
+def _has_platform_data(track: TrackWithStats, platform_attr: str) -> bool:
+    """Check if track is present on a specific platform.
+
+    A track is considered present if ANY field in the platform stats
+    has a non-None value (even if it's 0). Songstats only returns data
+    for platforms where the track exists.
 
     Args:
         track: TrackWithStats object
         platform_attr: Platform attribute name (e.g., 'spotify', 'apple_music')
-        stat_attr: Stat attribute to check (e.g., 'streams', 'views', 'fans')
 
     Returns:
-        True if platform exists and has the specified stat
+        True if platform exists and has at least one non-None field value
     """
     platform = getattr(track.platform_stats, platform_attr, None)
-    return platform is not None and getattr(platform, stat_attr, None) is not None
+    if platform is None:
+        return False
+
+    # Get all field values from the platform model
+    platform_dict = platform.model_dump()
+    # Track is present if ANY field has a non-None value
+    return any(value is not None for value in platform_dict.values())
 
 
 def _count_platform_tracks(data: list) -> dict[str, int]:
-    """Count tracks with data on each platform.
+    """Count tracks present on each platform.
 
     Args:
         data: List of TrackWithStats objects
@@ -555,18 +564,24 @@ def _count_platform_tracks(data: list) -> dict[str, int]:
     Returns:
         Dictionary mapping platform names to track counts
     """
-    # Platform configurations: (display_name, platform_attr, stat_attr)
+    # Platform configurations: (display_name, platform_attr)
+    # All 10 supported platforms
     platforms = [
-        ("Spotify", "spotify", "streams"),
-        ("Apple Music", "apple_music", "streams"),
-        ("YouTube", "youtube", "views"),
-        ("Deezer", "deezer", "fans"),
-        ("TikTok", "tiktok", "views"),
+        ("Spotify", "spotify"),
+        ("Apple Music", "apple_music"),
+        ("YouTube", "youtube"),
+        ("Amazon Music", "amazon_music"),
+        ("Deezer", "deezer"),
+        ("SoundCloud", "soundcloud"),
+        ("Tidal", "tidal"),
+        ("TikTok", "tiktok"),
+        ("Beatport", "beatport"),
+        ("1001Tracklists", "tracklists"),
     ]
 
     return {
-        name: sum(1 for t in data if _has_platform_data(t, platform_attr, stat_attr))
-        for name, platform_attr, stat_attr in platforms
+        name: sum(1 for t in data if _has_platform_data(t, platform_attr))
+        for name, platform_attr in platforms
     }
 
 
@@ -592,8 +607,8 @@ def stats(
         settings = get_settings()
         settings.year = year
 
-        # Load stats file
-        stats_file = settings.year_output_dir / "stats.json"
+        # Load enriched tracks file
+        stats_file = settings.output_dir / "enriched_tracks.json"
 
         if not stats_file.exists():
             typer.echo(

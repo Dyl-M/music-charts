@@ -166,6 +166,14 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
             try:
                 songstats_id = track.songstats_identifiers.songstats_id
 
+                # First, check which platforms track is available on
+                available_platforms = self.songstats.get_available_platforms(songstats_id)
+                self.logger.debug(
+                    "Track %s available on: %s",
+                    track.title,
+                    ", ".join(sorted(available_platforms)) if available_platforms else "none"
+                )
+
                 # Fetch platform statistics
                 platform_stats_data = self.songstats.get_platform_stats(songstats_id)
 
@@ -198,8 +206,8 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                 if peaks_data:
                     self._merge_peaks(platform_stats_data, peaks_data)
 
-                # Create PlatformStats model from data
-                platform_stats = self._create_platform_stats(platform_stats_data)
+                # Create PlatformStats model from data, filtering by available platforms
+                platform_stats = self._create_platform_stats(platform_stats_data, available_platforms)
 
                 # Optionally fetch YouTube video data
                 youtube_data: YouTubeVideoData | None = None
@@ -350,18 +358,24 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                     key = f"{platform}_{metric_name}_peak"
                     stats_data[key] = metric_data["peak"]
 
-    def _create_platform_stats(self, stats_data: dict) -> PlatformStats:
+    def _create_platform_stats(
+            self,
+            stats_data: dict,
+            available_platforms: set[str] | None = None
+    ) -> PlatformStats:
         """Create PlatformStats model from API response data.
 
         Args:
             stats_data: Raw platform statistics from API
+            available_platforms: Set of platform names where track exists
 
         Returns:
             PlatformStats model instance
         """
         # Use from_flat_dict to handle the flat structure from API
+        # Pass available_platforms to filter platforms properly
         try:
-            return PlatformStats.from_flat_dict(stats_data)
+            return PlatformStats.from_flat_dict(stats_data, available_platforms)
 
         except (ValidationError, ValueError, KeyError, TypeError) as error:
             self.logger.exception("Failed to create PlatformStats from data: %s", error)

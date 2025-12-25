@@ -37,7 +37,7 @@ All CLI commands will be validated from a user perspective:
 | ISSUE-013 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-015 | 🔴 High        | 📋 Planned | 1.0.0          |
-| ISSUE-016 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-016 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-017 | 🔴 High        | 📋 Planned | 1.0.0          |
 | ISSUE-018 | 🔴 High        | 📋 Planned | 1.0.0          |
 | ISSUE-019 | 🔴 High        | 📋 Planned | 1.0.0          |

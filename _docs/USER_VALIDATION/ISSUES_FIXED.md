@@ -1558,3 +1558,149 @@ try:
 **Related Files**:
 
 - `_data/runs/2025_20251224_113317/tracks.json` - Contains examples of unsplit artists
+
+---
+
+#### [ISSUE-016] `msc stats` Command Fixed - Platform Coverage Now Accurate
+
+**Command**: `msc stats`
+
+**Description**:
+The `msc stats` command had multiple critical issues preventing accurate platform coverage statistics. Fixed all file path issues, attribute name mismatches, and implemented proper platform presence detection using Songstats API data.
+
+**Status**:
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (blocks analytics functionality for 1.0.0)
+
+**Original Issues**:
+
+1. **Wrong file path**: Tried to load from `_data/output/2025/stats.json` instead of `_data/output/enriched_tracks.json`
+2. **Wrong platform attribute names**: Used incorrect attributes (e.g., `streams` instead of `streams_total`)
+3. **Missing platforms**: Only checked 5 platforms instead of all 10
+4. **Flawed platform presence logic**: Checked `is not None` which incorrectly counted tracks with 0 values
+5. **Amazon Music 0% coverage**: Platform name normalization issue (`"amazon"` vs `"amazon_music"`)
+
+**Solution Implemented (2025-12-25)**:
+
+✅ **1. Fixed File Path**:
+- Changed from `settings.year_output_dir / "stats.json"` → `settings.output_dir / "enriched_tracks.json"`
+- Now correctly loads enriched tracks data
+
+✅ **2. Fixed Platform Attribute Names**:
+- Spotify: `"streams"` → `"streams_total"`
+- YouTube: `"views"` → `"video_views_total"`
+- Deezer: `"fans"` → `"playlist_reach_total"`
+- All attributes now match model field names
+
+✅ **3. Added All 10 Platforms**:
+- Added missing platforms: SoundCloud, Tidal, Amazon Music, Beatport, 1001Tracklists
+- Now displays coverage for all supported streaming platforms
+
+✅ **4. Implemented Proper Platform Presence Detection**:
+
+**Architecture Decision**: Two-phase platform availability checking
+
+**Phase 1 - Get Available Platforms** (`SongstatsClient.get_available_platforms()`):
+- Calls `/tracks/info` endpoint to determine which platforms track exists on
+- Returns `links` array showing actual platform availability
+- Normalizes platform names: `"tracklist"` → `"1001tracklists"`, `"amazon"` → `"amazon_music"`
+
+**Phase 2 - Filter Platform Stats** (`PlatformStats.from_flat_dict()`):
+- Only creates platform stat instances for available platforms
+- Correctly distinguishes "not on platform" (None) from "on platform with 0 stats" (0)
+- Uses name mapping dict for consistent normalization
+
+**Key Implementation Details**:
+
+```python
+# msc/clients/songstats.py - Platform name normalization
+platform_name_map = {
+    "tracklist": "1001tracklists",
+    "amazon": "amazon_music",
+}
+normalized = {platform_name_map.get(platform, platform) for platform in platforms}
+
+# msc/models/stats.py - Field name normalization
+field_to_source = {
+    "tracklists": "1001tracklists",
+}
+normalized_name = field_to_source.get(field_name, field_name)
+if normalized_name in available_platforms:
+    platform_kwargs[field_name] = model_class(**platform_data)
+
+# msc/cli.py - Platform presence check
+def _has_platform_data(track: TrackWithStats, platform_attr: str) -> bool:
+    """Check if track is present on a specific platform.
+
+    A track is considered present if ANY field in the platform stats
+    has a non-None value (even if it's 0).
+    """
+    platform = getattr(track.platform_stats, platform_attr, None)
+    if platform is None:
+        return False
+
+    platform_dict = platform.model_dump()
+    return any(value is not None for value in platform_dict.values())
+```
+
+**Why This Architecture?**:
+
+The Songstats `/tracks/stats` endpoint returns ALL requested platforms with 0 values even when a track doesn't exist on that platform. This makes it impossible to distinguish:
+- Track not on platform (shouldn't count)
+- Track on platform with 0 activity (should count)
+
+By checking `/tracks/info` first, we get the authoritative list of platforms where the track actually exists, then use that to filter which platform stats to create.
+
+**Files Modified**:
+- `msc/clients/songstats.py:334-370` - Added `get_available_platforms()` method with normalization dict
+- `msc/models/stats.py:149-227` - Updated `from_flat_dict()` with `available_platforms` parameter and field name normalization
+- `msc/pipeline/enrich.py:169-210, 361-383` - Call `get_available_platforms()` before fetching stats, pass to `_create_platform_stats()`
+- `msc/cli.py:534-585, 598-630` - Fixed file path, attribute names, added all 10 platforms, updated presence detection
+
+**Test Results** (Run 2025_20251225_233149):
+
+```
+=== Dataset Statistics - 2025 ===
+
+Total Tracks: 329
+
+Platform Coverage:
+  Spotify          320 tracks ( 97.3%)
+  Apple Music      315 tracks ( 95.7%)
+  YouTube          312 tracks ( 94.8%)
+  Amazon Music     303 tracks ( 92.1%)  ✅ Now showing correctly!
+  Deezer           306 tracks ( 93.0%)
+  SoundCloud       236 tracks ( 71.7%)
+  Tidal            301 tracks ( 91.5%)
+  TikTok           262 tracks ( 79.6%)
+  Beatport         261 tracks ( 79.3%)
+  1001Tracklists   253 tracks ( 76.9%)
+```
+
+**Platform Name Normalization Map**:
+
+Three different naming conventions exist:
+1. **API source names**: `"tracklist"`, `"amazon"` (from `/tracks/info` endpoint)
+2. **Normalized comparison names**: `"1001tracklists"`, `"amazon_music"` (in available_platforms set)
+3. **Model field names**: `"tracklists"`, `"amazon_music"` (Pydantic model attributes)
+
+The normalization ensures all three conventions map correctly:
+- `get_available_platforms()`: API → Comparison names
+- `from_flat_dict()`: Field → Comparison names for lookup
+
+**Benefits**:
+- ✅ Accurate platform coverage statistics (no more 0% or 100% false readings)
+- ✅ Distinguishes "not on platform" from "on platform with no activity"
+- ✅ Preserves all platform data in JSON for weight computation (ISSUE-019)
+- ✅ Cleaner, more maintainable code with dict-based normalization
+- ✅ All 10 platforms properly tracked
+
+**Related Issues**:
+- Enables proper weight adjustment for ISSUE-019 (Power Ranking Weights)
+- Provides accurate data availability information for analytics
+
+---

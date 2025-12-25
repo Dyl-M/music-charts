@@ -147,7 +147,11 @@ class PlatformStats(MSCBaseModel):
         return {k: v for k, v in data.items() if k.startswith(prefix)}
 
     @classmethod
-    def from_flat_dict(cls, data: dict[str, Any]) -> Self:
+    def from_flat_dict(
+            cls,
+            data: dict[str, Any],
+            available_platforms: set[str] | None = None
+    ) -> Self:
         """Load from legacy flat dictionary format.
 
         Takes a flat dictionary with platform-prefixed keys
@@ -156,6 +160,9 @@ class PlatformStats(MSCBaseModel):
 
         Args:
             data: Flat dictionary with platform-prefixed keys.
+            available_platforms: Optional set of platform names where track exists.
+                If provided, only creates platform instances for these platforms.
+                Platforms not in this set will use default_factory (all None values).
 
         Returns:
             PlatformStats instance with nested platform models.
@@ -168,6 +175,16 @@ class PlatformStats(MSCBaseModel):
             >>> stats = PlatformStats.from_flat_dict(flat_data)
             >>> stats.spotify.streams_total
             1000000
+
+            >>> # With platform filtering
+            >>> stats = PlatformStats.from_flat_dict(
+            ...     flat_data,
+            ...     available_platforms={"spotify"}
+            ... )
+            >>> stats.spotify.streams_total  # Has data
+            1000000
+            >>> stats.deezer.popularity_peak  # Not available, uses default
+            None
         """
         # Define platform configurations
         platforms = [
@@ -187,9 +204,27 @@ class PlatformStats(MSCBaseModel):
         platform_kwargs = {}
         for field_name, prefix, model_class in platforms:
             platform_data = cls._group_by_platform(data, prefix)
-            platform_kwargs[field_name] = (
-                model_class(**platform_data) if platform_data else model_class()
-            )
+
+            # Only create platform instance if platform is available (track exists there)
+            # If available_platforms is None, create for all platforms with data (backward compat)
+            if available_platforms is None:
+                # Legacy behavior: create if has any data
+                has_data = any(value is not None for value in platform_data.values())
+                if has_data:
+                    platform_kwargs[field_name] = model_class(**platform_data)
+
+            else:
+                # New behavior: only create if platform is in available list
+                # This correctly distinguishes "not on platform" (None) from "on platform with 0 stats" (0)
+
+                # Normalize model field names to match available_platforms set
+                field_to_source = {
+                    "tracklists": "1001tracklists",
+                }
+
+                normalized_name = field_to_source.get(field_name, field_name)
+                if normalized_name in available_platforms:
+                    platform_kwargs[field_name] = model_class(**platform_data)
 
         return cls(**platform_kwargs)
 
@@ -424,3 +459,57 @@ class TrackWithStats(MSCBaseModel):
             songstats_identifiers=SongstatsIdentifiers(**identifiers_data),
             platform_stats=PlatformStats.from_flat_dict(data),
         )
+
+    def to_flat_dict(self) -> dict[str, Any]:
+        """Convert to fully flat dictionary format.
+
+        Flattens nested track, identifier, and platform stats into a single
+        dictionary with all fields at the top level. Useful for CSV export
+        and pandas DataFrames.
+
+        Returns:
+            Flat dictionary with all fields at top level.
+
+        Examples:
+            >>> track_with_stats = TrackWithStats(
+            ...     track=Track(
+            ...         title="16",
+            ...         artist_list=["blasterjaxx"],
+            ...         year=2024
+            ...     ),
+            ...     songstats_identifiers=SongstatsIdentifiers(
+            ...         songstats_id="qmr6e0bx",
+            ...         songstats_title="16"
+            ...     ),
+            ...     platform_stats=PlatformStats(
+            ...         spotify=SpotifyStats(streams_total=3805083)
+            ...     )
+            ... )
+            >>> flat = track_with_stats.to_flat_dict()
+            >>> flat["title"]
+            '16'
+            >>> flat["spotify_streams_total"]
+            3805083
+        """
+        result = {}
+
+        # Flatten track fields (exclude None values)
+        track_dict = self.track.model_dump(exclude_none=True)
+        result.update(track_dict)
+
+        # Flatten identifier fields (exclude None values)
+        identifiers_dict = self.songstats_identifiers.model_dump(exclude_none=True)
+        result.update(identifiers_dict)
+
+        # Flatten platform stats (uses aliases and excludes None values)
+        platform_dict = self.platform_stats.to_flat_dict()
+        result.update(platform_dict)
+
+        # Flatten YouTube data if present
+        if self.youtube_data is not None:
+            youtube_dict = self.youtube_data.model_dump(exclude_none=True)
+            # Prefix YouTube data fields to avoid collisions
+            for key, value in youtube_dict.items():
+                result[f"youtube_data_{key}"] = value
+
+        return result

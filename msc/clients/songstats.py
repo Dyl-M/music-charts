@@ -331,6 +331,44 @@ class SongstatsClient(BaseClient):
             )
             return {}
 
+    def get_available_platforms(self, songstats_track_id: str) -> set[str]:
+        """Get list of platforms where track is available.
+
+        Args:
+            songstats_track_id: Songstats track identifier.
+
+        Returns:
+            Set of platform names where track exists (e.g., {'spotify', 'youtube', 'tracklist'})
+
+        Examples:
+            >>> client.get_available_platforms("2kuc1bpm")
+            {'tracklist'}
+        """
+        track_info = self.get_track_info(songstats_track_id)
+
+        if not track_info:
+            return set()
+
+        # Extract platform sources from links array
+        links = track_info.get("track_info", {}).get("links", [])
+        platforms = {link.get("source") for link in links if link.get("source")}
+
+        # Normalize platform names to match model field names
+        platform_name_map = {
+            "tracklist": "1001tracklists",
+            "amazon": "amazon_music",
+        }
+
+        normalized = {platform_name_map.get(platform, platform) for platform in platforms}
+
+        self.logger.debug(
+            "Track %s available on platforms: %s",
+            songstats_track_id,
+            ", ".join(sorted(normalized))
+        )
+
+        return normalized
+
     # =========================================================================
     # Data modification endpoints (POST)
     # =========================================================================
