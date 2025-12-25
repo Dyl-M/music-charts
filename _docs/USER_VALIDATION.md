@@ -996,6 +996,7 @@ def identifier(self) -> str:
 The `Track.identifier` property now uses UUID5 hashing to generate compact, deterministic 8-character identifiers:
 
 **Key Features**:
+
 - ✅ **Compact**: 8 characters (e.g., `c4e7f8a3`) vs 40-60+ characters
 - ✅ **Deterministic**: Same track always produces same ID across runs
 - ✅ **Stable**: UUID5 namespace-based hashing ensures reproducibility
@@ -1037,28 +1038,34 @@ def legacy_identifier(self) -> str:
 Updated pipeline progress bars to display track **title** instead of UUID identifier for better user experience:
 
 **Before**:
+
 ```
 Extraction → c4e7f8a3
 Enrichment → c4e7f8a3
 ```
 
 **After**:
+
 ```
 Extraction → Scary Monsters and Nice Sprites
 Enrichment → Scary Monsters and Nice Sprites
 ```
 
 Logs still use the UUID identifier for tracking:
+
 ```json
 {
   "event_type": "item_processing",
   "item_id": "c4e7f8a3",
   "message": "Searching Songstats: Scary Monsters and Nice Sprites - skrillex",
-  "metadata": {"current_item": "Scary Monsters and Nice Sprites"}
+  "metadata": {
+    "current_item": "Scary Monsters and Nice Sprites"
+  }
 }
 ```
 
 **Files Modified**:
+
 - `msc/models/track.py:119-170` - Updated `identifier` property to UUID5, added `legacy_identifier` property
 - `msc/pipeline/extract.py:251` - Added `current_item` metadata for progress bar
 - `msc/pipeline/enrich.py:161` - Added `current_item` metadata for progress bar
@@ -1069,6 +1076,7 @@ Logs still use the UUID identifier for tracking:
 ✅ **All 53 track model tests passing**
 
 New tests added:
+
 - `test_identifier_is_uuid_based` - Validates 8-char hexadecimal format
 - `test_identifier_is_deterministic` - Same track = same ID
 - `test_identifier_is_stable_across_runs` - Stability across instantiations
@@ -1081,6 +1089,7 @@ New tests added:
 **Migration Notes**:
 
 No migration script needed since:
+
 - Repository and checkpoint usage is not affected (uses same `identifier` property)
 - Export formats automatically use new UUID format
 - `legacy_identifier` available for any backward compatibility needs
@@ -1571,6 +1580,280 @@ try:
 **Related Files**:
 
 - `_data/runs/2025_20251224_113317/tracks.json` - Contains examples of unsplit artists
+
+---
+
+#### [ISSUE-015] `msc export` Command Failing
+
+**Command**: `msc export`
+
+**Description**:
+The `msc export` command is not working properly during user validation testing. The exact error and failure mode need
+to be investigated.
+
+**Steps to Reproduce**:
+
+1. Run `msc export --year 2025`
+2. Observe the error/failure
+
+**Expected Behavior**:
+
+- Command should export enriched track data to CSV format (default)
+- Should handle ODS and HTML formats with appropriate flags
+- Should display export summary with row count, file size, and duration
+
+**Actual Behavior**:
+
+*To be documented after investigation*
+
+**Status**:
+
+- [x] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: High (blocks data export functionality for 1.0.0)
+
+**Location in Code**:
+
+- `msc/cli.py:366-467` - Export command implementation
+- `msc/commands/exporters.py` - DataExporter class
+
+**Notes**:
+
+- Requires investigation to determine root cause
+- May be related to missing data files or incorrect path resolution
+- May be related to pandas/odfpy dependency issues
+
+---
+
+#### [ISSUE-016] `msc stats` Command Failing
+
+**Command**: `msc stats`
+
+**Description**:
+The `msc stats` command is not working properly during user validation testing. The exact error and failure mode need to
+be investigated.
+
+**Steps to Reproduce**:
+
+1. Run `msc stats --year 2025`
+2. Observe the error/failure
+
+**Expected Behavior**:
+
+- Command should display dataset statistics for the specified year
+- Should show total track count
+- Should show platform coverage with track counts and percentages
+- Should handle missing data gracefully
+
+**Actual Behavior**:
+
+*To be documented after investigation*
+
+**Status**:
+
+- [x] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: High (blocks analytics functionality for 1.0.0)
+
+**Location in Code**:
+
+- `msc/cli.py:573-630` - Stats command implementation
+- Helper functions: `_has_platform_data()`, `_count_platform_tracks()`
+
+**Notes**:
+
+- Requires investigation to determine root cause
+- May be related to missing data files or incorrect path resolution
+- May be related to TrackWithStats model structure
+
+---
+
+#### [ISSUE-017] Power Ranking Scores Not in 0-100 Range (Design Issue)
+
+**Command**: `msc run --stage rank`
+
+**Description**:
+The power ranking scores by category are not in the expected 0-100 range as they were in the legacy implementation. The
+current normalization strategy may be producing scores in a different range (e.g., 0-1), which affects readability and
+comparison with historical rankings.
+
+**Expected Behavior**:
+
+- Category scores (Popularity, Streams, Charts, etc.) should be normalized to 0-100 range
+- Total score should be weighted sum of category scores
+- Scores should match legacy implementation behavior for consistency
+- Normalization should use same algorithm as legacy (MinMaxScaler or equivalent)
+
+**Actual Behavior**:
+
+*To be documented after investigation of current scoring output*
+
+**Status**:
+
+- [x] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data quality and comparison with legacy rankings)
+
+**Location in Code**:
+
+- `msc/analysis/scorer.py` - PowerRankingScorer implementation
+- `msc/analysis/normalizers.py` - MinMaxNormalizer, ZScoreNormalizer, RobustNormalizer
+- `msc/pipeline/rank.py` - RankingStage that uses scorer
+
+**Root Cause**:
+
+Likely a normalization strategy issue:
+
+- MinMaxNormalizer may be producing 0-1 range instead of 0-100
+- Scores may need to be multiplied by 100 after normalization
+- Or normalizer may need a `feature_range=(0, 100)` parameter
+
+**Impact**:
+
+- Rankings are technically correct but scores are harder to interpret
+- Can't compare directly with legacy rankings
+- User experience is degraded (scores like 0.85 vs 85.0)
+
+**Files to Modify**:
+
+- `msc/analysis/normalizers.py` - Update MinMaxNormalizer to support 0-100 range
+- `msc/analysis/scorer.py` - Ensure scores are in 0-100 range
+- `msc/pipeline/rank.py` - Verify normalization configuration
+
+**Testing Requirements**:
+
+- Verify category scores are in 0-100 range
+- Verify total scores match legacy implementation
+- Update tests to expect 0-100 range instead of 0-1
+
+---
+
+#### [ISSUE-018] Missing YouTube Data Despite Songstats Data Availability
+
+**Command**: `msc run --stage enrich`
+
+**Description**:
+Some tracks are not being enriched with YouTube data even though minimal YouTube data appears to exist in the Songstats
+API response. The enrichment logic may be too strict in validation or may not be extracting all available YouTube data.
+
+**Expected Behavior**:
+
+- All tracks with any YouTube presence in Songstats should have YouTube data
+- YouTube data should be extracted even if minimal/incomplete
+- Tracks with no YouTube data should be clearly identified vs validation failures
+
+**Actual Behavior**:
+
+*To be documented after investigation of enrichment logs and Songstats responses*
+
+**Status**:
+
+- [x] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data completeness)
+
+**Location in Code**:
+
+- `msc/pipeline/enrich.py:207-228` - YouTube data extraction and validation
+- `msc/clients/songstats.py` - YouTube video fetching from Songstats API
+
+**Possible Root Causes**:
+
+1. Validation may be too strict (requires all fields: ytb_id, views, channel_name)
+2. Songstats API may return partial YouTube data that's being rejected
+3. API response structure may vary and code doesn't handle all cases
+
+**Investigation Needed**:
+
+- Review Songstats API responses for tracks without YouTube data
+- Check if partial YouTube data exists but is rejected by validation
+- Determine if validation should be more permissive
+
+**Related Issues**:
+
+- See ISSUE-007: Enrichment Stage Failing on Empty YouTube Data (fixed, but related)
+
+---
+
+#### [ISSUE-019] Power Ranking Weights Not Adjusted from Data Availability
+
+**Command**: `msc run --stage rank`
+
+**Description**:
+The power ranking weights are static and do not adjust based on actual data availability from each platform. The legacy
+implementation adjusted weights based data availability rate on which platforms, ensuring fair comparison between tracks
+with different platform coverage.
+
+**Expected Behavior**:
+
+- Weights should be dynamically adjusted per stat based on data availability
+- If popularity_peak from Deezer is available for 50% of the database (tracks existing withing Songstats DB), then the
+  weight for Deezer's popularity_peak should multiplied by 0.5
+- Matches legacy implementation behavior
+
+**Actual Behavior**:
+
+- Weights are static for all tracks regardless of data availability
+
+**Status**:
+
+- [x] Planned
+- [ ] In Progress
+- [ ] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects ranking fairness and accuracy)
+
+**Location in Code**:
+
+- `msc/analysis/scorer.py` - PowerRankingScorer implementation
+- `msc/config/constants.py` - CATEGORY_WEIGHTS definition
+- `msc/pipeline/rank.py` - RankingStage scoring logic
+
+**Root Cause**:
+
+The current implementation uses static weights from `CATEGORY_WEIGHTS` without adjusting for missing data:
+
+```python
+# Current: Static weights
+category_weights = {
+    StatCategory.POPULARITY: 4,  # High weight
+    StatCategory.STREAMS: 4,  # High weight
+    # ... etc
+}
+```
+
+**Expected Implementation**:
+
+```python
+# TODO: to define properly
+```
+
+**Impact**:
+
+- Rankings are biased toward tracks with more complete data
+- Tracks with niche platform presence are unfairly penalized
+- Can't fairly compare mainstream vs independent releases
+
+**Files to Modify**:
+
+# TODO: to analyze again
+
+**Testing Requirements**:
+
+- Verify tracks with missing data get fair scores
 
 ---
 
@@ -2132,22 +2415,27 @@ The pipeline will:
 
 ## Resolution Tracking
 
-| Issue ID  | Priority       | Status     | Target Version |
-|-----------|----------------|------------|----------------|
-| ISSUE-001 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-002 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
-| ISSUE-003 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
-| ISSUE-004 | 🔵 Low         | ✅ Fixed    | 1.0.0          |
-| ISSUE-005 | 📈 Enhancement | ⏳ Deferred | Future         |
-| ISSUE-006 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
-| ISSUE-007 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
-| ISSUE-008 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-009 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-010 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-011 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-012 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-013 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| Issue ID  | Priority       | Status       | Target Version |
+|-----------|----------------|--------------|----------------|
+| ISSUE-001 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-002 | 🟠 Medium      | ✅ Fixed      | 1.0.0          |
+| ISSUE-003 | 🟠 Medium      | ✅ Fixed      | 1.0.0          |
+| ISSUE-004 | 🔵 Low         | ✅ Fixed      | 1.0.0          |
+| ISSUE-005 | 📈 Enhancement | ⏳ Deferred   | Future         |
+| ISSUE-006 | ☢️ Critical    | ✅ Fixed      | 1.0.0          |
+| ISSUE-007 | ☢️ Critical    | ✅ Fixed      | 1.0.0          |
+| ISSUE-008 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-009 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-010 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-011 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-012 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-013 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-014 | 🔴 High        | ✅ Fixed      | 1.0.0          |
+| ISSUE-015 | 🔴 High        | 📋 Planned   | 1.0.0          |
+| ISSUE-016 | 🔴 High        | 📋 Planned   | 1.0.0          |
+| ISSUE-017 | 🔴 High        | 📋 Planned   | 1.0.0          |
+| ISSUE-018 | 🔴 High        | 📋 Planned   | 1.0.0          |
+| ISSUE-019 | 🔴 High        | 📋 Planned   | 1.0.0          |
 
 ---
 
