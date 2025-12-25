@@ -16,6 +16,19 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 ## Status
 
 **Current:** Phase 5 (CLI & Polish) ✅ **Complete** - Professional-grade CLI with comprehensive features
+
+**Branch:** `feat-V1` (preparing for 1.0.0 release)
+
+### Recent Enhancements (feat-V1)
+- **UUID5-based Track Identifiers:** Compact 8-character deterministic IDs replacing long string concatenation
+- **Songstats Match Validation:** Keyword-based rejection prevents false positives (karaoke, instrumentals)
+- **Enhanced Metadata Extraction:** ISRC codes, Songstats artist/label lists for data quality validation
+- **Run-based Directory Structure:** Organized output with timestamps for better tracking
+- **Clean Console Output:** Minimal logs with file-based verbose logging and enhanced progress bars
+- **Manual Review Queue:** Automatic checkpoint resumption with deduplication
+- **Comprehensive Query Cleaning:** Advanced text normalization for better Songstats search accuracy
+
+### CLI Features
 - **7 CLI commands:** `run`, `billing`, `validate`, `export`, `clean`, `stats`, `init`
 - **Error handling infrastructure:** Custom exceptions with helpful multi-line suggestions
 - **Display formatters:** Rich tables and panels for quota, validation errors, export summaries
@@ -145,8 +158,7 @@ music-charts/
 ├── _config/                # Runtime configuration
 ├── _data/                  # Data artifacts (gitignored)
 ├── _demos/                 # Interactive demo scripts
-├── _docs/                  # Documentations and notes
-│
+├── _docs/                  # Documentation and notes
 ├── _legacy/                # Archived original scripts
 │   ├── src/                # Original pipeline scripts
 │   ├── notebooks/          # Original Jupyter notebooks
@@ -159,6 +171,7 @@ music-charts/
 └── msc/                    # Main package (new modular architecture)
     ├── analysis/           # Analytics modules
     ├── clients/            # API clients
+    ├── commands/           # CLI utilities
     ├── config/             # Configuration
     ├── models/             # Data models
     ├── pipeline/           # ETL pipeline base classes
