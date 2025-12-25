@@ -4,68 +4,6 @@ This document contains all open and pending issues discovered during user valida
 
 ## High Priority Issues
 
-#### [ISSUE-015] `msc export` Command Failing
-
-**Command**: `msc export`
-
-**Description**:
-The `msc export` command is not working properly during user validation testing. The exact error and failure mode need
-to be investigated.
-
-**Steps to Reproduce**:
-
-1. Run `msc export --year 2025`
-2. Observe the error/failure
-
-**Expected Behavior**:
-
-- Command should export enriched track data to CSV format (default)
-- Should handle ODS and HTML formats with appropriate flags
-- Should display export summary with row count, file size, and duration
-
-**Actual Behavior**:
-
-The `msc export` command has multiple critical issues:
-
-1. **Wrong file path** (`msc/cli.py:408`):
-    - Tries to load from: `settings.year_output_dir / "stats.json"` (e.g., `_data/output/2025/stats.json`)
-    - Should load from: `settings.output_dir / "enriched_tracks.json"` (e.g., `_data/output/enriched_tracks.json`)
-    - Results in file not found or loading wrong data
-
-2. **Missing data flattening method**:
-    - `TrackWithStats` model lacks `to_flat_dict()` method for proper CSV export
-    - When exporting to CSV, nested Pydantic models are converted to string representations
-    - Results in CSV cells containing Python dict strings like: `{'songstats_id': 'xxx', 'api_track_id': 'xxx'}`
-    - Instead of proper flat columns: `songstats_id, api_track_id`
-
-3. **Nested structures not properly flattened**:
-    - `TrackWithStats` has nested structure: `track`, `songstats_identifiers`, `platform_stats`, `youtube_data`
-    - Each platform in `platform_stats` has nested objects (e.g., `spotify.streams_total`, `youtube.video_views_total`)
-    - Export shows nested dicts as strings instead of creating flat column structure
-    - Makes exported data unreadable and unusable for analysis
-
-**Status**:
-
-- [x] Planned
-- [ ] In Progress
-- [ ] Fixed
-- [ ] Deferred
-
-**Priority**: High (blocks data export functionality for 1.0.0)
-
-**Location in Code**:
-
-- `msc/cli.py:366-467` - Export command implementation
-- `msc/commands/exporters.py` - DataExporter class
-
-**Notes**:
-
-- Requires investigation to determine root cause
-- May be related to missing data files or incorrect path resolution
-- May be related to pandas/odfpy dependency issues
-
----
-
 #### [ISSUE-017] Power Ranking Scores Not in 0-100 Range (Design Issue)
 
 **Command**: `msc run --stage rank`

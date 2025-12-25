@@ -385,13 +385,13 @@ class TrackWithStats(MSCBaseModel):
             '16'
         """
         # Extract track fields (top-level)
+        # Legacy format uses "label" key, Track model uses "grouping"
         track_data = {
             "title": data["title"],
             "artist_list": data["artist_list"],
             "year": data.get("year"),
             "genre": data.get("genre", []),
-            "label": data.get("label", []),
-            "grouping": data.get("grouping"),
+            "grouping": data.get("label", []) or data.get("grouping", []),
             "search_query": data.get("request"),  # Legacy uses "request" key
         }
 
@@ -439,8 +439,7 @@ class TrackWithStats(MSCBaseModel):
             "artist_list": data.get("artist_list", []),
             "year": data.get("year"),
             "genre": data.get("genre", []),
-            "label": data.get("label", []),
-            "grouping": data.get("grouping"),
+            "grouping": data.get("label", []) or data.get("grouping", []),
             "search_query": data.get("search_query") or data.get("request"),
         }
 
@@ -461,14 +460,14 @@ class TrackWithStats(MSCBaseModel):
         )
 
     def to_flat_dict(self) -> dict[str, Any]:
-        """Convert to fully flat dictionary format.
+        """Convert to fully flat dictionary format for CSV export.
 
         Flattens nested track, identifier, and platform stats into a single
-        dictionary with all fields at the top level. Useful for CSV export
-        and pandas DataFrames.
+        dictionary with only scalar values at the top level. Lists and nested
+        dicts are excluded for clean CSV output.
 
         Returns:
-            Flat dictionary with all fields at top level.
+            Flat dictionary with scalar fields only.
 
         Examples:
             >>> track_with_stats = TrackWithStats(
@@ -486,30 +485,17 @@ class TrackWithStats(MSCBaseModel):
             ...     )
             ... )
             >>> flat = track_with_stats.to_flat_dict()
-            >>> flat["title"]
-            '16'
+            >>> flat["track_id"]
+            '3e4f5a6b'
+            >>> flat["songstats_id"]
+            'qmr6e0bx'
             >>> flat["spotify_streams_total"]
             3805083
         """
-        result = {}
-
-        # Flatten track fields (exclude None values)
-        track_dict = self.track.model_dump(exclude_none=True)
-        result.update(track_dict)
-
-        # Flatten identifier fields (exclude None values)
-        identifiers_dict = self.songstats_identifiers.model_dump(exclude_none=True)
-        result.update(identifiers_dict)
+        result: dict[str, Any] = {"track_id": self.track.identifier,
+                                  "songstats_id": self.songstats_identifiers.songstats_id}
 
         # Flatten platform stats (uses aliases and excludes None values)
         platform_dict = self.platform_stats.to_flat_dict()
         result.update(platform_dict)
-
-        # Flatten YouTube data if present
-        if self.youtube_data is not None:
-            youtube_dict = self.youtube_data.model_dump(exclude_none=True)
-            # Prefix YouTube data fields to avoid collisions
-            for key, value in youtube_dict.items():
-                result[f"youtube_data_{key}"] = value
-
         return result

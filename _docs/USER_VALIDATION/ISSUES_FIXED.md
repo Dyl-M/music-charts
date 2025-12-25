@@ -1561,6 +1561,78 @@ try:
 
 ---
 
+#### [ISSUE-015] `msc export` Command Fixed - Clean CSV Output
+
+**Command**: `msc export`
+
+**Description**:
+The `msc export` command was producing CSV files with nested Python objects (lists and dicts) instead of clean scalar values. This made the exported data unusable for analysis in spreadsheet applications.
+
+**Status**:
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (blocks data export functionality for 1.0.0)
+
+**Original Issues**:
+
+1. **Nested dicts in CSV**: Fields like `songstats_identifiers` and `youtube_data_most_viewed` rendered as Python dict strings
+2. **Lists in CSV**: Fields like `artist_list`, `genre`, `grouping` rendered as Python list strings (`['value1', 'value2']`)
+3. **Duplicate data**: `songstats_identifiers` appeared both as nested dict AND as individual flattened fields
+4. **Unnecessary metadata**: Fields like `title`, `year`, `search_query` duplicated data already in JSON
+
+**Solution Implemented (2025-12-26)**:
+
+✅ **1. Simplified Export to Identifiers + Stats Only**:
+- CSV now contains only: `track_id`, `songstats_id`, and platform statistics
+- Full track metadata remains in `enriched_tracks.json` (the source of truth)
+- Clean separation: JSON for full data, CSV for stats analysis
+
+✅ **2. Removed All Nested Structures**:
+- Removed nested dict fields: `songstats_identifiers`, `youtube_data_most_viewed`, `youtube_data_songstats_identifiers`
+- Removed list fields: `artist_list`, `genre`, `grouping`, `songstats_artists`, `songstats_labels`, `youtube_data_all_sources`
+- All exported values are now scalars (strings, numbers, or None)
+
+✅ **3. Updated `TrackWithStats.to_flat_dict()`**:
+```python
+def to_flat_dict(self) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "track_id": self.track.identifier,
+        "songstats_id": self.songstats_identifiers.songstats_id
+    }
+    # Add platform stats (already flat scalars)
+    result.update(self.platform_stats.to_flat_dict())
+    return result
+```
+
+✅ **4. Fixed Legacy Key Mapping**:
+- `from_legacy_json()`: Maps legacy `"label"` key to `"grouping"` field
+- `from_flat_dict()`: Handles both `"label"` and `"grouping"` keys
+
+**Files Modified**:
+
+- `msc/models/stats.py` - `TrackWithStats.to_flat_dict()`, `from_legacy_json()`, `from_flat_dict()`
+- `_tests/unit/test_stats_model.py` - Updated tests for new behavior
+- `_tests/unit/test_commands_exporters.py` - Updated HTML export test
+
+**Test Results**:
+
+```
+$ uv run pytest _tests/unit/test_stats_model.py _tests/unit/test_commands_exporters.py -v
+============================= 32 passed in 0.57s ==============================
+```
+
+**CSV Output Sample**:
+
+```csv
+track_id,songstats_id,spotify_streams_total,spotify_playlist_reach_total,...
+f68b210b,em0th986,10187,11.5,...
+```
+
+---
+
 #### [ISSUE-016] `msc stats` Command Fixed - Platform Coverage Now Accurate
 
 **Command**: `msc stats`

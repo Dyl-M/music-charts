@@ -10,13 +10,21 @@
 
 All CLI commands will be validated from a user perspective:
 
-- `msc init` - Directory structure initialization
-- `msc billing` - Songstats API quota checking
-- `msc run` - Full pipeline execution
-- `msc validate` - File validation with auto-detection
-- `msc export` - Data export (CSV/ODS/HTML)
-- `msc stats` - Dataset statistics display
-- `msc clean` - Cache management
+- [x] `msc init` - Directory structure initialization
+- [x] `msc billing` - Songstats API quota checking
+- [x] `msc run` - Full pipeline execution
+- [x] `msc validate` - File validation with auto-detection
+- [x] `msc export` - Data export (CSV/ODS/HTML)
+- [x] `msc stats` - Dataset statistics display
+- [x] `msc clean` - Cache management
+
+All anomalies in core components will be validated from a user perspective:
+
+- [ ] Power Ranking range
+- [ ] YouTube Data integration
+- [ ] Weights adjustments based on data overall availability
+- [ ] Test suite revamped and covering at least 95% of the codebase
+- [ ] Actual documentation for module and archiving/preparation for 2026
 
 ## Resolution Tracking
 
@@ -36,7 +44,7 @@ All CLI commands will be validated from a user perspective:
 | ISSUE-012 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-013 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-015 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-015 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-016 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-017 | 🔴 High        | 📋 Planned | 1.0.0          |
 | ISSUE-018 | 🔴 High        | 📋 Planned | 1.0.0          |

@@ -178,7 +178,7 @@ class TestDataExporterHTML:
         # Check HTML content
         content = output_file.read_text(encoding="utf-8")
         assert "<!DOCTYPE html>" in content
-        assert "Test Song" in content
+        assert "test123" in content  # songstats_id is in flat export
 
     @staticmethod
     def test_export_html_empty_repository(tmp_path: Path) -> None:

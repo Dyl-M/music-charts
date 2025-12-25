@@ -222,7 +222,7 @@ class TestTrackWithStats:
             artist_list=["blasterjaxx", "hardwell", "maddix"],
             year=2024,
             genre=["hard techno"],
-            label=["revealed"]
+            grouping=["revealed"]
         )
         identifiers = SongstatsIdentifiers(
             songstats_id="qmr6e0bx",
@@ -291,7 +291,7 @@ class TestTrackWithStats:
         assert track.track.artist_list == ["blasterjaxx", "hardwell", "maddix"]
         assert track.track.year == 2024
         assert track.track.genre == ["hard techno"]
-        assert track.track.label == ["revealed"]
+        assert track.track.grouping == ["revealed"]
         assert track.track.search_query == "blasterjaxx, hardwell, maddix 16"
 
         # Verify identifiers
@@ -368,8 +368,8 @@ class TestTrackWithStats:
 
         data = track_with_stats.model_dump(exclude_none=True)
 
-        # Track should not have grouping or search_query (both None)
-        assert "grouping" not in data["track"]
+        # Track should have empty list for grouping (default) but no search_query (None)
+        assert data["track"]["grouping"] == []
         assert "search_query" not in data["track"]
 
         # Platform stats should not have nested empty dicts
