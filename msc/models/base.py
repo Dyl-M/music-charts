@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict
 
 # Local
 from msc.config.settings import PROJECT_ROOT
+from msc.utils.path_utils import validate_path_within_base
 
 
 class MSCBaseModel(BaseModel):
@@ -41,37 +42,6 @@ class MSCBaseModel(BaseModel):
         str_strip_whitespace=True,  # Auto-strip strings
     )
 
-    @staticmethod
-    def _validate_path(path: Path) -> Path:
-        """Validate file path to prevent path traversal attacks.
-
-        Args:
-            path: Path to validate.
-
-        Returns:
-            Resolved absolute path.
-
-        Raises:
-            ValueError: If path attempts to escape project directory.
-
-        Examples:
-            >>> MSCBaseModel._validate_path(Path("_data/track.json"))
-            PosixPath('/project/root/_data/track.json')
-        """
-        # Resolve to absolute path
-        resolved_path = path.resolve()
-
-        # Check if path is within project directory
-        try:
-            resolved_path.relative_to(PROJECT_ROOT)
-
-        except ValueError as e:
-            raise ValueError(
-                f"Path '{path}' attempts to escape project directory"
-            ) from e
-
-        return resolved_path
-
     def to_flat_dict(self) -> dict[str, Any]:
         """Convert nested model to flat dict with aliased keys.
 
@@ -101,7 +71,7 @@ class MSCBaseModel(BaseModel):
         Examples:
             >>> track.to_json_file(Path("_data/track.json"))
         """
-        validated_path = self._validate_path(path)
+        validated_path = validate_path_within_base(path, PROJECT_ROOT, "save")
         validated_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(validated_path, "w", encoding="utf-8") as f:
@@ -129,7 +99,7 @@ class MSCBaseModel(BaseModel):
         Examples:
             >>> track = Track.from_json_file(Path("_data/track.json"))
         """
-        validated_path = cls._validate_path(path)
+        validated_path = validate_path_within_base(path, PROJECT_ROOT, "load")
 
         if not validated_path.exists():
             raise FileNotFoundError(f"File not found: {validated_path}")
