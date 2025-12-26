@@ -16,6 +16,12 @@ from msc.cli import app
 runner = CliRunner()
 
 
+def _strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text."""
+    import re
+    return re.sub(r'\x1b\[[0-9;]*m', '', text)
+
+
 class TestRunCommandIntegration:
     """Integration tests for 'msc run' command with new flags."""
 
@@ -23,24 +29,27 @@ class TestRunCommandIntegration:
     def test_run_help_shows_test_mode_flag() -> None:
         """Should show --test-mode flag in help output."""
         result = runner.invoke(app, ["run", "--help"])
+        output = _strip_ansi(result.output)
         assert result.exit_code == 0
-        assert "--test-mode" in result.output
-        assert "-t" in result.output
+        assert "--test-mode" in output
+        assert "-t" in output
 
     @staticmethod
     def test_run_help_shows_limit_flag() -> None:
         """Should show --limit flag in help output."""
         result = runner.invoke(app, ["run", "--help"])
+        output = _strip_ansi(result.output)
         assert result.exit_code == 0
-        assert "--limit" in result.output
-        assert "-l" in result.output
+        assert "--limit" in output
+        assert "-l" in output
 
     @staticmethod
     def test_run_help_shows_cleanup_flag() -> None:
         """Should show --cleanup flag in help output."""
         result = runner.invoke(app, ["run", "--help"])
+        output = _strip_ansi(result.output)
         assert result.exit_code == 0
-        assert "--cleanup" in result.output
+        assert "--cleanup" in output
 
     @staticmethod
     def test_run_with_test_mode_displays_message(tmp_path: Path) -> None:

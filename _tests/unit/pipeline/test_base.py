@@ -22,11 +22,11 @@ class ConcretePipelineStage(PipelineStage[list[str], list[str]]):
         """Return stage name."""
         return "TestStage"
 
-    def extract(self) -> list[str]:  # skipcq: PYL-R6301
+    def extract(self) -> list[str]:  # skipcq: PYL-R0201
         """Extract test data."""
         return ["item1", "item2"]
 
-    def transform(self, data: list[str]) -> list[str]:  # skipcq: PYL-R6301
+    def transform(self, data: list[str]) -> list[str]:  # skipcq: PYL-R0201
         """Transform test data."""
         return [item.upper() for item in data]
 
@@ -43,11 +43,11 @@ class FailingStage(PipelineStage[list[str], list[str]]):
         """Return stage name."""
         return "FailingStage"
 
-    def extract(self) -> list[str]:  # skipcq: PYL-R6301
+    def extract(self) -> list[str]:  # skipcq: PYL-R0201
         """Extract test data."""
         return ["item"]
 
-    def transform(self, data: list[str]) -> list[str]:  # skipcq: PYL-R6301
+    def transform(self, data: list[str]) -> list[str]:  # skipcq: PYL-R0201
         """Raise an error."""
         raise ValueError("Transform failed")
 

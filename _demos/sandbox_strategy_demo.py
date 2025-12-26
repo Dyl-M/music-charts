@@ -23,7 +23,7 @@ def print_separator(title: str = "") -> None:
     """Print a formatted separator line.
 
     Args:
-title: Optional title to display in separator.
+        title: Optional title to display in separator.
     """
     if title:
         print(f"\n{'=' * 80}")
