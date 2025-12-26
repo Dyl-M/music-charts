@@ -6,6 +6,8 @@ Tests CLI commands with test mode and mocked dependencies.
 # Standard library
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+# Third-party
 from typer.testing import CliRunner
 
 # Local

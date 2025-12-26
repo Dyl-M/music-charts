@@ -343,9 +343,11 @@ class TestPipelineOrchestratorResetPipeline:
             with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
                 orchestrator = PipelineOrchestrator(new_run=True)
 
-                with patch.object(orchestrator, "clear_checkpoints"), patch.object(orchestrator.track_repository, "clear"), patch.object(orchestrator.stats_repository, "clear"), patch.object(orchestrator.review_queue, "clear"):
+                with (patch.object(orchestrator, "clear_checkpoints"),
+                      patch.object(orchestrator.track_repository, "clear"),
+                      patch.object(orchestrator.stats_repository, "clear"),
+                      patch.object(orchestrator.review_queue, "clear")):
                     orchestrator.reset_pipeline()
-
                     orchestrator.track_repository.clear.assert_called_once()
                     orchestrator.stats_repository.clear.assert_called_once()
                     orchestrator.review_queue.clear.assert_called_once()

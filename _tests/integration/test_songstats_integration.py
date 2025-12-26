@@ -2,6 +2,8 @@
 
 Tests real API interactions when API key is available.
 """
+
+# Third-party
 import requests
 
 # Local
@@ -62,7 +64,7 @@ class TestSongstatsClientRealAPI:
             result = client.get_quota()
             # If it returns, should be empty or error response
             assert result is None or isinstance(result, dict)
-        
+
         except requests.RequestException:
             # Network/HTTP errors are acceptable for invalid API key
             pass

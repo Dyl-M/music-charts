@@ -14,9 +14,6 @@ Usage:
     python _demos/sandbox_strategy_demo.py
 """
 
-# Standard library
-from typing import Any
-
 # Local
 from msc.analysis.normalizers import MinMaxNormalizer, RobustNormalizer, ZScoreNormalizer
 from msc.analysis.strategy import NormalizationStrategy
@@ -26,7 +23,7 @@ def print_separator(title: str = "") -> None:
     """Print a formatted separator line.
 
     Args:
-        title: Optional title to display in separator.
+title: Optional title to display in separator.
     """
     if title:
         print(f"\n{'=' * 80}")

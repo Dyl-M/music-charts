@@ -2,8 +2,9 @@
 
 Tests EventType, PipelineEvent, PipelineObserver, and Observable.
 """
-from abc import ABC
+
 # Standard library
+from abc import ABC
 from datetime import datetime
 
 # Third-party

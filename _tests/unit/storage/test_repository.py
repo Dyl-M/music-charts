@@ -247,16 +247,13 @@ class TestTrackRepositoryInterface:
             def add(self, item: Track):
                 raise NotImplementedError()
 
-            @staticmethod
-            def get(identifier: str):
+            def get(self, identifier: str):  # skipcq: PYL-R6301
                 return None
 
-            @staticmethod
-            def get_all():
+            def get_all(self):  # skipcq: PYL-R6301
                 return []
 
-            @staticmethod
-            def exists(identifier: str):
+            def exists(self, identifier: str):  # skipcq: PYL-R6301
                 return False
 
             def remove(self, identifier: str):
@@ -265,11 +262,10 @@ class TestTrackRepositoryInterface:
             def clear(self):
                 raise NotImplementedError()
 
-            @staticmethod
-            def count():
+            def count(self):  # skipcq: PYL-R6301
                 return 0
 
-            def get_unprocessed(self, processed_ids: set[str]):
+            def get_unprocessed(self, processed_ids: set[str]):  # skipcq: PYL-R6301
                 return []
 
         with pytest.raises(TypeError, match="find_by_title_artist"):
@@ -286,16 +282,13 @@ class TestTrackRepositoryInterface:
             def add(self, item: Track):
                 raise NotImplementedError()
 
-            @staticmethod
-            def get(identifier: str):
+            def get(self, identifier: str):  # skipcq: PYL-R6301
                 return None
 
-            @staticmethod
-            def get_all():
+            def get_all(self):  # skipcq: PYL-R6301
                 return []
 
-            @staticmethod
-            def exists(identifier: str):
+            def exists(self, identifier: str):  # skipcq: PYL-R6301
                 return False
 
             def remove(self, identifier: str):
@@ -304,11 +297,10 @@ class TestTrackRepositoryInterface:
             def clear(self):
                 raise NotImplementedError()
 
-            @staticmethod
-            def count():
+            def count(self):  # skipcq: PYL-R6301
                 return 0
 
-            def find_by_title_artist(self, title: str, artist: str):
+            def find_by_title_artist(self, title: str, artist: str):  # skipcq: PYL-R6301
                 return None
 
         with pytest.raises(TypeError, match="get_unprocessed"):
@@ -336,16 +328,13 @@ class TestStatsRepositoryInterface:
             def add(self, item: TrackWithStats):
                 raise NotImplementedError()
 
-            @staticmethod
-            def get(identifier: str):
+            def get(self, identifier: str):  # skipcq: PYL-R6301
                 return None
 
-            @staticmethod
-            def get_all():
+            def get_all(self):  # skipcq: PYL-R6301
                 return []
 
-            @staticmethod
-            def exists(identifier: str):
+            def exists(self, identifier: str):  # skipcq: PYL-R6301
                 return False
 
             def remove(self, identifier: str):
@@ -354,8 +343,7 @@ class TestStatsRepositoryInterface:
             def clear(self):
                 raise NotImplementedError()
 
-            @staticmethod
-            def count():
+            def count(self):  # skipcq: PYL-R6301
                 return 0
 
             def export_to_json(self, file_path, flat=False):
@@ -364,7 +352,7 @@ class TestStatsRepositoryInterface:
             def export_to_csv(self, file_path):
                 raise NotImplementedError()
 
-            def get_by_songstats_id(self, songstats_id: str):
+            def get_by_songstats_id(self, songstats_id: str):  # skipcq: PYL-R6301
                 return None
 
         with pytest.raises(TypeError, match="save_batch"):
@@ -381,16 +369,13 @@ class TestStatsRepositoryInterface:
             def add(self, item: TrackWithStats):
                 raise NotImplementedError()
 
-            @staticmethod
-            def get(identifier: str):
+            def get(self, identifier: str):  # skipcq: PYL-R6301
                 return None
 
-            @staticmethod
-            def get_all():
+            def get_all(self):  # skipcq: PYL-R6301
                 return []
 
-            @staticmethod
-            def exists(identifier: str):
+            def exists(self, identifier: str):  # skipcq: PYL-R6301
                 return False
 
             def remove(self, identifier: str):
@@ -399,8 +384,7 @@ class TestStatsRepositoryInterface:
             def clear(self):
                 raise NotImplementedError()
 
-            @staticmethod
-            def count():
+            def count(self):  # skipcq: PYL-R6301
                 return 0
 
             def save_batch(self, items):
@@ -409,7 +393,7 @@ class TestStatsRepositoryInterface:
             def export_to_csv(self, file_path):
                 raise NotImplementedError()
 
-            def get_by_songstats_id(self, songstats_id: str):
+            def get_by_songstats_id(self, songstats_id: str):  # skipcq: PYL-R6301
                 return None
 
         with pytest.raises(TypeError, match="export_to_json"):
@@ -426,16 +410,13 @@ class TestStatsRepositoryInterface:
             def add(self, item: TrackWithStats):
                 raise NotImplementedError()
 
-            @staticmethod
-            def get(identifier: str):
+            def get(self, identifier: str):  # skipcq: PYL-R6301
                 return None
 
-            @staticmethod
-            def get_all():
+            def get_all(self):  # skipcq: PYL-R6301
                 return []
 
-            @staticmethod
-            def exists(identifier: str):
+            def exists(self, identifier: str):  # skipcq: PYL-R6301
                 return False
 
             def remove(self, identifier: str):
@@ -444,8 +425,7 @@ class TestStatsRepositoryInterface:
             def clear(self):
                 raise NotImplementedError()
 
-            @staticmethod
-            def count():
+            def count(self):  # skipcq: PYL-R6301
                 return 0
 
             def save_batch(self, items):
@@ -454,7 +434,7 @@ class TestStatsRepositoryInterface:
             def export_to_json(self, file_path, flat=False):
                 raise NotImplementedError()
 
-            def get_by_songstats_id(self, songstats_id: str):
+            def get_by_songstats_id(self, songstats_id: str):  # skipcq: PYL-R6301
                 return None
 
         with pytest.raises(TypeError, match="export_to_csv"):
@@ -471,16 +451,13 @@ class TestStatsRepositoryInterface:
             def add(self, item: TrackWithStats):
                 raise NotImplementedError()
 
-            @staticmethod
-            def get(identifier: str):
+            def get(self, identifier: str):  # skipcq: PYL-R6301
                 return None
 
-            @staticmethod
-            def get_all():
+            def get_all(self):  # skipcq: PYL-R6301
                 return []
 
-            @staticmethod
-            def exists(identifier: str):
+            def exists(self, identifier: str):  # skipcq: PYL-R6301
                 return False
 
             def remove(self, identifier: str):
@@ -489,8 +466,7 @@ class TestStatsRepositoryInterface:
             def clear(self):
                 raise NotImplementedError()
 
-            @staticmethod
-            def count():
+            def count(self):  # skipcq: PYL-R6301
                 return 0
 
             def save_batch(self, items):

@@ -35,8 +35,8 @@ class TestMSCBaseModelConfig:
     @staticmethod
     def test_validates_on_assignment() -> None:
         """Should validate when attributes are assigned."""
-        # Create mutable subclass for testing
-        class MutableModel(MSCBaseModel):
+
+        class MutableModel(MSCBaseModel):  # Create mutable subclass for testing
             """Mutable test model."""
 
             value: int

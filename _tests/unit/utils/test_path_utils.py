@@ -130,7 +130,8 @@ class TestSecureWrite:
         base_dir.mkdir()
         outside_path = tmp_path / "outside" / "file.txt"
 
-        with pytest.raises(ValueError, match="Security error"), secure_write(outside_path, base_dir=base_dir, purpose="test"):
+        with (pytest.raises(ValueError, match="Security error"),
+              secure_write(outside_path, base_dir=base_dir, purpose="test")):
             pass
 
     @staticmethod

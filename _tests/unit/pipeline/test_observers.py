@@ -401,7 +401,8 @@ class TestProgressBarObserverItemEvents:
             error=ValueError("Test error"),
         )
 
-        with patch.object(observer.progress, "advance") as mock_advance, patch.object(observer.progress, "update"):
+        with (patch.object(observer.progress, "advance") as mock_advance,
+              patch.object(observer.progress, "update")):
             observer.on_item_failed(event)
 
             mock_advance.assert_called_once()
