@@ -20,9 +20,11 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 **Branch:** `feat-V1` (preparing for 1.0.0 release)
 
 ### Recent Enhancements (feat-V1)
+
 - **Legacy-Compatible Scoring Algorithm:** Power rankings now use 0-100 scale with data availability weighting
 - **Dynamic Weight Adjustment:** Category weights adapt based on per-metric data availability (ISSUE-017/019)
-- **YouTube "Topic Channel" Fallback:** Tracks with only Topic channel videos now correctly capture YouTube data (ISSUE-018)
+- **YouTube "Topic Channel" Fallback:** Tracks with only Topic channel videos now correctly capture YouTube data (
+  ISSUE-018)
 - **UUID5-based Track Identifiers:** Compact 8-character deterministic IDs replacing long string concatenation
 - **Songstats Match Validation:** Keyword-based rejection prevents false positives (karaoke, instrumentals)
 - **Enhanced Metadata Extraction:** ISRC codes, Songstats artist/label lists for data quality validation
@@ -30,8 +32,10 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 - **Clean Console Output:** Minimal logs with file-based verbose logging and enhanced progress bars
 - **Manual Review Queue:** Automatic checkpoint resumption with deduplication
 - **Comprehensive Query Cleaning:** Advanced text normalization for better Songstats search accuracy
+- **Pre-1.0.0 Code Review:** Dead code removal, redundancy fixes, Pythonic improvements, lazy logging compliance
 
 ### CLI Features
+
 - **7 CLI commands:** `run`, `billing`, `validate`, `export`, `clean`, `stats`, `init`
 - **Error handling infrastructure:** Custom exceptions with helpful multi-line suggestions
 - **Display formatters:** Rich tables and panels for quota, validation errors, export summaries
@@ -41,6 +45,7 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 - **Enhanced progress bars:** ETA, current item display, error visibility
 
 **Completed Phases:**
+
 - Phase 4 (Pipeline Migration) ✅ Complete - Full ETL pipeline with clean architecture
 - Phase 3 (Data Models) ✅ Complete - 17 models (Track, PlatformStats, PowerRanking, etc.)
 - Phase 2 (API Clients) ✅ Complete - 3 clients (MusicBee, Songstats, YouTube)
