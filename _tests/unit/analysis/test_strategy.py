@@ -23,7 +23,7 @@ class TestNormalizationStrategyInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            NormalizationStrategy()
+            NormalizationStrategy()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_normalize_is_abstract() -> None:
@@ -37,7 +37,7 @@ class TestNormalizationStrategyInterface:
 
         with pytest.raises(TypeError, match="normalize"):
             # noinspection PyAbstractClass
-            IncompleteStrategy()
+            IncompleteStrategy()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_get_name_is_abstract() -> None:
@@ -51,7 +51,7 @@ class TestNormalizationStrategyInterface:
 
         with pytest.raises(TypeError, match="get_name"):
             # noinspection PyAbstractClass
-            IncompleteStrategy()
+            IncompleteStrategy()  # skipcq: PYL-E0110
 
 
 class TestScoringStrategyInterface:
@@ -62,7 +62,7 @@ class TestScoringStrategyInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            ScoringStrategy()
+            ScoringStrategy()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_compute_category_scores_is_abstract() -> None:
@@ -79,7 +79,7 @@ class TestScoringStrategyInterface:
 
         with pytest.raises(TypeError, match="compute_category_scores"):
             # noinspection PyAbstractClass
-            IncompleteStrategy()
+            IncompleteStrategy()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_compute_power_ranking_is_abstract() -> None:
@@ -96,7 +96,7 @@ class TestScoringStrategyInterface:
 
         with pytest.raises(TypeError, match="compute_power_ranking"):
             # noinspection PyAbstractClass
-            IncompleteStrategy()
+            IncompleteStrategy()  # skipcq: PYL-E0110
 
 
 class TestWeightingStrategyInterface:
@@ -107,7 +107,7 @@ class TestWeightingStrategyInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            WeightingStrategy()
+            WeightingStrategy()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_apply_weights_is_abstract() -> None:
@@ -121,7 +121,7 @@ class TestWeightingStrategyInterface:
 
         with pytest.raises(TypeError, match="apply_weights"):
             # noinspection PyAbstractClass
-            IncompleteStrategy()
+            IncompleteStrategy()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_get_name_is_abstract() -> None:
@@ -135,4 +135,4 @@ class TestWeightingStrategyInterface:
 
         with pytest.raises(TypeError, match="get_name"):
             # noinspection PyAbstractClass
-            IncompleteStrategy()
+            IncompleteStrategy()  # skipcq: PYL-E0110

@@ -191,7 +191,7 @@ class TestPipelineObserverInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            PipelineObserver()
+            PipelineObserver()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_requires_on_event() -> None:
@@ -202,7 +202,7 @@ class TestPipelineObserverInterface:
 
         with pytest.raises(TypeError, match="on_event"):
             # noinspection PyAbstractClass
-            IncompleteObserver()
+            IncompleteObserver()  # skipcq: PYL-E0110
 
 
 class ConcreteObserver(PipelineObserver):

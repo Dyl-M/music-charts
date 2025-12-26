@@ -21,7 +21,7 @@ class TestRepositoryInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            Repository()
+            Repository()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_add_is_abstract() -> None:
@@ -50,7 +50,7 @@ class TestRepositoryInterface:
 
         with pytest.raises(TypeError, match="add"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_get_is_abstract() -> None:
@@ -79,7 +79,7 @@ class TestRepositoryInterface:
 
         with pytest.raises(TypeError, match="get"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_get_all_is_abstract() -> None:
@@ -108,7 +108,7 @@ class TestRepositoryInterface:
 
         with pytest.raises(TypeError, match="get_all"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_exists_is_abstract() -> None:
@@ -137,7 +137,7 @@ class TestRepositoryInterface:
 
         with pytest.raises(TypeError, match="exists"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_remove_is_abstract() -> None:
@@ -166,7 +166,7 @@ class TestRepositoryInterface:
 
         with pytest.raises(TypeError, match="remove"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_clear_is_abstract() -> None:
@@ -195,7 +195,7 @@ class TestRepositoryInterface:
 
         with pytest.raises(TypeError, match="clear"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_count_is_abstract() -> None:
@@ -224,7 +224,7 @@ class TestRepositoryInterface:
 
         with pytest.raises(TypeError, match="count"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
 
 class TestTrackRepositoryInterface:
@@ -235,7 +235,7 @@ class TestTrackRepositoryInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            TrackRepository()
+            TrackRepository()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_find_by_title_artist_is_abstract() -> None:
@@ -270,7 +270,7 @@ class TestTrackRepositoryInterface:
 
         with pytest.raises(TypeError, match="find_by_title_artist"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_get_unprocessed_is_abstract() -> None:
@@ -305,7 +305,7 @@ class TestTrackRepositoryInterface:
 
         with pytest.raises(TypeError, match="get_unprocessed"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
 
 class TestStatsRepositoryInterface:
@@ -316,7 +316,7 @@ class TestStatsRepositoryInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            StatsRepository()
+            StatsRepository()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_save_batch_is_abstract() -> None:
@@ -357,7 +357,7 @@ class TestStatsRepositoryInterface:
 
         with pytest.raises(TypeError, match="save_batch"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_export_to_json_is_abstract() -> None:
@@ -398,7 +398,7 @@ class TestStatsRepositoryInterface:
 
         with pytest.raises(TypeError, match="export_to_json"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_export_to_csv_is_abstract() -> None:
@@ -439,7 +439,7 @@ class TestStatsRepositoryInterface:
 
         with pytest.raises(TypeError, match="export_to_csv"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_get_by_songstats_id_is_abstract() -> None:
@@ -480,4 +480,4 @@ class TestStatsRepositoryInterface:
 
         with pytest.raises(TypeError, match="get_by_songstats_id"):
             # noinspection PyAbstractClass
-            IncompleteRepo()
+            IncompleteRepo()  # skipcq: PYL-E0110

@@ -214,7 +214,7 @@ class TestBaseClientAbstractMethods:
 
         with pytest.raises(TypeError, match="health_check"):
             # noinspection PyAbstractClass
-            IncompleteClient()
+            IncompleteClient()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_get_quota_must_be_implemented() -> None:
@@ -228,7 +228,7 @@ class TestBaseClientAbstractMethods:
 
         with pytest.raises(TypeError, match="get_quota"):
             # noinspection PyAbstractClass
-            IncompleteClient()
+            IncompleteClient()  # skipcq: PYL-E0110
 
 
 class TestBaseClientDefaultHeaders:

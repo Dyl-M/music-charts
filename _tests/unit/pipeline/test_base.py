@@ -65,7 +65,7 @@ class TestPipelineStageInterface:
         """Should not allow direct instantiation."""
         with pytest.raises(TypeError, match="abstract"):
             # noinspection PyAbstractClass
-            PipelineStage()
+            PipelineStage()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_requires_stage_name() -> None:
@@ -85,7 +85,7 @@ class TestPipelineStageInterface:
 
         with pytest.raises(TypeError, match="stage_name"):
             # noinspection PyAbstractClass
-            IncompleteStage()
+            IncompleteStage()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_requires_extract() -> None:
@@ -106,7 +106,7 @@ class TestPipelineStageInterface:
 
         with pytest.raises(TypeError, match="extract"):
             # noinspection PyAbstractClass
-            IncompleteStage()
+            IncompleteStage()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_requires_transform() -> None:
@@ -127,7 +127,7 @@ class TestPipelineStageInterface:
 
         with pytest.raises(TypeError, match="transform"):
             # noinspection PyAbstractClass
-            IncompleteStage()
+            IncompleteStage()  # skipcq: PYL-E0110
 
     @staticmethod
     def test_requires_load() -> None:
@@ -148,7 +148,7 @@ class TestPipelineStageInterface:
 
         with pytest.raises(TypeError, match="load"):
             # noinspection PyAbstractClass
-            IncompleteStage()
+            IncompleteStage()  # skipcq: PYL-E0110
 
 
 class TestPipelineStageInit:
