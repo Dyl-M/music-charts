@@ -66,9 +66,8 @@ class CacheManager:
                 cache_dir=self.cache_dir,
             )
 
-        # Collect all files
-        all_files = list(self.cache_dir.rglob("*"))
-        cache_files = [f for f in all_files if f.is_file()]
+        # Collect all files (single comprehension)
+        cache_files = [f for f in self.cache_dir.rglob("*") if f.is_file()]
 
         if not cache_files:
             return CacheStats(
@@ -78,11 +77,10 @@ class CacheManager:
                 cache_dir=self.cache_dir,
             )
 
-        # Calculate total size
-        total_size = sum(f.stat().st_size for f in cache_files)
-
-        # Find oldest file
-        oldest_mtime = min(f.stat().st_mtime for f in cache_files)
+        # Cache stat results to avoid calling stat() twice per file
+        file_stats = [f.stat() for f in cache_files]
+        total_size = sum(s.st_size for s in file_stats)
+        oldest_mtime = min(s.st_mtime for s in file_stats)
         oldest_date = datetime.fromtimestamp(oldest_mtime)
         age_days = (datetime.now() - oldest_date).days
 
