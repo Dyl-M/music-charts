@@ -992,6 +992,7 @@ class TestEnrichmentStage:
     def test_transform_checkpoint_repository_mismatch() -> None:
         """Test transform when track is in checkpoint but missing from repository."""
         songstats = Mock()
+        songstats.get_available_platforms.return_value = {"spotify"}
         songstats.get_platform_stats.return_value = {"spotify_streams_total": 1000000}
         songstats.get_historical_peaks.return_value = {}
         songstats.get_youtube_videos.return_value = []
@@ -1041,6 +1042,7 @@ class TestEnrichmentStage:
     def test_transform_empty_platform_stats_continues() -> None:
         """Test transform continues with empty stats when no platform data found."""
         songstats = Mock()
+        songstats.get_available_platforms.return_value = set()  # No platforms
         songstats.get_platform_stats.return_value = {}  # Empty dict (no stats)
         songstats.get_historical_peaks.return_value = {}
         songstats.get_youtube_videos.return_value = []
@@ -1090,13 +1092,13 @@ class TestEnrichmentStage:
     def test_transform_with_peaks_data() -> None:
         """Test transform correctly merges peaks data."""
         songstats = Mock()
+        songstats.get_available_platforms.return_value = {"spotify"}
         songstats.get_platform_stats.return_value = {
             "spotify_streams_total": 1000000,
         }
+        # get_historical_peaks returns flat format: {platform}_popularity_peak
         songstats.get_historical_peaks.return_value = {
-            "spotify": {
-                "popularity": {"peak": 85, "date": "2024-01-01"}
-            }
+            "spotify_popularity_peak": 85
         }
         songstats.get_youtube_videos.return_value = []
 
@@ -1144,6 +1146,7 @@ class TestEnrichmentStage:
     def test_transform_youtube_no_results() -> None:
         """Test transform when YouTube is enabled but no videos found."""
         songstats = Mock()
+        songstats.get_available_platforms.return_value = {"spotify"}
         songstats.get_platform_stats.return_value = {
             "spotify_streams_total": 1000000,
         }
@@ -1239,6 +1242,7 @@ class TestEnrichmentStage:
     def test_transform_youtube_data_found() -> None:
         """Test transform when YouTube data is found."""
         songstats = Mock()
+        songstats.get_available_platforms.return_value = {"spotify"}
         songstats.get_platform_stats.return_value = {
             "spotify_streams_total": 1000000,
         }

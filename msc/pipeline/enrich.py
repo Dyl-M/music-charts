@@ -202,9 +202,9 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                 start_date = f"{self.settings.year}-01-01"
                 peaks_data = self.songstats.get_historical_peaks(songstats_id, start_date)
 
-                # Merge peaks into platform stats
+                # Merge peaks into platform stats (peaks_data is already flat format)
                 if peaks_data:
-                    self._merge_peaks(platform_stats_data, peaks_data)
+                    platform_stats_data.update(peaks_data)
 
                 # Create PlatformStats model from data, filtering by available platforms
                 platform_stats = self._create_platform_stats(platform_stats_data, available_platforms)
