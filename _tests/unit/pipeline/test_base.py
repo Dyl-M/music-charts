@@ -2,8 +2,9 @@
 
 Tests PipelineStage abstract base class and Pipeline orchestrator.
 """
-from abc import ABC
+
 # Standard library
+from abc import ABC
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -30,7 +31,7 @@ class ConcretePipelineStage(PipelineStage[list[str], list[str]]):
         """Transform test data."""
         return [item.upper() for item in data]
 
-    def load(self, data: list[str]) -> None:  # skipcq: PYL-R0201, PYL-W0107
+    def load(self, data: list[str]) -> None:  # skipcq: PYL-R0201, PYL-W0107, PTC-W0049
         """Load test data (no-op for testing)."""
         ...
 
@@ -51,7 +52,7 @@ class FailingStage(PipelineStage[list[str], list[str]]):
         """Raise an error."""
         raise ValueError("Transform failed")
 
-    def load(self, data: list[str]) -> None:  # skipcq: PYL-R0201, PYL-W0107
+    def load(self, data: list[str]) -> None:  # skipcq: PYL-R0201, PYL-W0107, PTC-W0049
         """Load test data (no-op for testing)."""
         ...
 
