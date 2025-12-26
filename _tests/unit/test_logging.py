@@ -151,13 +151,25 @@ class TestPipelineLogger:
     @staticmethod
     def test_format_message_without_context() -> None:
         """Should return message unchanged when no context."""
-        result = PipelineLogger._format_message("test", {})
+        result = PipelineLogger._format_message("test", (), {})
         assert result == "test"
 
     @staticmethod
     def test_format_message_with_context() -> None:
         """Should format message with context."""
-        result = PipelineLogger._format_message("test", {"key": "value", "num": 42})
+        result = PipelineLogger._format_message("test", (), {"key": "value", "num": 42})
         assert "test |" in result
         assert "key=value" in result
         assert "num=42" in result
+
+    @staticmethod
+    def test_format_message_with_args() -> None:
+        """Should format message with positional args."""
+        result = PipelineLogger._format_message("Starting %s", ("TestStage",), {})
+        assert result == "Starting TestStage"
+
+    @staticmethod
+    def test_format_message_with_multiple_args() -> None:
+        """Should format message with multiple positional args."""
+        result = PipelineLogger._format_message("Stage %s failed: %s", ("Test", "error"), {})
+        assert result == "Stage Test failed: error"

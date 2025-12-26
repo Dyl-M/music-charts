@@ -378,28 +378,6 @@ class TestTrack:
         assert "grouping" in data  # grouping defaults to [], not None
 
     @staticmethod
-    def test_validate_path_within_project() -> None:
-        """Test path validation accepts paths within project."""
-        # Path within project should be accepted
-        valid_path = PROJECT_ROOT / "_data" / "test.json"
-        validated = Track._validate_path(valid_path)
-        assert validated == valid_path.resolve()
-
-    @staticmethod
-    def test_validate_path_rejects_traversal() -> None:
-        """Test path validation rejects path traversal attempts."""
-        # Path escaping project should be rejected
-        with pytest.raises(ValueError, match="attempts to escape project directory"):
-            Track._validate_path(Path("../../../etc/passwd"))
-
-    @staticmethod
-    def test_validate_path_rejects_absolute_outside() -> None:
-        """Test path validation rejects absolute paths outside project."""
-        # Absolute path outside project should be rejected
-        with pytest.raises(ValueError, match="attempts to escape project directory"):
-            Track._validate_path(Path("/tmp/malicious.json"))
-
-    @staticmethod
     def test_to_json_file(tmp_path: Path) -> None:
         """Test saving Track to JSON file."""
         track = Track(
@@ -450,7 +428,7 @@ class TestTrack:
         )
 
         # Attempt path traversal
-        with pytest.raises(ValueError, match="attempts to escape project directory"):
+        with pytest.raises(ValueError, match="Security error.*outside allowed directory"):
             track.to_json_file(Path("../../../etc/passwd"))
 
     @staticmethod
@@ -488,7 +466,7 @@ class TestTrack:
     def test_from_json_file_rejects_path_traversal() -> None:
         """Test from_json_file rejects path traversal attempts."""
         # Attempt path traversal
-        with pytest.raises(ValueError, match="attempts to escape project directory"):
+        with pytest.raises(ValueError, match="Security error.*outside allowed directory"):
             Track.from_json_file(Path("../../../etc/passwd"))
 
     @staticmethod

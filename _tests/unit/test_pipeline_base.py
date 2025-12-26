@@ -106,24 +106,6 @@ class TestPipelineStage:
         assert stage.output_path == output_path
 
     @staticmethod
-    def test_validate_input_returns_true() -> None:
-        """Test validate_input default implementation returns True."""
-        stage = ConcretePipelineStage()
-
-        result = stage.validate_input(["test"])
-
-        assert result is True
-
-    @staticmethod
-    def test_validate_output_returns_true() -> None:
-        """Test validate_output default implementation returns True."""
-        stage = ConcretePipelineStage()
-
-        result = stage.validate_output(["TEST"])
-
-        assert result is True
-
-    @staticmethod
     def test_run_executes_etl_pipeline() -> None:
         """Test run method executes extract, transform, load."""
         stage = ConcretePipelineStage()
