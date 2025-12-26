@@ -44,6 +44,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
             checkpoint_manager: CheckpointManager,
             review_queue: ManualReviewQueue,
             playlist_name: str | None = None,
+            track_limit: int | None = None,
     ) -> None:
         """Initialize extraction stage.
 
@@ -54,6 +55,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
             checkpoint_manager: Manager for checkpoint state
             review_queue: Queue for tracks needing manual review
             playlist_name: Name of playlist to extract (default: from settings)
+            track_limit: Maximum number of tracks to process (None = no limit)
         """
         Observable.__init__(self)
         self.musicbee = musicbee_client
@@ -63,6 +65,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
         self.review_queue = review_queue
         self.settings = get_settings()
         self.logger = get_logger(__name__)
+        self.track_limit = track_limit
 
         # Determine playlist name
         if playlist_name is None:
@@ -163,6 +166,11 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 self.playlist_name,
                 self.settings.year,
             )
+
+            # Apply track limit if specified
+            if self.track_limit and len(tracks) > self.track_limit:
+                self.logger.info("Limiting to %d tracks (from %d)", self.track_limit, len(tracks))
+                tracks = tracks[:self.track_limit]
 
             return tracks
 

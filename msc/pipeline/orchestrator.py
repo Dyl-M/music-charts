@@ -49,6 +49,8 @@ class PipelineOrchestrator(Observable):
             verbose: bool = False,
             run_id: str | None = None,
             new_run: bool = False,
+            test_mode: bool = False,
+            track_limit: int | None = None,
     ) -> None:
         """Initialize pipeline orchestrator.
 
@@ -59,6 +61,8 @@ class PipelineOrchestrator(Observable):
             verbose: Enable verbose logging
             run_id: Unique identifier for this run (default: auto-detect latest or create new)
             new_run: If True, force creation of new run directory instead of resuming latest
+            test_mode: If True, use test fixtures and mock API clients
+            track_limit: Maximum number of tracks to process (None = no limit)
         """
         super().__init__()
         self.settings = get_settings()
@@ -104,13 +108,23 @@ class PipelineOrchestrator(Observable):
 
         self.include_youtube = include_youtube
         self.verbose = verbose
+        self.test_mode = test_mode
+        self.track_limit = track_limit
 
-        # Initialize clients
-        self.musicbee = MusicBeeClient(self.settings.musicbee_library)
-        self.songstats = SongstatsClient(
-            api_key=self.settings.songstats_api_key,
-            rate_limit=self.settings.songstats_rate_limit,
-        )
+        # Initialize clients (use mocks in test mode)
+        if test_mode:
+            from msc.clients import create_mock_songstats_client
+            # Use test library fixture
+            self.musicbee = MusicBeeClient(self.settings.test_library_path)
+            self.songstats = create_mock_songstats_client()
+            self.logger.info("Test mode: using test library and mock clients")
+
+        else:
+            self.musicbee = MusicBeeClient(self.settings.musicbee_library)
+            self.songstats = SongstatsClient(
+                api_key=self.settings.songstats_api_key,
+                rate_limit=self.settings.songstats_rate_limit,
+            )
 
         # Initialize repositories
         # Tracks repository now in run directory
@@ -268,6 +282,7 @@ class PipelineOrchestrator(Observable):
                     checkpoint_manager=self.checkpoint_mgr,
                     review_queue=self.review_queue,
                     playlist_name=playlist_name,
+                    track_limit=self.track_limit,
                 )
 
                 # Attach all pipeline observers to stage

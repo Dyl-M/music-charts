@@ -206,6 +206,32 @@ def run(
                 help="Playlist name to extract (default: '✅ {year} Selection').",
             ),
         ] = None,
+
+        test_mode: Annotated[
+            bool,
+            typer.Option(
+                "--test-mode",
+                "-t",
+                help="Run with test library fixture (mocked APIs, no quota usage).",
+            ),
+        ] = False,
+
+        limit: Annotated[
+            int,
+            typer.Option(
+                "--limit",
+                "-l",
+                help="Limit number of tracks to process.",
+            ),
+        ] = None,
+
+        cleanup: Annotated[
+            bool,
+            typer.Option(
+                "--cleanup",
+                help="Delete run directory after completion (for test iterations).",
+            ),
+        ] = False,
 ) -> None:
     """Run the music charts pipeline.
 
@@ -217,6 +243,8 @@ def run(
         msc run --year 2025 --new-run          # Force new run directory
         msc run --year 2025 --stage extract    # Resume and run extraction only
         msc run --year 2025 --reset            # Start from scratch
+        msc run --test-mode                    # Run with test fixtures (no API calls)
+        msc run --test-mode --limit 2          # Test with only 2 tracks
     """
     # Local import to avoid circular dependencies
     from msc.pipeline.orchestrator import PipelineOrchestrator
@@ -236,11 +264,20 @@ def run(
         import logging
         is_verbose = logging.getLogger().level == logging.DEBUG
 
+        # Test mode info
+        if test_mode:
+            typer.echo("🧪 Test mode enabled - using test fixtures with mocked APIs")
+            if limit:
+                typer.echo(f"   Track limit: {limit}")
+            typer.echo("")
+
         # Initialize orchestrator
         orchestrator = PipelineOrchestrator(
             include_youtube=not no_youtube,
             verbose=is_verbose,
             new_run=new_run,
+            test_mode=test_mode,
+            track_limit=limit,
         )
 
         # Reset if requested
@@ -263,6 +300,14 @@ def run(
 
         # Display summary
         _display_summary(orchestrator, results)
+
+        # Cleanup if requested
+        if cleanup and orchestrator.run_dir:
+            import shutil
+            typer.echo("")
+            typer.echo(f"🧹 Cleaning up run directory: {orchestrator.run_dir}")
+            shutil.rmtree(orchestrator.run_dir, ignore_errors=True)
+            typer.echo("✓ Cleanup complete")
 
     except KeyboardInterrupt:
         typer.echo("")
@@ -472,7 +517,7 @@ def clean(
         dry_run: Annotated[
             bool,
             typer.Option(
-                "--dry-run",
+                "--dry-run/--no-dry-run",
                 help="Show what would be deleted without actually deleting.",
             ),
         ] = True,
