@@ -32,7 +32,7 @@ class ConcretePipelineStage(PipelineStage[list[str], list[str]]):
 
     def load(self, data: list[str]) -> None:
         """Load test data (no-op for testing)."""
-        ...
+        raise NotImplementedError()
 
 
 class FailingStage(PipelineStage[list[str], list[str]]):
@@ -53,7 +53,7 @@ class FailingStage(PipelineStage[list[str], list[str]]):
 
     def load(self, data: list[str]) -> None:
         """Load test data (no-op for testing)."""
-        ...
+        raise NotImplementedError()
 
 
 class TestPipelineStageInterface:
