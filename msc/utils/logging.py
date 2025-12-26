@@ -85,21 +85,21 @@ class PipelineLogger:
         self._logger = logging.getLogger(f"msc.pipeline.{stage_name}")
         self.stage_name = stage_name
 
-    def info(self, message: str, **kwargs: object) -> None:
+    def info(self, message: str, *args: object, **kwargs: object) -> None:
         """Log an info message with optional context."""
-        self._logger.info(self._format_message(message, kwargs))
+        self._logger.info(self._format_message(message, args, kwargs))
 
-    def debug(self, message: str, **kwargs: object) -> None:
+    def debug(self, message: str, *args: object, **kwargs: object) -> None:
         """Log a debug message with optional context."""
-        self._logger.debug(self._format_message(message, kwargs))
+        self._logger.debug(self._format_message(message, args, kwargs))
 
-    def warning(self, message: str, **kwargs: object) -> None:
+    def warning(self, message: str, *args: object, **kwargs: object) -> None:
         """Log a warning message with optional context."""
-        self._logger.warning(self._format_message(message, kwargs))
+        self._logger.warning(self._format_message(message, args, kwargs))
 
-    def error(self, message: str, **kwargs: object) -> None:
+    def error(self, message: str, *args: object, **kwargs: object) -> None:
         """Log an error message with optional context."""
-        self._logger.error(self._format_message(message, kwargs))
+        self._logger.error(self._format_message(message, args, kwargs))
 
     def progress(self, current: int, total: int, item: str = "") -> None:
         """Log progress update."""
@@ -110,9 +110,25 @@ class PipelineLogger:
         self._logger.info(msg)
 
     @staticmethod
-    def _format_message(message: str, context: dict[str, object]) -> str:
-        """Format message with optional context."""
+    def _format_message(
+            message: str,
+            args: tuple[object, ...],
+            context: dict[str, object],
+    ) -> str:
+        """Format message with positional args and optional context.
+
+        Args:
+            message: Message format string (supports %s placeholders)
+            args: Positional args for placeholder substitution
+            context: Keyword args for context logging
+        """
+        # Apply positional args if provided (lazy logging)
+        if args:
+            message = message % args
+
+        # Append context if provided
         if context:
             context_str = " | ".join(f"{k}={v}" for k, v in context.items())
             return f"{message} | {context_str}"
+
         return message
