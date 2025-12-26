@@ -30,9 +30,9 @@ class ConcretePipelineStage(PipelineStage[list[str], list[str]]):
         """Transform test data."""
         return [item.upper() for item in data]
 
-    def load(self, data: list[str]) -> None:
+    def load(self, data: list[str]) -> None:  # skipcq: PYL-R0201, PYL-W0107
         """Load test data (no-op for testing)."""
-        raise NotImplementedError()
+        ...
 
 
 class FailingStage(PipelineStage[list[str], list[str]]):
@@ -51,9 +51,9 @@ class FailingStage(PipelineStage[list[str], list[str]]):
         """Raise an error."""
         raise ValueError("Transform failed")
 
-    def load(self, data: list[str]) -> None:
+    def load(self, data: list[str]) -> None:  # skipcq: PYL-R0201, PYL-W0107
         """Load test data (no-op for testing)."""
-        raise NotImplementedError()
+        ...
 
 
 class TestPipelineStageInterface:
