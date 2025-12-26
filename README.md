@@ -167,6 +167,7 @@ music-charts/
 ├── _data/                  # Data artifacts (gitignored)
 ├── _demos/                 # Interactive demo scripts
 ├── _docs/                  # Documentation and notes
+│
 ├── _legacy/                # Archived original scripts
 │   ├── src/                # Original pipeline scripts
 │   ├── notebooks/          # Original Jupyter notebooks
@@ -195,6 +196,7 @@ music-charts/
 ```bash
 pytest                      # Run all tests
 pytest _tests/unit/         # Unit tests only
+pytest _tests/integration/  # Integration tests only
 pytest --cov=msc            # With coverage report
 pytest -v --tb=short        # Verbose with short traceback
 ```
