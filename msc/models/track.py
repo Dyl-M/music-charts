@@ -86,8 +86,9 @@ class Track(MSCBaseModel):
         )
     ]
 
-    @classmethod
+    # noinspection PyNestedDecorators
     @field_validator("grouping", mode="before")
+    @classmethod
     def validate_grouping(cls, v: Any) -> list[str]:
         """Convert None to empty list for backward compatibility with old data.
 
