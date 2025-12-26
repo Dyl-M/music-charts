@@ -1951,3 +1951,117 @@ total_score = sum(category_score * category_weight) / sum(category_weights)
 ✅ All scorer tests updated and passing
 
 ---
+
+#### [ISSUE-018] Missing YouTube Data Despite Songstats Data Availability
+
+**Command**: `msc run --stage enrich`
+
+**Description**:
+Many tracks were not receiving YouTube data during enrichment even though YouTube videos existed in Songstats. The issue
+occurred when tracks only had Topic channel videos (auto-generated YouTube channels ending with " - Topic") and no
+regular channel videos.
+
+**Status**:
+
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data completeness)
+
+**Root Cause Analysis**:
+
+The `_extract_youtube_videos()` method in `SongstatsClient` was designed to prefer non-Topic channel videos for
+`most_viewed`. When ONLY Topic videos existed:
+
+1. `non_topic_videos` list was empty
+2. `most_viewed` was set to empty dict `{}`
+3. In `enrich.py`, validation checked `most_viewed.get("ytb_id")` which was falsy for empty dict
+4. YouTube data was rejected even though videos existed
+
+**Data from Investigation**:
+
+- **77 out of 329 tracks** (23%) had no YouTube data
+- Of those, **~66% (10/15 sampled)** had Topic-only videos being rejected
+- Remaining **~33% (5/15 sampled)** genuinely had no YouTube videos in Songstats
+
+**Example Before Fix**:
+
+```python
+# Track: "<32n [Extended Mix]" (songstats_id: 4c5038go)
+# Songstats API returned:
+{
+    "most_viewed": {},  # Empty because only Topic video exists
+    "most_viewed_is_topic": True,
+    "all_sources": [
+        {"ytb_id": "-becj_4ipV4", "views": 11177, "channel_name": "Release - Topic"}
+    ]
+}
+# Result: YouTube data REJECTED (validation fails on empty most_viewed)
+```
+
+**Solution Implemented (2025-12-26)**:
+
+✅ **Added Topic Video Fallback in `_extract_youtube_videos()`**:
+
+When no non-Topic videos exist, fall back to the most viewed Topic video instead of returning empty dict:
+
+```python
+# Find most viewed non-Topic video, fall back to Topic video if none
+non_topic_videos = [
+    vid for vid in video_list
+    if " - Topic" not in vid["channel_name"]
+]
+
+if non_topic_videos:
+    most_viewed = non_topic_videos[0]
+
+elif video_list:
+    # Fallback to most viewed Topic video if no non-Topic videos exist
+    most_viewed = video_list[0]
+
+else:
+    most_viewed = {}
+```
+
+**Example After Fix**:
+
+```python
+# Track: "<32n [Extended Mix]" (songstats_id: 4c5038go)
+# Now returns:
+{
+    "most_viewed": {
+        "ytb_id": "-becj_4ipV4",
+        "views": 11177,
+        "channel_name": "Release - Topic"  # Topic video used as fallback
+    },
+    "most_viewed_is_topic": True,
+    "all_sources": [...]
+}
+# Result: YouTube data CAPTURED
+```
+
+**Files Modified**:
+
+- `msc/clients/songstats.py:657-671` - Added Topic video fallback logic
+- `msc/clients/songstats.py:257-265` - Updated docstring to reflect new behavior
+- `msc/clients/songstats.py:640-642` - Updated internal docstring
+- `_tests/unit/test_songstats_client.py:454-482` - Updated test for new fallback behavior
+
+**Test Results**:
+
+✅ All 74 Songstats client tests passing
+
+**Impact**:
+
+- ~50 additional tracks will now receive YouTube data (Topic-only videos)
+- `YouTubeVideo.is_topic_channel` property can identify Topic channel videos
+- `most_viewed_is_topic` flag indicates if overall most viewed video was from Topic channel
+- No changes needed to enrichment stage validation logic
+
+**Related Issues**:
+
+- See ISSUE-007: Enrichment Stage Failing on Empty YouTube Data (fixed earlier, different root cause)
+
+---

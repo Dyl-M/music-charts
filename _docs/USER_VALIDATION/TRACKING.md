@@ -21,7 +21,7 @@ All CLI commands will be validated from a user perspective:
 All anomalies in core components will be validated from a user perspective:
 
 - [x] Power Ranking range (ISSUE-017)
-- [ ] YouTube Data integration (ISSUE-018)
+- [x] YouTube Data integration (ISSUE-018)
 - [x] Weights adjustments based on data overall availability (ISSUE-019)
 - [ ] Test suite revamped and covering at least 95% of the codebase
 - [ ] Actual documentation for module and archiving/preparation for 2026
@@ -47,7 +47,7 @@ All anomalies in core components will be validated from a user perspective:
 | ISSUE-015 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-016 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-017 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-018 | 🔴 High        | 📋 Planned | 1.0.0          |
+| ISSUE-018 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 | ISSUE-019 | 🔴 High        | ✅ Fixed    | 1.0.0          |
 
 ---

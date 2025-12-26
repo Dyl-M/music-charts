@@ -452,7 +452,7 @@ class TestGetYouTubeVideos:
     @staticmethod
     @patch.object(SongstatsClient, "get")
     def test_get_youtube_videos_no_non_topic_videos(mock_get: MagicMock) -> None:
-        """Should return empty most_viewed when only Topic channels exist."""
+        """Should fall back to Topic video when no non-Topic channels exist."""
         mock_get.return_value = {
             "stats": [
                 {
@@ -473,8 +473,11 @@ class TestGetYouTubeVideos:
         client = SongstatsClient(api_key="test")
         result = client.get_youtube_videos("abc123")
 
-        assert result["most_viewed"] == {}
-        assert result["most_viewed_is_topic"] is True  # Only Topic video available
+        # Now falls back to Topic video instead of returning empty dict
+        assert result["most_viewed"]["ytb_id"] == "vid1"
+        assert result["most_viewed"]["views"] == 2000000
+        assert result["most_viewed"]["channel_name"] == "Artist - Topic"
+        assert result["most_viewed_is_topic"] is True
         assert len(result["all_sources"]) == 1
         assert result["all_sources"][0]["channel_name"] == "Artist - Topic"
 

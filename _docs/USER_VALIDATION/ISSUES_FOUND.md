@@ -2,58 +2,6 @@
 
 This document contains all open and pending issues discovered during user validation testing for version 1.0.0.
 
-## High Priority Issues
-
-#### [ISSUE-018] Missing YouTube Data Despite Songstats Data Availability
-
-**Command**: `msc run --stage enrich`
-
-**Description**:
-Some tracks are not being enriched with YouTube data even though minimal YouTube data appears to exist in the Songstats
-API response. The enrichment logic may be too strict in validation or may not be extracting all available YouTube data.
-
-**Expected Behavior**:
-
-- All tracks with any YouTube presence in Songstats should have YouTube data
-- YouTube data should be extracted even if minimal/incomplete
-- Tracks with no YouTube data should be clearly identified vs validation failures
-
-**Actual Behavior**:
-
-*To be documented after investigation of enrichment logs and Songstats responses*
-
-**Status**:
-
-- [x] Planned
-- [ ] In Progress
-- [ ] Fixed
-- [ ] Deferred
-
-**Priority**: High (affects data completeness)
-
-**Location in Code**:
-
-- `msc/pipeline/enrich.py:207-228` - YouTube data extraction and validation
-- `msc/clients/songstats.py` - YouTube video fetching from Songstats API
-
-**Possible Root Causes**:
-
-1. Validation may be too strict (requires all fields: ytb_id, views, channel_name)
-2. Songstats API may return partial YouTube data that's being rejected
-3. API response structure may vary and code doesn't handle all cases
-
-**Investigation Needed**:
-
-- Review Songstats API responses for tracks without YouTube data
-- Check if partial YouTube data exists but is rejected by validation
-- Determine if validation should be more permissive
-
-**Related Issues**:
-
-- See ISSUE-007: Enrichment Stage Failing on Empty YouTube Data (fixed, but related)
-
----
-
 ## Enhancement Requests
 
 *Feature requests discovered during validation*
