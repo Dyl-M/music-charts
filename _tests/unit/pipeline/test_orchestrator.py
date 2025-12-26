@@ -31,11 +31,10 @@ class TestPipelineOrchestratorInit:
             # Create dummy library file
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    assert orchestrator.data_dir == tmp_path
+                assert orchestrator.data_dir == tmp_path
 
     @staticmethod
     def test_accepts_custom_data_dir(tmp_path: Path) -> None:
@@ -51,13 +50,12 @@ class TestPipelineOrchestratorInit:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(
-                        data_dir=custom_dir, new_run=True
-                    )
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(
+                    data_dir=custom_dir, new_run=True
+                )
 
-                    assert orchestrator.data_dir == custom_dir
+                assert orchestrator.data_dir == custom_dir
 
     @staticmethod
     def test_creates_run_directory(tmp_path: Path) -> None:
@@ -71,11 +69,10 @@ class TestPipelineOrchestratorInit:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    assert orchestrator.run_dir.exists()
+                assert orchestrator.run_dir.exists()
 
     @staticmethod
     def test_creates_checkpoint_directory(tmp_path: Path) -> None:
@@ -89,11 +86,10 @@ class TestPipelineOrchestratorInit:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    assert orchestrator.checkpoint_dir.exists()
+                assert orchestrator.checkpoint_dir.exists()
 
     @staticmethod
     def test_default_include_youtube_true(tmp_path: Path) -> None:
@@ -107,11 +103,10 @@ class TestPipelineOrchestratorInit:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    assert orchestrator.include_youtube is True
+                assert orchestrator.include_youtube is True
 
     @staticmethod
     def test_default_verbose_false(tmp_path: Path) -> None:
@@ -125,11 +120,10 @@ class TestPipelineOrchestratorInit:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    assert orchestrator.verbose is False
+                assert orchestrator.verbose is False
 
     @staticmethod
     def test_attaches_default_observers(tmp_path: Path) -> None:
@@ -143,12 +137,11 @@ class TestPipelineOrchestratorInit:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    # Should have console, file, progress, metrics observers
-                    assert len(orchestrator._observers) >= 4
+                # Should have console, file, progress, metrics observers
+                assert len(orchestrator._observers) >= 4
 
 
 class TestPipelineOrchestratorFindLatestRun:
@@ -172,14 +165,13 @@ class TestPipelineOrchestratorFindLatestRun:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    # Search for runs in a different year than what orchestrator uses
-                    result = orchestrator._find_latest_run(2023)
+                # Search for runs in a different year than what orchestrator uses
+                result = orchestrator._find_latest_run(2023)
 
-                    assert result is None
+                assert result is None
 
     @staticmethod
     def test_finds_latest_run(tmp_path: Path) -> None:
@@ -199,16 +191,15 @@ class TestPipelineOrchestratorFindLatestRun:
             (runs_dir / "2024_20240101_120000").mkdir()
             (runs_dir / "2024_20240115_120000").mkdir()
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    # Create orchestrator with run_id to avoid creating new run
-                    orchestrator = PipelineOrchestrator(run_id="20240115_120000")
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                # Create orchestrator with run_id to avoid creating new run
+                orchestrator = PipelineOrchestrator(run_id="20240115_120000")
 
-                    # Find latest should return the one we specify
-                    result = orchestrator._find_latest_run(2024)
+                # Find latest should return the one we specify
+                result = orchestrator._find_latest_run(2024)
 
-                    # Will find "20240115_120000" as latest
-                    assert result == "20240115_120000"
+                # Will find "20240115_120000" as latest
+                assert result == "20240115_120000"
 
     @staticmethod
     def test_ignores_other_years(tmp_path: Path) -> None:
@@ -228,14 +219,13 @@ class TestPipelineOrchestratorFindLatestRun:
             (runs_dir / "2023_20231201_120000").mkdir()
             (runs_dir / "2024_20240101_120000").mkdir()
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    # Use run_id to avoid creating new run
-                    orchestrator = PipelineOrchestrator(run_id="20240101_120000")
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                # Use run_id to avoid creating new run
+                orchestrator = PipelineOrchestrator(run_id="20240101_120000")
 
-                    result = orchestrator._find_latest_run(2024)
+                result = orchestrator._find_latest_run(2024)
 
-                    assert result == "20240101_120000"
+                assert result == "20240101_120000"
 
 
 class TestPipelineOrchestratorAddObserver:
@@ -253,14 +243,13 @@ class TestPipelineOrchestratorAddObserver:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
-                    initial_count = len(orchestrator._observers)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
+                initial_count = len(orchestrator._observers)
 
-                    orchestrator.add_observer(mock_observer)
+                orchestrator.add_observer(mock_observer)
 
-                    assert len(orchestrator._observers) == initial_count + 1
+                assert len(orchestrator._observers) == initial_count + 1
 
 
 class TestPipelineOrchestratorGetMetrics:
@@ -278,14 +267,13 @@ class TestPipelineOrchestratorGetMetrics:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    metrics = orchestrator.get_metrics()
+                metrics = orchestrator.get_metrics()
 
-                    assert isinstance(metrics, dict)
-                    assert "items_processed" in metrics
+                assert isinstance(metrics, dict)
+                assert "items_processed" in metrics
 
 
 class TestPipelineOrchestratorGetReviewQueue:
@@ -303,13 +291,12 @@ class TestPipelineOrchestratorGetReviewQueue:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    result = orchestrator.get_review_queue()
+                result = orchestrator.get_review_queue()
 
-                    assert isinstance(result, list)
+                assert isinstance(result, list)
 
 
 class TestPipelineOrchestratorClearCheckpoints:
@@ -327,16 +314,15 @@ class TestPipelineOrchestratorClearCheckpoints:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    with patch.object(
-                            orchestrator.checkpoint_mgr, "clear_checkpoint"
-                    ) as mock_clear:
-                        orchestrator.clear_checkpoints()
+                with patch.object(
+                        orchestrator.checkpoint_mgr, "clear_checkpoint"
+                ) as mock_clear:
+                    orchestrator.clear_checkpoints()
 
-                        assert mock_clear.call_count == 2
+                    assert mock_clear.call_count == 2
 
 
 class TestPipelineOrchestratorResetPipeline:
@@ -354,19 +340,15 @@ class TestPipelineOrchestratorResetPipeline:
             mock_settings.return_value.output_dir = tmp_path / "output"
             (tmp_path / "library.xml").write_text("<library/>", encoding="utf-8")
 
-            with patch("msc.pipeline.orchestrator.MusicBeeClient"):
-                with patch("msc.pipeline.orchestrator.SongstatsClient"):
-                    orchestrator = PipelineOrchestrator(new_run=True)
+            with patch("msc.pipeline.orchestrator.MusicBeeClient"), patch("msc.pipeline.orchestrator.SongstatsClient"):
+                orchestrator = PipelineOrchestrator(new_run=True)
 
-                    with patch.object(orchestrator, "clear_checkpoints"):
-                        with patch.object(orchestrator.track_repository, "clear"):
-                            with patch.object(orchestrator.stats_repository, "clear"):
-                                with patch.object(orchestrator.review_queue, "clear"):
-                                    orchestrator.reset_pipeline()
+                with patch.object(orchestrator, "clear_checkpoints"), patch.object(orchestrator.track_repository, "clear"), patch.object(orchestrator.stats_repository, "clear"), patch.object(orchestrator.review_queue, "clear"):
+                    orchestrator.reset_pipeline()
 
-                                    orchestrator.track_repository.clear.assert_called_once()
-                                    orchestrator.stats_repository.clear.assert_called_once()
-                                    orchestrator.review_queue.clear.assert_called_once()
+                    orchestrator.track_repository.clear.assert_called_once()
+                    orchestrator.stats_repository.clear.assert_called_once()
+                    orchestrator.review_queue.clear.assert_called_once()
 
 
 class TestPipelineOrchestratorRun:

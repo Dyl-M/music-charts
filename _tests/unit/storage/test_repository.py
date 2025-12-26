@@ -40,10 +40,10 @@ class TestRepositoryInterface:
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
             def count(self):
                 return 0
@@ -60,7 +60,7 @@ class TestRepositoryInterface:
             """Repository missing get method."""
 
             def add(self, item):
-                pass
+                raise NotImplementedError()
 
             def get_all(self):
                 return []
@@ -69,10 +69,10 @@ class TestRepositoryInterface:
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
             def count(self):
                 return 0
@@ -89,7 +89,7 @@ class TestRepositoryInterface:
             """Repository missing get_all method."""
 
             def add(self, item):
-                pass
+                raise NotImplementedError()
 
             def get(self, identifier: str):
                 return None
@@ -98,10 +98,10 @@ class TestRepositoryInterface:
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
             def count(self):
                 return 0
@@ -118,7 +118,7 @@ class TestRepositoryInterface:
             """Repository missing exists method."""
 
             def add(self, item):
-                pass
+                raise NotImplementedError()
 
             def get(self, identifier: str):
                 return None
@@ -127,10 +127,10 @@ class TestRepositoryInterface:
                 return []
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
             def count(self):
                 return 0
@@ -147,7 +147,7 @@ class TestRepositoryInterface:
             """Repository missing remove method."""
 
             def add(self, item):
-                pass
+                raise NotImplementedError()
 
             def get(self, identifier: str):
                 return None
@@ -159,7 +159,7 @@ class TestRepositoryInterface:
                 return False
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
             def count(self):
                 return 0
@@ -176,7 +176,7 @@ class TestRepositoryInterface:
             """Repository missing clear method."""
 
             def add(self, item):
-                pass
+                raise NotImplementedError()
 
             def get(self, identifier: str):
                 return None
@@ -188,7 +188,7 @@ class TestRepositoryInterface:
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def count(self):
                 return 0
@@ -205,7 +205,7 @@ class TestRepositoryInterface:
             """Repository missing count method."""
 
             def add(self, item):
-                pass
+                raise NotImplementedError()
 
             def get(self, identifier: str):
                 return None
@@ -217,10 +217,10 @@ class TestRepositoryInterface:
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
         with pytest.raises(TypeError, match="count"):
             # noinspection PyAbstractClass
@@ -245,24 +245,28 @@ class TestTrackRepositoryInterface:
             """Repository missing find_by_title_artist method."""
 
             def add(self, item: Track):
-                pass
+                raise NotImplementedError()
 
-            def get(self, identifier: str):
+            @staticmethod
+            def get(identifier: str):
                 return None
 
-            def get_all(self):
+            @staticmethod
+            def get_all():
                 return []
 
-            def exists(self, identifier: str):
+            @staticmethod
+            def exists(identifier: str):
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
-            def count(self):
+            @staticmethod
+            def count():
                 return 0
 
             def get_unprocessed(self, processed_ids: set[str]):
@@ -280,24 +284,28 @@ class TestTrackRepositoryInterface:
             """Repository missing get_unprocessed method."""
 
             def add(self, item: Track):
-                pass
+                raise NotImplementedError()
 
-            def get(self, identifier: str):
+            @staticmethod
+            def get(identifier: str):
                 return None
 
-            def get_all(self):
+            @staticmethod
+            def get_all():
                 return []
 
-            def exists(self, identifier: str):
+            @staticmethod
+            def exists(identifier: str):
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
-            def count(self):
+            @staticmethod
+            def count():
                 return 0
 
             def find_by_title_artist(self, title: str, artist: str):
@@ -326,31 +334,35 @@ class TestStatsRepositoryInterface:
             """Repository missing save_batch method."""
 
             def add(self, item: TrackWithStats):
-                pass
+                raise NotImplementedError()
 
-            def get(self, identifier: str):
+            @staticmethod
+            def get(identifier: str):
                 return None
 
-            def get_all(self):
+            @staticmethod
+            def get_all():
                 return []
 
-            def exists(self, identifier: str):
+            @staticmethod
+            def exists(identifier: str):
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
-            def count(self):
+            @staticmethod
+            def count():
                 return 0
 
             def export_to_json(self, file_path, flat=False):
-                pass
+                raise NotImplementedError()
 
             def export_to_csv(self, file_path):
-                pass
+                raise NotImplementedError()
 
             def get_by_songstats_id(self, songstats_id: str):
                 return None
@@ -367,31 +379,35 @@ class TestStatsRepositoryInterface:
             """Repository missing export_to_json method."""
 
             def add(self, item: TrackWithStats):
-                pass
+                raise NotImplementedError()
 
-            def get(self, identifier: str):
+            @staticmethod
+            def get(identifier: str):
                 return None
 
-            def get_all(self):
+            @staticmethod
+            def get_all():
                 return []
 
-            def exists(self, identifier: str):
+            @staticmethod
+            def exists(identifier: str):
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
-            def count(self):
+            @staticmethod
+            def count():
                 return 0
 
             def save_batch(self, items):
-                pass
+                raise NotImplementedError()
 
             def export_to_csv(self, file_path):
-                pass
+                raise NotImplementedError()
 
             def get_by_songstats_id(self, songstats_id: str):
                 return None
@@ -408,31 +424,35 @@ class TestStatsRepositoryInterface:
             """Repository missing export_to_csv method."""
 
             def add(self, item: TrackWithStats):
-                pass
+                raise NotImplementedError()
 
-            def get(self, identifier: str):
+            @staticmethod
+            def get(identifier: str):
                 return None
 
-            def get_all(self):
+            @staticmethod
+            def get_all():
                 return []
 
-            def exists(self, identifier: str):
+            @staticmethod
+            def exists(identifier: str):
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
-            def count(self):
+            @staticmethod
+            def count():
                 return 0
 
             def save_batch(self, items):
-                pass
+                raise NotImplementedError()
 
             def export_to_json(self, file_path, flat=False):
-                pass
+                raise NotImplementedError()
 
             def get_by_songstats_id(self, songstats_id: str):
                 return None
@@ -449,34 +469,38 @@ class TestStatsRepositoryInterface:
             """Repository missing get_by_songstats_id method."""
 
             def add(self, item: TrackWithStats):
-                pass
+                raise NotImplementedError()
 
-            def get(self, identifier: str):
+            @staticmethod
+            def get(identifier: str):
                 return None
 
-            def get_all(self):
+            @staticmethod
+            def get_all():
                 return []
 
-            def exists(self, identifier: str):
+            @staticmethod
+            def exists(identifier: str):
                 return False
 
             def remove(self, identifier: str):
-                pass
+                raise NotImplementedError()
 
             def clear(self):
-                pass
+                raise NotImplementedError()
 
-            def count(self):
+            @staticmethod
+            def count():
                 return 0
 
             def save_batch(self, items):
-                pass
+                raise NotImplementedError()
 
             def export_to_json(self, file_path, flat=False):
-                pass
+                raise NotImplementedError()
 
             def export_to_csv(self, file_path):
-                pass
+                raise NotImplementedError()
 
         with pytest.raises(TypeError, match="get_by_songstats_id"):
             # noinspection PyAbstractClass

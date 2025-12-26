@@ -72,7 +72,7 @@ class TestScoringStrategyInterface:
             """Strategy missing compute_category_scores method."""
 
             def compute_power_ranking(self, track, category_scores, weights):
-                pass
+                raise NotImplementedError()
 
             def get_name(self) -> str:
                 return "Incomplete"

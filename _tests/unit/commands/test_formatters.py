@@ -5,9 +5,6 @@ Tests quota tables, validation errors, and export summary formatting.
 
 # Standard library
 from pathlib import Path
-
-# Third-party
-import pytest
 from rich.panel import Panel
 from rich.table import Table
 

@@ -130,9 +130,8 @@ class TestSecureWrite:
         base_dir.mkdir()
         outside_path = tmp_path / "outside" / "file.txt"
 
-        with pytest.raises(ValueError, match="Security error"):
-            with secure_write(outside_path, base_dir=base_dir, purpose="test"):
-                pass
+        with pytest.raises(ValueError, match="Security error"), secure_write(outside_path, base_dir=base_dir, purpose="test"):
+            pass
 
     @staticmethod
     def test_skips_validation_without_base_dir(tmp_path: Path) -> None:
@@ -172,8 +171,7 @@ class TestSecureWrite:
         base_dir.mkdir()
         outside_path = tmp_path / "outside" / "file.txt"
 
-        with pytest.raises(ValueError, match="export"):
-            with secure_write(
-                    outside_path, base_dir=base_dir, purpose="export", encoding="utf-8"
-            ):
-                pass
+        with pytest.raises(ValueError, match="export"), secure_write(
+                outside_path, base_dir=base_dir, purpose="export", encoding="utf-8"
+        ):
+            pass

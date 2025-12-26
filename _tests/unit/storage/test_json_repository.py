@@ -7,9 +7,6 @@ Tests JSONTrackRepository and JSONStatsRepository.
 import json
 from pathlib import Path
 
-# Third-party
-import pytest
-
 # Local
 from msc.models.track import Track, SongstatsIdentifiers
 from msc.models.stats import TrackWithStats, PlatformStats

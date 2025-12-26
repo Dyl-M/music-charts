@@ -3,9 +3,6 @@
 Tests Platform enum, StatCategory enum, WeightLevel enum, and constant values.
 """
 
-# Third-party
-import pytest
-
 # Local
 from msc.config.constants import (
     CATEGORY_WEIGHTS,

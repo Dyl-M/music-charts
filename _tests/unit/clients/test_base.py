@@ -195,9 +195,8 @@ class TestBaseClientRequest:
         mock_response = MagicMock()
         mock_response.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
 
-        with patch.object(client.session, "request", return_value=mock_response):
-            with pytest.raises(requests.HTTPError):
-                client.get("https://test.com/api")
+        with patch.object(client.session, "request", return_value=mock_response), pytest.raises(requests.HTTPError):
+            client.get("https://test.com/api")
 
 
 class TestBaseClientAbstractMethods:

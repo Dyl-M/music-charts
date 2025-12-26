@@ -9,9 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-# Third-party
-import pytest
-
 # Local
 from msc.pipeline.observer import EventType, PipelineEvent
 from msc.pipeline.observers import (
@@ -404,11 +401,10 @@ class TestProgressBarObserverItemEvents:
             error=ValueError("Test error"),
         )
 
-        with patch.object(observer.progress, "advance") as mock_advance:
-            with patch.object(observer.progress, "update"):
-                observer.on_item_failed(event)
+        with patch.object(observer.progress, "advance") as mock_advance, patch.object(observer.progress, "update"):
+            observer.on_item_failed(event)
 
-                mock_advance.assert_called_once()
+            mock_advance.assert_called_once()
 
 
 class TestProgressBarObserverClose:

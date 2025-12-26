@@ -2,9 +2,6 @@
 
 Tests real API interactions when API key is available.
 """
-
-# Third-party
-import pytest
 import requests
 
 # Local

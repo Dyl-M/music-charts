@@ -22,17 +22,19 @@ class ConcretePipelineStage(PipelineStage[list[str], list[str]]):
         """Return stage name."""
         return "TestStage"
 
-    def extract(self) -> list[str]:
+    @staticmethod
+    def extract() -> list[str]:
         """Extract test data."""
         return ["item1", "item2"]
 
-    def transform(self, data: list[str]) -> list[str]:
+    @staticmethod
+    def transform(data: list[str]) -> list[str]:
         """Transform test data."""
         return [item.upper() for item in data]
 
     def load(self, data: list[str]) -> None:
         """Load test data."""
-        pass
+        raise NotImplementedError()
 
 
 class FailingStage(PipelineStage[list[str], list[str]]):
@@ -43,17 +45,19 @@ class FailingStage(PipelineStage[list[str], list[str]]):
         """Return stage name."""
         return "FailingStage"
 
-    def extract(self) -> list[str]:
+    @staticmethod
+    def extract() -> list[str]:
         """Extract test data."""
         return ["item"]
 
-    def transform(self, data: list[str]) -> list[str]:
+    @staticmethod
+    def transform(data: list[str]) -> list[str]:
         """Raise an error."""
         raise ValueError("Transform failed")
 
     def load(self, data: list[str]) -> None:
         """Load test data."""
-        pass
+        raise NotImplementedError()
 
 
 class TestPipelineStageInterface:
@@ -80,7 +84,7 @@ class TestPipelineStageInterface:
                 return data
 
             def load(self, data):
-                pass
+                raise NotImplementedError()
 
         with pytest.raises(TypeError, match="stage_name"):
             # noinspection PyAbstractClass
@@ -101,7 +105,7 @@ class TestPipelineStageInterface:
                 return data
 
             def load(self, data):
-                pass
+                raise NotImplementedError()
 
         with pytest.raises(TypeError, match="extract"):
             # noinspection PyAbstractClass
@@ -122,7 +126,7 @@ class TestPipelineStageInterface:
                 return []
 
             def load(self, data):
-                pass
+                raise NotImplementedError()
 
         with pytest.raises(TypeError, match="transform"):
             # noinspection PyAbstractClass

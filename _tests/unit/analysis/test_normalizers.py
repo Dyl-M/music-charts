@@ -3,9 +3,6 @@
 Tests MinMaxNormalizer, ZScoreNormalizer, and RobustNormalizer.
 """
 
-# Third-party
-import pytest
-
 # Local
 from msc.analysis.normalizers import (
     MinMaxNormalizer,

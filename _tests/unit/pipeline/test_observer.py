@@ -199,8 +199,6 @@ class TestPipelineObserverInterface:
         class IncompleteObserver(PipelineObserver, ABC):
             """Observer missing on_event."""
 
-            pass
-
         with pytest.raises(TypeError, match="on_event"):
             # noinspection PyAbstractClass
             IncompleteObserver()
