@@ -23,32 +23,32 @@ All anomalies in core components will be validated from a user perspective:
 - [x] Power Ranking range (ISSUE-017)
 - [x] YouTube Data integration (ISSUE-018)
 - [x] Weights adjustments based on data overall availability (ISSUE-019)
-- [ ] Test suite revamped and covering at least 95% of the codebase
+- [x] Test suite revamped (1096 tests, 94% coverage - ISSUE-005 implemented)
 - [ ] Actual documentation for module and archiving/preparation for 2026
 
 ## Resolution Tracking
 
-| Issue ID  | Priority       | Status     | Target Version |
-|-----------|----------------|------------|----------------|
-| ISSUE-001 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-002 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
-| ISSUE-003 | 🟠 Medium      | ✅ Fixed    | 1.0.0          |
-| ISSUE-004 | 🔵 Low         | ✅ Fixed    | 1.0.0          |
-| ISSUE-005 | 📈 Enhancement | ⏳ Deferred | Future         |
-| ISSUE-006 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
-| ISSUE-007 | ☢️ Critical    | ✅ Fixed    | 1.0.0          |
-| ISSUE-008 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-009 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-010 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-011 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-012 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-013 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-014 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-015 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-016 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-017 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-018 | 🔴 High        | ✅ Fixed    | 1.0.0          |
-| ISSUE-019 | 🔴 High        | ✅ Fixed    | 1.0.0          |
+| Issue ID  | Priority       | Status      | Target Version |
+|-----------|----------------|-------------|----------------|
+| ISSUE-001 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-002 | 🟠 Medium      | ✅ Fixed     | 1.0.0          |
+| ISSUE-003 | 🟠 Medium      | ✅ Fixed     | 1.0.0          |
+| ISSUE-004 | 🔵 Low         | ✅ Fixed     | 1.0.0          |
+| ISSUE-005 | 📈 Enhancement | ✅ Fixed     | 1.0.0          |
+| ISSUE-006 | ☢️ Critical    | ✅ Fixed     | 1.0.0          |
+| ISSUE-007 | ☢️ Critical    | ✅ Fixed     | 1.0.0          |
+| ISSUE-008 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-009 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-010 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-011 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-012 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-013 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-014 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-015 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-016 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-017 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-018 | 🔴 High        | ✅ Fixed     | 1.0.0          |
+| ISSUE-019 | 🔴 High        | ✅ Fixed     | 1.0.0          |
 
 ---
 

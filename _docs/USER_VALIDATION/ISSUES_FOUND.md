@@ -39,40 +39,50 @@ not automatically cleaned up, leading to clutter and confusion about which outpu
 
 **Status**:
 
-- [ ] Planned
-- [ ] In Progress
-- [ ] Fixed
-- [ ] Deferred
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Won't Fix
 
 **Priority**: Enhancement (not blocking, but significantly impacts development workflow)
 
-**Proposed Solutions**:
+**Resolution (2025-12-26)**:
 
-1. **Test Playlist**: Create a dedicated small test playlist in MusicBee (e.g., "Test Selection 2025") with 10-20
-   representative tracks
-2. **CLI Flag**: Add `--test-mode` flag that uses test playlist and marks outputs
-3. **Auto-cleanup**: Add `--cleanup-after` flag to delete run directory after completion
-4. **Playlist Limit**: Add `--limit N` flag to process only first N tracks from any playlist
-5. **Test Fixtures**: Use the existing `_tests/fixtures/test_library.xml` for integration tests instead of production
-   library
+Implemented CLI test mode with full feature set.
 
-**Expected Benefits**:
+**New CLI Flags Added to `msc run`**:
 
-* Faster iteration during development (seconds instead of minutes)
-* Cleaner `_data/` directory structure
-* Easier to test specific features or edge cases
-* Reduced API quota usage during testing
+- `--test-mode` / `-t`: Run with test library fixture (mocked APIs, no quota usage)
+- `--limit N` / `-l N`: Limit number of tracks to process
+- `--cleanup`: Delete run directory after completion (for test iterations)
 
-**Workaround**:
+**Implementation Details**:
 
-For now, manually create a small playlist in MusicBee for testing purposes and specify it with:
+- Test mode uses `_tests/fixtures/test_library.xml` (5 tracks, 4 playlists)
+- Mock Songstats client auto-injected with predefined responses
+- No real API calls = no quota usage, fast execution
+- Works with existing `--stage` and `--new-run` flags
+
+**Coverage Improvements**:
+
+- CLI: 91% (up from 56%)
+- Orchestrator: 91% (up from 79%)
+- Songstats Client: 92% (up from 80%)
+- Track Model: 100% (up from 77%)
+- Overall: **94%** (1096 tests passing)
+
+**Test Quality Improvements (2025-12-26)**:
+
+- Fixed duplicate class definitions in `test_songstats.py`
+- Fixed unused variable warnings across test files
+- Added proper `# noinspection` comments for intentional code patterns
+- All IDE/linter warnings in test files resolved
+
+**Usage Examples**:
 
 ```bash
-msc run --playlist "Test Playlist"
+msc run --test-mode                    # Run with test fixtures
+msc run --test-mode --limit 2          # Test with only 2 tracks
+msc run --test-mode --cleanup          # Auto-cleanup after test
+msc run --test-mode --stage extract    # Test extraction only
 ```
-
-**Future Enhancements**:
-
-* Add `msc test` command that automatically uses test fixtures
-* Implement `--dry-run` mode that simulates pipeline without API calls
-* Add `msc clean --test-runs` to remove all test-related artifacts
