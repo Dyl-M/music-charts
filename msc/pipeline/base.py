@@ -89,7 +89,7 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
         Returns:
             The transformed output data.
         """
-        self.logger.info(f"Starting {self.stage_name}")
+        self.logger.info("Starting %s", self.stage_name)
 
         self.logger.info("Extracting data...")
         raw_data = self.extract()
@@ -103,36 +103,8 @@ class PipelineStage(ABC, Generic[InputT, OutputT]):
         self.load(transformed_data)
         self.logger.info("Load complete")
 
-        self.logger.info(f"Completed {self.stage_name}")
+        self.logger.info("Completed %s", self.stage_name)
         return transformed_data
-
-    # TODO: Remove skipcq after implementing validation logic in subclasses
-    def validate_input(self, data: InputT) -> bool:  # skipcq: PYL-R6301
-        """Validate input data before transformation.
-
-        Override in subclasses for custom validation logic.
-
-        Args:
-            data: Input data to validate.
-
-        Returns:
-            True if data is valid.
-        """
-        return True
-
-    # TODO: Remove skipcq after implementing validation logic in subclasses
-    def validate_output(self, data: OutputT) -> bool:  # skipcq: PYL-R6301
-        """Validate output data before loading.
-
-        Override in subclasses for custom validation logic.
-
-        Args:
-            data: Output data to validate.
-
-        Returns:
-            True if data is valid.
-        """
-        return True
 
 
 class Pipeline:
@@ -173,14 +145,15 @@ class Pipeline:
 
         for stage in self._stages:
             if stages is not None and stage.stage_name not in stages:
-                self.logger.info(f"Skipping {stage.stage_name}")
+                self.logger.info("Skipping %s", stage.stage_name)
                 continue
 
             try:
                 result = stage.run()
                 results[stage.stage_name] = result
+
             except Exception as e:
-                self.logger.error(f"Stage {stage.stage_name} failed: {e}")
+                self.logger.error("Stage %s failed: %s", stage.stage_name, e)
                 raise
 
         return results

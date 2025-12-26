@@ -207,6 +207,15 @@ class PipelineOrchestrator(Observable):
         """
         self.attach(observer)
 
+    def _attach_observers_to_stage(self, stage: Observable) -> None:
+        """Attach all pipeline observers to a stage.
+
+        Args:
+            stage: Pipeline stage to attach observers to
+        """
+        for observer in self._observers:
+            stage.attach(observer)
+
     def run(
             self,
             run_extraction: bool = True,
@@ -262,8 +271,7 @@ class PipelineOrchestrator(Observable):
                 )
 
                 # Attach all pipeline observers to stage
-                for observer in self._observers:
-                    self.extraction_stage.attach(observer)
+                self._attach_observers_to_stage(self.extraction_stage)
 
                 # Run extraction stage
                 extracted_tracks = self.extraction_stage.run()
@@ -287,8 +295,7 @@ class PipelineOrchestrator(Observable):
                 )
 
                 # Attach all pipeline observers to stage
-                for observer in self._observers:
-                    self.enrichment_stage.attach(observer)
+                self._attach_observers_to_stage(self.enrichment_stage)
 
                 # Run enrichment stage
                 enriched_tracks = self.enrichment_stage.transform(extracted_tracks)
@@ -311,8 +318,7 @@ class PipelineOrchestrator(Observable):
                 )
 
                 # Attach all pipeline observers to stage
-                for observer in self._observers:
-                    self.ranking_stage.attach(observer)
+                self._attach_observers_to_stage(self.ranking_stage)
 
                 # Run ranking stage
                 results = self.ranking_stage.transform(enriched_tracks)
