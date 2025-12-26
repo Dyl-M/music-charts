@@ -16,11 +16,11 @@ from msc.analysis.normalizers import (
 
 
 class TestMinMaxNormalizer:
-    """Tests for MinMaxNormalizer (0-1 range scaling)."""
+    """Tests for MinMaxNormalizer (0-100 range scaling by default)."""
 
     @staticmethod
     def test_normalize_typical_values() -> None:
-        """Test normalization of typical values."""
+        """Test normalization of typical values to 0-100 range."""
         normalizer = MinMaxNormalizer()
         values = [10.0, 20.0, 30.0, 40.0, 50.0]
 
@@ -28,8 +28,8 @@ class TestMinMaxNormalizer:
 
         assert len(result) == 5
         assert result[0] == 0.0  # Min value → 0
-        assert result[4] == 1.0  # Max value → 1
-        assert result[2] == 0.5  # Mid value → 0.5
+        assert result[4] == 100.0  # Max value → 100
+        assert result[2] == 50.0  # Mid value → 50
 
     @staticmethod
     def test_normalize_single_value() -> None:
@@ -40,7 +40,7 @@ class TestMinMaxNormalizer:
         result = normalizer.normalize(values)
 
         assert len(result) == 1
-        assert result[0] == 0.5  # Single value → 0.5 (all same)
+        assert result[0] == 50.0  # Single value → midpoint (50)
 
     @staticmethod
     def test_normalize_all_same_values() -> None:
@@ -51,7 +51,7 @@ class TestMinMaxNormalizer:
         result = normalizer.normalize(values)
 
         assert len(result) == 4
-        assert all(v == 0.5 for v in result)  # All same → 0.5
+        assert all(v == 50.0 for v in result)  # All same → midpoint (50)
 
     @staticmethod
     def test_normalize_with_zeros() -> None:
@@ -62,8 +62,8 @@ class TestMinMaxNormalizer:
         result = normalizer.normalize(values)
 
         assert result[0] == 0.0  # Min (0) → 0
-        assert result[2] == 1.0  # Max (20) → 1
-        assert result[1] == 0.5  # Mid (10) → 0.5
+        assert result[2] == 100.0  # Max (20) → 100
+        assert result[1] == 50.0  # Mid (10) → 50
 
     @staticmethod
     def test_normalize_negative_values() -> None:
@@ -74,8 +74,8 @@ class TestMinMaxNormalizer:
         result = normalizer.normalize(values)
 
         assert result[0] == 0.0  # Min (-10) → 0
-        assert result[2] == 1.0  # Max (10) → 1
-        assert result[1] == 0.5  # Mid (0) → 0.5
+        assert result[2] == 100.0  # Max (10) → 100
+        assert result[1] == 50.0  # Mid (0) → 50
 
     @staticmethod
     def test_normalize_empty_list() -> None:
@@ -96,7 +96,19 @@ class TestMinMaxNormalizer:
         result = normalizer.normalize(values)
 
         assert result[0] == 0.0
-        assert result[1] == 1.0
+        assert result[1] == 100.0
+
+    @staticmethod
+    def test_normalize_custom_feature_range() -> None:
+        """Test normalization with custom feature_range (0-1)."""
+        normalizer = MinMaxNormalizer(feature_range=(0.0, 1.0))
+        values = [10.0, 20.0, 30.0]
+
+        result = normalizer.normalize(values)
+
+        assert result[0] == 0.0
+        assert result[2] == 1.0
+        assert result[1] == 0.5
 
     @staticmethod
     def test_normalize_preserves_order() -> None:
@@ -154,14 +166,14 @@ class TestMinMaxNormalizer:
 
         result = normalizer.normalize(values)
 
-        # NaN values should become 0.0, valid values should be normalized
+        # NaN values should become 0.0, valid values should be normalized to 0-100
         assert len(result) == 5
         assert result[0] == 0.0  # NaN → 0.0
         assert result[3] == 0.0  # NaN → 0.0
-        # Valid values should be normalized
-        assert 0.0 <= result[1] <= 1.0
-        assert 0.0 <= result[2] <= 1.0
-        assert 0.0 <= result[4] <= 1.0
+        # Valid values should be normalized to 0-100 range
+        assert 0.0 <= result[1] <= 100.0
+        assert 0.0 <= result[2] <= 100.0
+        assert 0.0 <= result[4] <= 100.0
 
     @staticmethod
     def test_normalize_mixed_infinite_and_valid() -> None:
@@ -425,26 +437,34 @@ class TestNormalizationBoundaryConditions:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "normalizer_class",
-        [MinMaxNormalizer, RobustNormalizer, ZScoreNormalizer],
+        "normalizer_class,expected_midpoint",
+        [
+            (MinMaxNormalizer, 50.0),  # 0-100 range, midpoint is 50
+            (RobustNormalizer, 0.5),   # 0-1 range, midpoint is 0.5
+            (ZScoreNormalizer, 0.5),   # 0-1 range, midpoint is 0.5
+        ],
     )
-    def test_normalize_handles_single_value(normalizer_class) -> None:
-        """Test that all normalizers handle single value."""
+    def test_normalize_handles_single_value(normalizer_class, expected_midpoint) -> None:
+        """Test that all normalizers handle single value with correct midpoint."""
         normalizer = normalizer_class()
         result = normalizer.normalize([42.0])
         assert len(result) == 1
-        assert result[0] == 0.5  # All normalizers return 0.5 for single/same values
+        assert result[0] == expected_midpoint
 
     @staticmethod
     @pytest.mark.parametrize(
-        "normalizer_class",
-        [MinMaxNormalizer, RobustNormalizer, ZScoreNormalizer],
+        "normalizer_class,expected_midpoint",
+        [
+            (MinMaxNormalizer, 50.0),  # 0-100 range, midpoint is 50
+            (RobustNormalizer, 0.5),   # 0-1 range, midpoint is 0.5
+            (ZScoreNormalizer, 0.5),   # 0-1 range, midpoint is 0.5
+        ],
     )
-    def test_normalize_handles_all_same(normalizer_class) -> None:
-        """Test that all normalizers handle identical values."""
+    def test_normalize_handles_all_same(normalizer_class, expected_midpoint) -> None:
+        """Test that all normalizers handle identical values with correct midpoint."""
         normalizer = normalizer_class()
         result = normalizer.normalize([5.0, 5.0, 5.0, 5.0])
-        assert all(v == 0.5 for v in result)  # All normalizers return 0.5
+        assert all(v == expected_midpoint for v in result)
 
     @staticmethod
     @pytest.mark.parametrize(

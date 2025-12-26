@@ -20,6 +20,8 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 **Branch:** `feat-V1` (preparing for 1.0.0 release)
 
 ### Recent Enhancements (feat-V1)
+- **Legacy-Compatible Scoring Algorithm:** Power rankings now use 0-100 scale with data availability weighting
+- **Dynamic Weight Adjustment:** Category weights adapt based on per-metric data availability (ISSUE-017/019)
 - **UUID5-based Track Identifiers:** Compact 8-character deterministic IDs replacing long string concatenation
 - **Songstats Match Validation:** Keyword-based rejection prevents false positives (karaoke, instrumentals)
 - **Enhanced Metadata Extraction:** ISRC codes, Songstats artist/label lists for data quality validation

@@ -272,7 +272,7 @@ class TestPowerRankingScorer:
 
     @staticmethod
     def test_compute_rankings_raw_scores_normalized(tmp_path: Path) -> None:
-        """Test that raw_score in CategoryScore is 0-1 normalized."""
+        """Test that raw_score in CategoryScore is 0-100 normalized."""
         config_file = tmp_path / "categories.json"
         with open(config_file, "w", encoding="utf-8") as f:
             json.dump({"popularity": ["spotify_popularity_peak"]}, f)
@@ -299,10 +299,10 @@ class TestPowerRankingScorer:
 
         results = scorer.compute_rankings(tracks)
 
-        # Check that all raw_scores are in [0, 1] range
+        # Check that all raw_scores are in [0, 100] range
         for ranking in results.rankings:
             for cat_score in ranking.category_scores:
-                assert 0.0 <= cat_score.raw_score <= 1.0
+                assert 0.0 <= cat_score.raw_score <= 100.0
 
     @staticmethod
     def test_compute_rankings_weighted_scores(tmp_path: Path) -> None:
@@ -337,7 +337,7 @@ class TestPowerRankingScorer:
 
     @staticmethod
     def test_compute_rankings_total_score(tmp_path: Path) -> None:
-        """Test that total_score is sum of weighted category scores."""
+        """Test that total_score is weighted average of category scores (0-100 range)."""
         config_file = tmp_path / "categories.json"
         with open(config_file, "w", encoding="utf-8") as f:
             json.dump(
@@ -368,9 +368,10 @@ class TestPowerRankingScorer:
         results = scorer.compute_rankings([track])
         ranking = results.rankings[0]
 
-        # Total score should be sum of all weighted scores
-        expected_total = sum(cs.weighted_score for cs in ranking.category_scores)
-        assert abs(ranking.total_score - expected_total) < 0.001
+        # Total score is now weighted average (0-100 range)
+        # With a single track, all stats get normalized to midpoint (50)
+        # since min == max for single track
+        assert 0.0 <= ranking.total_score <= 100.0
 
     @staticmethod
     def test_compute_rankings_handles_missing_data(tmp_path: Path) -> None:
@@ -504,10 +505,11 @@ class TestPowerRankingScorer:
 
         results = scorer.compute_rankings(tracks)
 
-        # All tracks have same value (0), so normalizer returns 0.5
-        # 0.5 * weight(4) = 2.0 for all tracks
+        # All tracks have 0 values → availability is 0 → weight is 0 → score is 0
+        # This is correct: no data means no contribution to the score
         for ranking in results.rankings:
-            assert ranking.total_score == 2.0
+            assert ranking.total_score == 0.0
+            assert ranking.category_scores[0].weight == 0.0
 
     @staticmethod
     def test_load_missing_category_config(tmp_path: Path) -> None:

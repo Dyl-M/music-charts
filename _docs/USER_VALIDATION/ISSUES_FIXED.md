@@ -1,6 +1,7 @@
 # User Validation - Issues Fixed
 
-This document contains all resolved issues that were discovered and fixed during user validation testing for version 1.0.0.
+This document contains all resolved issues that were discovered and fixed during user validation testing for version
+1.0.0.
 
 ## Critical Issues
 
@@ -1566,9 +1567,11 @@ try:
 **Command**: `msc export`
 
 **Description**:
-The `msc export` command was producing CSV files with nested Python objects (lists and dicts) instead of clean scalar values. This made the exported data unusable for analysis in spreadsheet applications.
+The `msc export` command was producing CSV files with nested Python objects (lists and dicts) instead of clean scalar
+values. This made the exported data unusable for analysis in spreadsheet applications.
 
 **Status**:
+
 - [x] Planned
 - [x] In Progress
 - [x] Fixed
@@ -1578,24 +1581,30 @@ The `msc export` command was producing CSV files with nested Python objects (lis
 
 **Original Issues**:
 
-1. **Nested dicts in CSV**: Fields like `songstats_identifiers` and `youtube_data_most_viewed` rendered as Python dict strings
-2. **Lists in CSV**: Fields like `artist_list`, `genre`, `grouping` rendered as Python list strings (`['value1', 'value2']`)
+1. **Nested dicts in CSV**: Fields like `songstats_identifiers` and `youtube_data_most_viewed` rendered as Python dict
+   strings
+2. **Lists in CSV**: Fields like `artist_list`, `genre`, `grouping` rendered as Python list strings (
+   `['value1', 'value2']`)
 3. **Duplicate data**: `songstats_identifiers` appeared both as nested dict AND as individual flattened fields
 4. **Unnecessary metadata**: Fields like `title`, `year`, `search_query` duplicated data already in JSON
 
 **Solution Implemented (2025-12-26)**:
 
 ✅ **1. Simplified Export to Identifiers + Stats Only**:
+
 - CSV now contains only: `track_id`, `songstats_id`, and platform statistics
 - Full track metadata remains in `enriched_tracks.json` (the source of truth)
 - Clean separation: JSON for full data, CSV for stats analysis
 
 ✅ **2. Removed All Nested Structures**:
+
 - Removed nested dict fields: `songstats_identifiers`, `youtube_data_most_viewed`, `youtube_data_songstats_identifiers`
-- Removed list fields: `artist_list`, `genre`, `grouping`, `songstats_artists`, `songstats_labels`, `youtube_data_all_sources`
+- Removed list fields: `artist_list`, `genre`, `grouping`, `songstats_artists`, `songstats_labels`,
+  `youtube_data_all_sources`
 - All exported values are now scalars (strings, numbers, or None)
 
 ✅ **3. Updated `TrackWithStats.to_flat_dict()`**:
+
 ```python
 def to_flat_dict(self) -> dict[str, Any]:
     result: dict[str, Any] = {
@@ -1608,6 +1617,7 @@ def to_flat_dict(self) -> dict[str, Any]:
 ```
 
 ✅ **4. Fixed Legacy Key Mapping**:
+
 - `from_legacy_json()`: Maps legacy `"label"` key to `"grouping"` field
 - `from_flat_dict()`: Handles both `"label"` and `"grouping"` keys
 
@@ -1638,9 +1648,11 @@ f68b210b,em0th986,10187,11.5,...
 **Command**: `msc stats`
 
 **Description**:
-The `msc stats` command had multiple critical issues preventing accurate platform coverage statistics. Fixed all file path issues, attribute name mismatches, and implemented proper platform presence detection using Songstats API data.
+The `msc stats` command had multiple critical issues preventing accurate platform coverage statistics. Fixed all file
+path issues, attribute name mismatches, and implemented proper platform presence detection using Songstats API data.
 
 **Status**:
+
 - [x] Planned
 - [x] In Progress
 - [x] Fixed
@@ -1659,16 +1671,19 @@ The `msc stats` command had multiple critical issues preventing accurate platfor
 **Solution Implemented (2025-12-25)**:
 
 ✅ **1. Fixed File Path**:
+
 - Changed from `settings.year_output_dir / "stats.json"` → `settings.output_dir / "enriched_tracks.json"`
 - Now correctly loads enriched tracks data
 
 ✅ **2. Fixed Platform Attribute Names**:
+
 - Spotify: `"streams"` → `"streams_total"`
 - YouTube: `"views"` → `"video_views_total"`
 - Deezer: `"fans"` → `"playlist_reach_total"`
 - All attributes now match model field names
 
 ✅ **3. Added All 10 Platforms**:
+
 - Added missing platforms: SoundCloud, Tidal, Amazon Music, Beatport, 1001Tracklists
 - Now displays coverage for all supported streaming platforms
 
@@ -1677,11 +1692,13 @@ The `msc stats` command had multiple critical issues preventing accurate platfor
 **Architecture Decision**: Two-phase platform availability checking
 
 **Phase 1 - Get Available Platforms** (`SongstatsClient.get_available_platforms()`):
+
 - Calls `/tracks/info` endpoint to determine which platforms track exists on
 - Returns `links` array showing actual platform availability
 - Normalizes platform names: `"tracklist"` → `"1001tracklists"`, `"amazon"` → `"amazon_music"`
 
 **Phase 2 - Filter Platform Stats** (`PlatformStats.from_flat_dict()`):
+
 - Only creates platform stat instances for available platforms
 - Correctly distinguishes "not on platform" (None) from "on platform with 0 stats" (0)
 - Uses name mapping dict for consistent normalization
@@ -1704,6 +1721,7 @@ normalized_name = field_to_source.get(field_name, field_name)
 if normalized_name in available_platforms:
     platform_kwargs[field_name] = model_class(**platform_data)
 
+
 # msc/cli.py - Platform presence check
 def _has_platform_data(track: TrackWithStats, platform_attr: str) -> bool:
     """Check if track is present on a specific platform.
@@ -1721,16 +1739,22 @@ def _has_platform_data(track: TrackWithStats, platform_attr: str) -> bool:
 
 **Why This Architecture?**:
 
-The Songstats `/tracks/stats` endpoint returns ALL requested platforms with 0 values even when a track doesn't exist on that platform. This makes it impossible to distinguish:
+The Songstats `/tracks/stats` endpoint returns ALL requested platforms with 0 values even when a track doesn't exist on
+that platform. This makes it impossible to distinguish:
+
 - Track not on platform (shouldn't count)
 - Track on platform with 0 activity (should count)
 
-By checking `/tracks/info` first, we get the authoritative list of platforms where the track actually exists, then use that to filter which platform stats to create.
+By checking `/tracks/info` first, we get the authoritative list of platforms where the track actually exists, then use
+that to filter which platform stats to create.
 
 **Files Modified**:
+
 - `msc/clients/songstats.py:334-370` - Added `get_available_platforms()` method with normalization dict
-- `msc/models/stats.py:149-227` - Updated `from_flat_dict()` with `available_platforms` parameter and field name normalization
-- `msc/pipeline/enrich.py:169-210, 361-383` - Call `get_available_platforms()` before fetching stats, pass to `_create_platform_stats()`
+- `msc/models/stats.py:149-227` - Updated `from_flat_dict()` with `available_platforms` parameter and field name
+  normalization
+- `msc/pipeline/enrich.py:169-210, 361-383` - Call `get_available_platforms()` before fetching stats, pass to
+  `_create_platform_stats()`
 - `msc/cli.py:534-585, 598-630` - Fixed file path, attribute names, added all 10 platforms, updated presence detection
 
 **Test Results** (Run 2025_20251225_233149):
@@ -1756,15 +1780,18 @@ Platform Coverage:
 **Platform Name Normalization Map**:
 
 Three different naming conventions exist:
+
 1. **API source names**: `"tracklist"`, `"amazon"` (from `/tracks/info` endpoint)
 2. **Normalized comparison names**: `"1001tracklists"`, `"amazon_music"` (in available_platforms set)
 3. **Model field names**: `"tracklists"`, `"amazon_music"` (Pydantic model attributes)
 
 The normalization ensures all three conventions map correctly:
+
 - `get_available_platforms()`: API → Comparison names
 - `from_flat_dict()`: Field → Comparison names for lookup
 
 **Benefits**:
+
 - ✅ Accurate platform coverage statistics (no more 0% or 100% false readings)
 - ✅ Distinguishes "not on platform" from "on platform with no activity"
 - ✅ Preserves all platform data in JSON for weight computation (ISSUE-019)
@@ -1772,7 +1799,155 @@ The normalization ensures all three conventions map correctly:
 - ✅ All 10 platforms properly tracked
 
 **Related Issues**:
+
 - Enables proper weight adjustment for ISSUE-019 (Power Ranking Weights)
 - Provides accurate data availability information for analytics
+
+---
+
+#### [ISSUE-017] Power Ranking Scores Not in 0-100 Range (Design Issue)
+
+**Command**: `msc run --stage rank`
+
+**Description**:
+The power ranking scores by category were not in the expected 0-100 range as they were in the legacy implementation. The
+normalization strategy was producing scores in 0-1 range, which affected readability and comparison with historical
+rankings.
+
+**Status**:
+
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects data quality and comparison with legacy rankings)
+
+**Solution Implemented (2025-12-26)**:
+
+✅ **1. Updated MinMaxNormalizer with `feature_range` Parameter**:
+
+Added configurable output range to MinMaxNormalizer (default 0-100):
+
+```python
+class MinMaxNormalizer(NormalizationStrategy):
+    def __init__(self, feature_range: tuple[float, float] = (0.0, 100.0)) -> None:
+        self.feature_range = feature_range
+        self._range_min = feature_range[0]
+        self._range_max = feature_range[1]
+        self._range_span = self._range_max - self._range_min
+        self._midpoint = (self._range_min + self._range_max) / 2
+```
+
+✅ **2. Updated CategoryScore Model**:
+
+- `raw_score`: Changed constraint from `le=1.0` to `le=100.0`
+- `weight`: Changed from `int` to `float` (now represents `availability × importance`)
+
+✅ **3. Refactored PowerRankingScorer with Legacy Algorithm**:
+
+Implemented the legacy algorithm from `power_ranking_2024.ipynb`:
+
+- Per-metric normalization to 0-100 range
+- Data availability weighting per metric
+- Category weight = `avg_availability × importance_multiplier`
+- Final score = **weighted average** (0-100 range) instead of weighted sum
+
+**Files Modified**:
+
+- `msc/analysis/normalizers.py:15-88` - Added `feature_range` parameter to MinMaxNormalizer
+- `msc/models/ranking.py:25-65` - Updated CategoryScore constraints
+- `msc/analysis/scorer.py:145-280` - Refactored with legacy algorithm
+
+**Test Results**:
+
+✅ All 100 tests passing (normalizers, scorer, ranking model)
+
+---
+
+#### [ISSUE-019] Power Ranking Weights Not Adjusted from Data Availability
+
+**Command**: `msc run --stage rank`
+
+**Description**:
+The power ranking weights were static and did not adjust based on actual data availability from each platform. The
+legacy
+implementation adjusted weights based on data availability rate, ensuring fair comparison between tracks with different
+platform coverage.
+
+**Status**:
+
+- [x] Planned
+- [x] In Progress
+- [x] Fixed
+- [ ] Deferred
+
+**Priority**: High (affects ranking fairness and accuracy)
+
+**Solution Implemented (2025-12-26)**:
+
+✅ **Implemented Legacy Algorithm with Dynamic Weight Adjustment**:
+
+The new `PowerRankingScorer` now computes weights dynamically based on data availability:
+
+**1. Per-Metric Availability Calculation**:
+
+```python
+def _compute_availability_weights(metric_values: dict[str, list[float]]) -> dict[str, float]:
+    """Availability = proportion of tracks with non-zero value for this metric."""
+    availability = {}
+    for metric_name, values in metric_values.items():
+        non_zero_count = sum(1 for v in values if v > 0)
+        availability[metric_name] = non_zero_count / len(values)
+    return availability
+```
+
+**2. Category Score with Availability Weighting**:
+
+```python
+# Category score = weighted average of normalized metrics by availability
+# Formula: score = sum(normalized_stat × availability) / sum(availability)
+weighted_sum = sum(normalized[metric] * availability[metric] for metric in metrics)
+score = weighted_sum / total_availability
+```
+
+**3. Effective Category Weight**:
+
+```python
+# Category weight = avg_availability × importance_multiplier
+avg_availability = sum(availability_weights.values()) / len(metrics)
+category_weight = avg_availability * importance_multiplier
+```
+
+**4. Final Score as Weighted Average**:
+
+```python
+# Final score = weighted average (0-100 range)
+total_score = sum(category_score * category_weight) / sum(category_weights)
+```
+
+**Key Algorithm Changes**:
+
+| Aspect             | Before                  | After (Legacy Algorithm)     |
+|--------------------|-------------------------|------------------------------|
+| Normalization      | 0-1 range               | 0-100 range                  |
+| Per-stat weighting | None (uniform)          | By data availability         |
+| Category weight    | Just importance (1,2,4) | availability × importance    |
+| Final score        | Weighted **sum** (0-32) | Weighted **average** (0-100) |
+
+**Files Modified**:
+
+- `msc/analysis/scorer.py:145-280` - Complete refactor with new algorithm
+
+**Benefits**:
+
+- ✅ Tracks with missing data get fair scores (not penalized for missing platforms)
+- ✅ Metrics with low availability contribute less to rankings
+- ✅ Final scores in readable 0-100 range
+- ✅ Matches legacy implementation behavior
+
+**Test Results**:
+
+✅ All scorer tests updated and passing
 
 ---

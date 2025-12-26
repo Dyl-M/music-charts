@@ -24,19 +24,19 @@ class CategoryScore(MSCBaseModel):
 
     Attributes:
         category: Category name (streams, popularity, playlists, etc.).
-        raw_score: Normalized score 0.0-1.0 before weighting.
-        weight: Weight multiplier (1, 2, or 4).
-        weighted_score: Final score after applying weight.
+        raw_score: Normalized score 0-100 (power ranking within category).
+        weight: Effective weight (data_availability × importance_multiplier).
+        weighted_score: raw_score × weight, used for final ranking calculation.
 
     Examples:
         >>> score = CategoryScore(
         ...     category="streams",
-        ...     raw_score=0.85,
-        ...     weight=4,
-        ...     weighted_score=3.4
+        ...     raw_score=85.0,
+        ...     weight=2.4,
+        ...     weighted_score=204.0
         ... )
         >>> score.weighted_score
-        3.4
+        204.0
     """
 
     model_config = ConfigDict(frozen=True)  # Immutable
@@ -49,23 +49,22 @@ class CategoryScore(MSCBaseModel):
         float,
         Field(
             ge=0.0,
-            le=1.0,
-            description="Normalized score before weighting (0.0-1.0)"
+            le=100.0,
+            description="Normalized score (0-100) before weighting"
         )
     ]
     weight: Annotated[
-        int,
+        float,
         Field(
-            ge=1,
-            le=4,
-            description="Weight multiplier (1, 2, or 4)"
+            ge=0.0,
+            description="Effective weight (data_availability × importance_multiplier)"
         )
     ]
     weighted_score: Annotated[
         float,
         Field(
             ge=0.0,
-            description="Final score after applying weight"
+            description="raw_score × weight, for final ranking calculation"
         )
     ]
 

@@ -42,30 +42,27 @@ class TestCategoryScore:
 
     @staticmethod
     def test_raw_score_validation_max() -> None:
-        """Test raw_score must be <= 1.0."""
+        """Test raw_score must be <= 100.0."""
         with pytest.raises(ValidationError):
             CategoryScore(
                 category="streams",
-                raw_score=1.1,
-                weight=4,
-                weighted_score=4.4
+                raw_score=100.1,
+                weight=4.0,
+                weighted_score=400.4
             )
 
     @staticmethod
     def test_weight_validation() -> None:
-        """Test weight must be 1-4."""
-        # Valid weights
-        CategoryScore(category="test", raw_score=0.5, weight=1, weighted_score=0.5)
-        CategoryScore(category="test", raw_score=0.5, weight=2, weighted_score=1.0)
-        CategoryScore(category="test", raw_score=0.5, weight=4, weighted_score=2.0)
+        """Test weight must be >= 0.0 (availability × importance)."""
+        # Valid weights (now floats representing availability × importance)
+        CategoryScore(category="test", raw_score=50.0, weight=0.0, weighted_score=0.0)
+        CategoryScore(category="test", raw_score=50.0, weight=0.5, weighted_score=25.0)
+        CategoryScore(category="test", raw_score=50.0, weight=2.0, weighted_score=100.0)
+        CategoryScore(category="test", raw_score=50.0, weight=4.0, weighted_score=200.0)
 
-        # Invalid: below 1
+        # Invalid: negative weight
         with pytest.raises(ValidationError):
-            CategoryScore(category="test", raw_score=0.5, weight=0, weighted_score=0.0)
-
-        # Invalid: above 4
-        with pytest.raises(ValidationError):
-            CategoryScore(category="test", raw_score=0.5, weight=5, weighted_score=2.5)
+            CategoryScore(category="test", raw_score=50.0, weight=-0.5, weighted_score=-25.0)
 
     @staticmethod
     def test_frozen_model() -> None:
