@@ -124,33 +124,13 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
         for track in tracks_with_ids:
             track_id = track.identifier
 
-            # Skip if already processed
+            # Skip if already processed (checkpoint hit)
             if track_id in checkpoint.processed_ids:
-                # Load from repository
-                existing_stats = self.repository.get(track_id)
-
-                if existing_stats:
-                    # Happy path - use cached track
-                    self.logger.debug("Skipping already enriched track: %s", track_id)
-
-                    # Notify skipped
-                    event = self.create_event(
-                        EventType.ITEM_SKIPPED,
-                        stage_name="Enrichment",
-                        item_id=track_id,
-                        message=f"Already enriched: {track.title} - {track.primary_artist}",
-                    )
-                    self.notify(event)
-                    enriched_tracks.append(existing_stats)
+                cached_stats = self._handle_cached_track(track, checkpoint)
+                if cached_stats:
+                    enriched_tracks.append(cached_stats)
                     continue
-
-                # Repository lost track - reprocess
-                self.logger.warning(
-                    "Track %s in checkpoint but missing from repository, reprocessing",
-                    track_id
-                )
-                checkpoint.processed_ids.remove(track_id)
-                # Fall through to processing logic
+                # Fall through to reprocess if cache miss
 
             # Notify processing
             event = self.create_event(
@@ -160,125 +140,12 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
                 message=f"Fetching stats: {track.title} - {track.primary_artist}",
                 metadata={"current_item": track.title},
             )
-
             self.notify(event)
 
-            try:
-                songstats_id = track.songstats_identifiers.songstats_id
-
-                # First, check which platforms track is available on
-                available_platforms = self.songstats.get_available_platforms(songstats_id)
-                self.logger.debug(
-                    "Track %s available on: %s",
-                    track.title,
-                    ", ".join(sorted(available_platforms)) if available_platforms else "none"
-                )
-
-                # Fetch platform statistics
-                platform_stats_data = self.songstats.get_platform_stats(songstats_id)
-
-                if not platform_stats_data:
-                    self.logger.warning(
-                        "No platform stats found for: %s (ID: %s)",
-                        track.title,
-                        songstats_id,
-                    )
-                    checkpoint.failed_ids.add(track_id)
-
-                    # Notify warning
-                    event = self.create_event(
-                        EventType.WARNING,
-                        stage_name="Enrichment",
-                        item_id=track_id,
-                        message="No platform stats found",
-                    )
-                    self.notify(event)
-
-                    # Continue with empty stats (defensive)
-                    platform_stats_data = {}
-
-                # Fetch historical peaks (for popularity metrics)
-                # Start date is January 1st of the target year
-                start_date = f"{self.settings.year}-01-01"
-                peaks_data = self.songstats.get_historical_peaks(songstats_id, start_date)
-
-                # Merge peaks into platform stats (peaks_data is already flat format)
-                if peaks_data:
-                    platform_stats_data.update(peaks_data)
-
-                # Create PlatformStats model from data, filtering by available platforms
-                platform_stats = self._create_platform_stats(platform_stats_data, available_platforms)
-
-                # Optionally fetch YouTube video data
-                youtube_data: YouTubeVideoData | None = None
-
-                if self.include_youtube:
-                    youtube_results = self.songstats.get_youtube_videos(songstats_id)
-
-                    # Check if YouTube data is valid (all required fields present and not None)
-                    most_viewed = youtube_results.get("most_viewed") if youtube_results else None
-                    if (most_viewed
-                            and most_viewed.get("ytb_id")
-                            and most_viewed.get("views") is not None
-                            and most_viewed.get("channel_name")):
-                        # Convert API response to YouTubeVideoData model
-                        most_viewed_video = YouTubeVideo(**youtube_results["most_viewed"])
-                        video_ids = [video["ytb_id"] for video in youtube_results["all_sources"]]
-
-                        youtube_data = YouTubeVideoData(
-                            most_viewed=most_viewed_video,
-                            all_sources=video_ids,
-                            songstats_identifiers=track.songstats_identifiers,
-                        )
-
-                    else:
-                        self.logger.debug("No YouTube data found for: %s", track.title)
-
-                # Create TrackWithStats model (nested structure)
-                track_with_stats = TrackWithStats(
-                    track=track,  # Nested Track object
-                    songstats_identifiers=track.songstats_identifiers,  # Nested SongstatsIdentifiers
-                    platform_stats=platform_stats,
-                    youtube_data=youtube_data,  # Optional YouTube video data
-                )
-
+            # Process track enrichment
+            track_with_stats = self._enrich_track(track, checkpoint)
+            if track_with_stats:
                 enriched_tracks.append(track_with_stats)
-
-                # Mark as processed
-                checkpoint.processed_ids.add(track_id)
-
-                # Notify success
-                event = self.create_event(
-                    EventType.ITEM_COMPLETED,
-                    stage_name="Enrichment",
-                    item_id=track_id,
-                    message="Stats fetched successfully",
-                )
-                self.notify(event)
-
-                self.logger.info(
-                    "Enriched track: %s - %s (ID: %s)",
-                    track.primary_artist,
-                    track.title,
-                    songstats_id,
-                )
-
-            except Exception as error:
-                self.logger.exception("Failed to enrich track: %s", track_id)
-
-                # Mark as failed
-                checkpoint.failed_ids.add(track_id)
-
-                # Notify error
-                event = self.create_event(
-                    EventType.ITEM_FAILED,
-                    stage_name="Enrichment",
-                    item_id=track_id,
-                    message=f"Enrichment failed: {error!s}",
-                    error=error,
-                )
-
-                self.notify(event)
 
             # Save checkpoint after each track
             self.checkpoint_mgr.save_checkpoint(checkpoint)
@@ -297,6 +164,183 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
 
         self.notify(event)
         return enriched_tracks
+
+    def _handle_cached_track(self, track: Track, checkpoint) -> TrackWithStats | None:
+        """Handle track that was already processed (checkpoint hit).
+
+        Args:
+            track: Track to check
+            checkpoint: Current checkpoint state
+
+        Returns:
+            Cached stats from repository if found, None if needs reprocessing
+        """
+        existing_stats = self.repository.get(track.identifier)
+
+        if existing_stats:
+            self.logger.debug("Skipping already enriched track: %s", track.identifier)
+            event = self.create_event(
+                EventType.ITEM_SKIPPED,
+                stage_name="Enrichment",
+                item_id=track.identifier,
+                message=f"Already enriched: {track.title} - {track.primary_artist}",
+            )
+            self.notify(event)
+            return existing_stats
+
+        # Repository lost track - mark for reprocessing
+        self.logger.warning(
+            "Track %s in checkpoint but missing from repository, reprocessing",
+            track.identifier
+        )
+        checkpoint.processed_ids.remove(track.identifier)
+        return None
+
+    def _enrich_track(self, track: Track, checkpoint) -> TrackWithStats | None:
+        """Enrich a single track with platform statistics.
+
+        Args:
+            track: Track to enrich
+            checkpoint: Current checkpoint state
+
+        Returns:
+            TrackWithStats if successful, None if failed
+        """
+        try:
+            songstats_id = track.songstats_identifiers.songstats_id
+
+            # Fetch platform stats and peaks
+            platform_stats = self._fetch_platform_stats(track, songstats_id, checkpoint)
+
+            # Fetch YouTube data if enabled
+            youtube_data = self._fetch_youtube_data(track, songstats_id)
+
+            # Create TrackWithStats model
+            track_with_stats = TrackWithStats(
+                track=track,
+                songstats_identifiers=track.songstats_identifiers,
+                platform_stats=platform_stats,
+                youtube_data=youtube_data,
+            )
+
+            # Mark as processed and notify
+            checkpoint.processed_ids.add(track.identifier)
+            event = self.create_event(
+                EventType.ITEM_COMPLETED,
+                stage_name="Enrichment",
+                item_id=track.identifier,
+                message="Stats fetched successfully",
+            )
+            self.notify(event)
+
+            self.logger.info(
+                "Enriched track: %s - %s (ID: %s)",
+                track.primary_artist,
+                track.title,
+                songstats_id,
+            )
+
+            return track_with_stats
+
+        except Exception as error:
+            self.logger.exception("Failed to enrich track: %s", track.identifier)
+            checkpoint.failed_ids.add(track.identifier)
+
+            event = self.create_event(
+                EventType.ITEM_FAILED,
+                stage_name="Enrichment",
+                item_id=track.identifier,
+                message=f"Enrichment failed: {error!s}",
+                error=error,
+            )
+            self.notify(event)
+
+            return None
+
+    def _fetch_platform_stats(
+            self, track: Track, songstats_id: str, checkpoint
+    ) -> PlatformStats:
+        """Fetch platform statistics for a track.
+
+        Args:
+            track: Track being enriched
+            songstats_id: Songstats track ID
+            checkpoint: Current checkpoint state
+
+        Returns:
+            PlatformStats model
+        """
+        # Check which platforms track is available on
+        available_platforms = self.songstats.get_available_platforms(songstats_id)
+        self.logger.debug(
+            "Track %s available on: %s",
+            track.title,
+            ", ".join(sorted(available_platforms)) if available_platforms else "none"
+        )
+
+        # Fetch platform statistics
+        platform_stats_data = self.songstats.get_platform_stats(songstats_id)
+
+        if not platform_stats_data:
+            self.logger.warning(
+                "No platform stats found for: %s (ID: %s)",
+                track.title,
+                songstats_id,
+            )
+            checkpoint.failed_ids.add(track.identifier)
+
+            event = self.create_event(
+                EventType.WARNING,
+                stage_name="Enrichment",
+                item_id=track.identifier,
+                message="No platform stats found",
+            )
+            self.notify(event)
+            platform_stats_data = {}
+
+        # Fetch and merge historical peaks
+        start_date = f"{self.settings.year}-01-01"
+        peaks_data = self.songstats.get_historical_peaks(songstats_id, start_date)
+        if peaks_data:
+            platform_stats_data.update(peaks_data)
+
+        return self._create_platform_stats(platform_stats_data, available_platforms)
+
+    def _fetch_youtube_data(
+            self, track: Track, songstats_id: str
+    ) -> YouTubeVideoData | None:
+        """Fetch YouTube video data for a track.
+
+        Args:
+            track: Track being enriched
+            songstats_id: Songstats track ID
+
+        Returns:
+            YouTubeVideoData if found, None otherwise
+        """
+        if not self.include_youtube:
+            return None
+
+        youtube_results = self.songstats.get_youtube_videos(songstats_id)
+
+        # Validate YouTube data has all required fields
+        most_viewed = youtube_results.get("most_viewed") if youtube_results else None
+        if not (most_viewed
+                and most_viewed.get("ytb_id")
+                and most_viewed.get("views") is not None
+                and most_viewed.get("channel_name")):
+            self.logger.debug("No YouTube data found for: %s", track.title)
+            return None
+
+        # Convert API response to YouTubeVideoData model
+        most_viewed_video = YouTubeVideo(**youtube_results["most_viewed"])
+        video_ids = [video["ytb_id"] for video in youtube_results["all_sources"]]
+
+        return YouTubeVideoData(
+            most_viewed=most_viewed_video,
+            all_sources=video_ids,
+            songstats_identifiers=track.songstats_identifiers,
+        )
 
     def load(self, data: list[TrackWithStats]) -> None:
         """Save enriched tracks to repository.
