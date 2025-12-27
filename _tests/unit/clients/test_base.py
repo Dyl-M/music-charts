@@ -210,6 +210,7 @@ class TestBaseClientAbstractMethods:
             """Client missing health_check."""
 
             def get_quota(self) -> dict:
+                """Return API quota."""
                 return {}
 
         with pytest.raises(TypeError, match="health_check"):
@@ -224,6 +225,7 @@ class TestBaseClientAbstractMethods:
             """Client missing get_quota."""
 
             def health_check(self) -> bool:
+                """Check API health."""
                 return True
 
         with pytest.raises(TypeError, match="get_quota"):

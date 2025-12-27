@@ -75,12 +75,15 @@ class TestPipelineStageInterface:
             """Stage missing stage_name."""
 
             def extract(self):
+                """Extract data from source."""
                 return []
 
             def transform(self, data):
+                """Transform extracted data."""
                 return data
 
             def load(self, data):
+                """Load transformed data."""
                 raise NotImplementedError()
 
         with pytest.raises(TypeError, match="stage_name"):
@@ -96,12 +99,15 @@ class TestPipelineStageInterface:
 
             @property
             def stage_name(self) -> str:
+                """Return stage name."""
                 return "Test"
 
             def transform(self, data):
+                """Transform extracted data."""
                 return data
 
             def load(self, data):
+                """Load transformed data."""
                 raise NotImplementedError()
 
         with pytest.raises(TypeError, match="extract"):
@@ -117,12 +123,15 @@ class TestPipelineStageInterface:
 
             @property
             def stage_name(self) -> str:
+                """Return stage name."""
                 return "Test"
 
             def extract(self):
+                """Extract data from source."""
                 return []
 
             def load(self, data):
+                """Load transformed data."""
                 raise NotImplementedError()
 
         with pytest.raises(TypeError, match="transform"):
@@ -138,12 +147,15 @@ class TestPipelineStageInterface:
 
             @property
             def stage_name(self) -> str:
+                """Return stage name."""
                 return "Test"
 
             def extract(self):
+                """Extract data from source."""
                 return []
 
             def transform(self, data):
+                """Transform extracted data."""
                 return data
 
         with pytest.raises(TypeError, match="load"):

@@ -31,21 +31,27 @@ class TestRepositoryInterface:
             """Repository missing add method."""
 
             def get(self, identifier: str):
+                """Return item by identifier."""
                 return None
 
             def get_all(self):
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):
+                """Return item count."""
                 return 0
 
         with pytest.raises(TypeError, match="add"):
@@ -60,21 +66,27 @@ class TestRepositoryInterface:
             """Repository missing get method."""
 
             def add(self, item):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get_all(self):
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):
+                """Return item count."""
                 return 0
 
         with pytest.raises(TypeError, match="get"):
@@ -89,21 +101,27 @@ class TestRepositoryInterface:
             """Repository missing get_all method."""
 
             def add(self, item):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):
+                """Return item by identifier."""
                 return None
 
             def exists(self, identifier: str):
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):
+                """Return item count."""
                 return 0
 
         with pytest.raises(TypeError, match="get_all"):
@@ -118,21 +136,27 @@ class TestRepositoryInterface:
             """Repository missing exists method."""
 
             def add(self, item):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):
+                """Return item by identifier."""
                 return None
 
             def get_all(self):
+                """Return all items."""
                 return []
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):
+                """Return item count."""
                 return 0
 
         with pytest.raises(TypeError, match="exists"):
@@ -147,21 +171,27 @@ class TestRepositoryInterface:
             """Repository missing remove method."""
 
             def add(self, item):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):
+                """Return item by identifier."""
                 return None
 
             def get_all(self):
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):
+                """Check if item exists."""
                 return False
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):
+                """Return item count."""
                 return 0
 
         with pytest.raises(TypeError, match="remove"):
@@ -176,21 +206,27 @@ class TestRepositoryInterface:
             """Repository missing clear method."""
 
             def add(self, item):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):
+                """Return item by identifier."""
                 return None
 
             def get_all(self):
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def count(self):
+                """Return item count."""
                 return 0
 
         with pytest.raises(TypeError, match="clear"):
@@ -205,21 +241,27 @@ class TestRepositoryInterface:
             """Repository missing count method."""
 
             def add(self, item):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):
+                """Return item by identifier."""
                 return None
 
             def get_all(self):
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
         with pytest.raises(TypeError, match="count"):
@@ -245,27 +287,35 @@ class TestTrackRepositoryInterface:
             """Repository missing find_by_title_artist method."""
 
             def add(self, item: Track):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):  # skipcq: PYL-R0201
+                """Return item by identifier."""
                 return None
 
             def get_all(self):  # skipcq: PYL-R0201
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):  # skipcq: PYL-R0201
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):  # skipcq: PYL-R0201
+                """Return item count."""
                 return 0
 
             def get_unprocessed(self, processed_ids: set[str]):  # skipcq: PYL-R0201
+                """Return unprocessed items."""
                 return []
 
         with pytest.raises(TypeError, match="find_by_title_artist"):
@@ -280,27 +330,35 @@ class TestTrackRepositoryInterface:
             """Repository missing get_unprocessed method."""
 
             def add(self, item: Track):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):  # skipcq: PYL-R0201
+                """Return item by identifier."""
                 return None
 
             def get_all(self):  # skipcq: PYL-R0201
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):  # skipcq: PYL-R0201
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):  # skipcq: PYL-R0201
+                """Return item count."""
                 return 0
 
             def find_by_title_artist(self, title: str, artist: str):  # skipcq: PYL-R0201
+                """Find track by title and artist."""
                 return None
 
         with pytest.raises(TypeError, match="get_unprocessed"):
@@ -326,33 +384,43 @@ class TestStatsRepositoryInterface:
             """Repository missing save_batch method."""
 
             def add(self, item: TrackWithStats):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):  # skipcq: PYL-R0201
+                """Return item by identifier."""
                 return None
 
             def get_all(self):  # skipcq: PYL-R0201
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):  # skipcq: PYL-R0201
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):  # skipcq: PYL-R0201
+                """Return item count."""
                 return 0
 
             def export_to_json(self, file_path, flat=False):
+                """Export data to JSON."""
                 raise NotImplementedError()
 
             def export_to_csv(self, file_path):
+                """Export data to CSV."""
                 raise NotImplementedError()
 
             def get_by_songstats_id(self, songstats_id: str):  # skipcq: PYL-R0201
+                """Get item by Songstats ID."""
                 return None
 
         with pytest.raises(TypeError, match="save_batch"):
@@ -367,33 +435,43 @@ class TestStatsRepositoryInterface:
             """Repository missing export_to_json method."""
 
             def add(self, item: TrackWithStats):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):  # skipcq: PYL-R0201
+                """Return item by identifier."""
                 return None
 
             def get_all(self):  # skipcq: PYL-R0201
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):  # skipcq: PYL-R0201
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):  # skipcq: PYL-R0201
+                """Return item count."""
                 return 0
 
             def save_batch(self, items):
+                """Save multiple items."""
                 raise NotImplementedError()
 
             def export_to_csv(self, file_path):
+                """Export data to CSV."""
                 raise NotImplementedError()
 
             def get_by_songstats_id(self, songstats_id: str):  # skipcq: PYL-R0201
+                """Get item by Songstats ID."""
                 return None
 
         with pytest.raises(TypeError, match="export_to_json"):
@@ -408,33 +486,43 @@ class TestStatsRepositoryInterface:
             """Repository missing export_to_csv method."""
 
             def add(self, item: TrackWithStats):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):  # skipcq: PYL-R0201
+                """Return item by identifier."""
                 return None
 
             def get_all(self):  # skipcq: PYL-R0201
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):  # skipcq: PYL-R0201
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):  # skipcq: PYL-R0201
+                """Return item count."""
                 return 0
 
             def save_batch(self, items):
+                """Save multiple items."""
                 raise NotImplementedError()
 
             def export_to_json(self, file_path, flat=False):
+                """Export data to JSON."""
                 raise NotImplementedError()
 
             def get_by_songstats_id(self, songstats_id: str):  # skipcq: PYL-R0201
+                """Get item by Songstats ID."""
                 return None
 
         with pytest.raises(TypeError, match="export_to_csv"):
@@ -449,33 +537,43 @@ class TestStatsRepositoryInterface:
             """Repository missing get_by_songstats_id method."""
 
             def add(self, item: TrackWithStats):
+                """Add item to repository."""
                 raise NotImplementedError()
 
             def get(self, identifier: str):  # skipcq: PYL-R0201
+                """Return item by identifier."""
                 return None
 
             def get_all(self):  # skipcq: PYL-R0201
+                """Return all items."""
                 return []
 
             def exists(self, identifier: str):  # skipcq: PYL-R0201
+                """Check if item exists."""
                 return False
 
             def remove(self, identifier: str):
+                """Remove item by identifier."""
                 raise NotImplementedError()
 
             def clear(self):
+                """Clear all items."""
                 raise NotImplementedError()
 
             def count(self):  # skipcq: PYL-R0201
+                """Return item count."""
                 return 0
 
             def save_batch(self, items):
+                """Save multiple items."""
                 raise NotImplementedError()
 
             def export_to_json(self, file_path, flat=False):
+                """Export data to JSON."""
                 raise NotImplementedError()
 
             def export_to_csv(self, file_path):
+                """Export data to CSV."""
                 raise NotImplementedError()
 
         with pytest.raises(TypeError, match="get_by_songstats_id"):

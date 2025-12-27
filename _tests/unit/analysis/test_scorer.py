@@ -75,7 +75,7 @@ class TestPowerRankingScorerGetMetricValue:
 
     @staticmethod
     def test_extracts_metric(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should extract metric value from track."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -86,7 +86,7 @@ class TestPowerRankingScorerGetMetricValue:
 
     @staticmethod
     def test_returns_none_for_invalid_format(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should return None for invalid metric name format."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -97,7 +97,7 @@ class TestPowerRankingScorerGetMetricValue:
 
     @staticmethod
     def test_returns_none_for_missing_platform(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should return None for missing platform."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -108,7 +108,7 @@ class TestPowerRankingScorerGetMetricValue:
 
     @staticmethod
     def test_returns_none_for_missing_metric(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should return None for missing metric on platform."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -124,7 +124,7 @@ class TestPowerRankingScorerCollectMetricValues:
 
     @staticmethod
     def test_collects_values(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should collect metric values for all tracks."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -137,7 +137,7 @@ class TestPowerRankingScorerCollectMetricValues:
 
     @staticmethod
     def test_uses_zero_for_missing(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should use 0.0 for missing metric values."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -188,7 +188,7 @@ class TestPowerRankingScorerComputeRankings:
 
     @staticmethod
     def test_returns_power_ranking_results(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should return PowerRankingResults."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -199,7 +199,7 @@ class TestPowerRankingScorerComputeRankings:
 
     @staticmethod
     def test_ranks_all_tracks(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should rank all input tracks."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -210,7 +210,7 @@ class TestPowerRankingScorerComputeRankings:
 
     @staticmethod
     def test_assigns_consecutive_ranks(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should assign consecutive ranks starting at 1."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -222,7 +222,7 @@ class TestPowerRankingScorerComputeRankings:
 
     @staticmethod
     def test_sorts_by_score_descending(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should sort by total score in descending order."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -243,7 +243,7 @@ class TestPowerRankingScorerComputeRankings:
 
     @staticmethod
     def test_includes_category_scores(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should include category scores in rankings."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -255,7 +255,7 @@ class TestPowerRankingScorerComputeRankings:
 
     @staticmethod
     def test_scores_in_valid_range(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should produce scores in 0-100 range."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
@@ -271,7 +271,7 @@ class TestPowerRankingScorerEmptyConfig:
 
     @staticmethod
     def test_handles_empty_config(
-        tmp_path: Path, sample_tracks_with_stats: list[TrackWithStats]
+            tmp_path: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should raise validation error for empty category configuration.
 
@@ -290,7 +290,7 @@ class TestPowerRankingScorerEmptyConfig:
 
     @staticmethod
     def test_handles_missing_category_weight(
-        tmp_path: Path, sample_tracks_with_stats: list[TrackWithStats]
+            tmp_path: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should handle unknown category names."""
         config_path = tmp_path / "unknown.json"
@@ -323,12 +323,12 @@ class TestPowerRankingScorerCategoryScores:
 
     @staticmethod
     def test_category_weight_based_on_availability(
-        temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
+            temp_category_config: Path, sample_tracks_with_stats: list[TrackWithStats]
     ) -> None:
         """Should compute category weight from average availability."""
         scorer = PowerRankingScorer(category_config_path=temp_category_config)
 
-        scores, weight = scorer._compute_category_scores(
+        _scores, weight = scorer._compute_category_scores(
             sample_tracks_with_stats,
             "test",
             ["spotify_streams_total"],  # All tracks have this

@@ -253,9 +253,11 @@ class TestPipelineObserverDefaultMethods:
             """Observer with only on_event."""
 
             def __init__(self):
+                """Initialize instance."""
                 self.events = []
 
             def on_event(self, _event: PipelineEvent) -> None:
+                """Handle pipeline event."""
                 self.events.append(_event)
 
         observer = MinimalObserver()
@@ -276,9 +278,11 @@ class TestPipelineObserverDefaultMethods:
             """Observer with only on_event."""
 
             def __init__(self):
+                """Initialize instance."""
                 self.events = []
 
             def on_event(self, _event: PipelineEvent) -> None:
+                """Handle pipeline event."""
                 self.events.append(_event)
 
         observer = MinimalObserver()

@@ -33,6 +33,7 @@ class TestNormalizationStrategyInterface:
             """Strategy missing normalize method."""
 
             def get_name(self) -> str:
+                """Return strategy name."""
                 return "Incomplete"
 
         with pytest.raises(TypeError, match="normalize"):
@@ -47,6 +48,7 @@ class TestNormalizationStrategyInterface:
             """Strategy missing get_name method."""
 
             def normalize(self, values: list[float]) -> list[float]:
+                """Normalize input values."""
                 return values
 
         with pytest.raises(TypeError, match="get_name"):
@@ -72,9 +74,11 @@ class TestScoringStrategyInterface:
             """Strategy missing compute_category_scores method."""
 
             def compute_power_ranking(self, track, category_scores, weights):
+                """Compute power ranking."""
                 raise NotImplementedError()
 
             def get_name(self) -> str:
+                """Return strategy name."""
                 return "Incomplete"
 
         with pytest.raises(TypeError, match="compute_category_scores"):
@@ -89,9 +93,11 @@ class TestScoringStrategyInterface:
             """Strategy missing compute_power_ranking method."""
 
             def compute_category_scores(self, tracks, category_config):
+                """Compute category scores."""
                 return {}
 
             def get_name(self) -> str:
+                """Return strategy name."""
                 return "Incomplete"
 
         with pytest.raises(TypeError, match="compute_power_ranking"):
@@ -117,6 +123,7 @@ class TestWeightingStrategyInterface:
             """Strategy missing apply_weights method."""
 
             def get_name(self) -> str:
+                """Return strategy name."""
                 return "Incomplete"
 
         with pytest.raises(TypeError, match="apply_weights"):
@@ -131,6 +138,7 @@ class TestWeightingStrategyInterface:
             """Strategy missing get_name method."""
 
             def apply_weights(self, category_scores, weights):
+                """Apply weights to scores."""
                 return 0.0
 
         with pytest.raises(TypeError, match="get_name"):
