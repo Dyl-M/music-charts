@@ -207,6 +207,14 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
             TrackWithStats if successful, None if failed
         """
         try:
+            # Check and repopulate missing metadata if needed
+            if self._needs_metadata_repopulation(track):
+                track = self._repopulate_metadata(track)
+
+                # Save updated track to repository if available
+                if self.track_repository:
+                    self._update_track_in_repository(track)
+
             songstats_id = track.songstats_identifiers.songstats_id
 
             # Fetch platform stats and peaks
@@ -341,6 +349,126 @@ class EnrichmentStage(PipelineStage[list[Track], list[TrackWithStats]], Observab
             all_sources=video_ids,
             songstats_identifiers=track.songstats_identifiers,
         )
+
+    @staticmethod
+    def _needs_metadata_repopulation(track: Track) -> bool:
+        """Check if track has incomplete Songstats metadata.
+
+        Returns True if the track has a songstats_id but is missing
+        any of: songstats_title, songstats_artists, songstats_labels, or isrc.
+
+        Args:
+            track: Track to check
+
+        Returns:
+            True if metadata repopulation is needed
+        """
+        identifiers = track.songstats_identifiers
+
+        # Must have an ID to repopulate
+        if not identifiers.songstats_id:
+            return False
+
+        # Check if any metadata fields are missing
+        missing_title = not identifiers.songstats_title
+        missing_artists = not identifiers.songstats_artists
+        missing_labels = not identifiers.songstats_labels
+        missing_isrc = not identifiers.isrc
+
+        return missing_title or missing_artists or missing_labels or missing_isrc
+
+    def _repopulate_metadata(self, track: Track) -> Track:
+        """Repopulate missing Songstats metadata from API.
+
+        Fetches metadata using the existing songstats_id and updates
+        any missing fields (title, artists, labels, ISRC).
+
+        Args:
+            track: Track with incomplete metadata
+
+        Returns:
+            Track with repopulated metadata (or original if fetch failed)
+        """
+        songstats_id = track.songstats_identifiers.songstats_id
+        identifiers = track.songstats_identifiers
+
+        self.logger.info(
+            "Repopulating metadata for %s - %s (ID: %s)",
+            track.primary_artist,
+            track.title,
+            songstats_id,
+        )
+
+        # Fetch metadata from API
+        metadata = self.songstats.get_track_metadata(songstats_id)
+        if not metadata:
+            self.logger.warning(
+                "Could not fetch metadata for %s, keeping existing values",
+                songstats_id,
+            )
+            return track
+
+        # Build update dict with only missing fields
+        updates: dict = {}
+
+        if not identifiers.songstats_title and metadata.get("title"):
+            updates["songstats_title"] = metadata["title"]
+            self.logger.debug("  → title: %s", metadata["title"])
+
+        if not identifiers.songstats_artists and metadata.get("artists"):
+            updates["songstats_artists"] = metadata["artists"]
+            self.logger.debug("  → artists: %s", metadata["artists"])
+
+        if not identifiers.songstats_labels and metadata.get("labels"):
+            updates["songstats_labels"] = metadata["labels"]
+            self.logger.debug("  → labels: %s", metadata["labels"])
+
+        if not identifiers.isrc and metadata.get("isrc"):
+            updates["isrc"] = metadata["isrc"]
+            self.logger.debug("  → isrc: %s", metadata["isrc"])
+
+        if not updates:
+            self.logger.debug("No new metadata to update for %s", songstats_id)
+            return track
+
+        # Update identifiers immutably
+        updated_identifiers = identifiers.model_copy(update=updates)
+        updated_track = track.model_copy(update={"songstats_identifiers": updated_identifiers})
+
+        self.logger.info(
+            "Repopulated %d metadata field(s) for %s",
+            len(updates),
+            songstats_id,
+        )
+
+        return updated_track
+
+    def _update_track_in_repository(self, track: Track) -> None:
+        """Update a single track in the track repository.
+
+        Uses add() which updates the internal dict and persists to disk.
+        Used to persist metadata repopulation to tracks.json.
+
+        Args:
+            track: Track with updated metadata
+        """
+        if not self.track_repository:
+            return
+
+        try:
+            # add() updates the track by identifier and saves
+            self.track_repository.add(track)
+
+            self.logger.debug(
+                "Updated track %s in repository with repopulated metadata",
+                track.identifier,
+            )
+
+        except (OSError, ValueError) as error:
+            self.logger.warning(
+                "Failed to update track repository: %s",
+                error,
+            )
 
     def load(self, data: list[TrackWithStats]) -> None:
         """Save enriched tracks to repository.
