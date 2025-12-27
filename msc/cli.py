@@ -54,8 +54,20 @@ def main(
         ] = False,
 ) -> None:
     """Music Charts CLI - Analyze track performance across streaming platforms."""
-    log_level: Literal["DEBUG", "INFO"] = "DEBUG" if verbose else "INFO"
-    setup_logging(level=log_level)
+    settings = get_settings()
+
+    # Configure logging
+    # - File always logs INFO (or DEBUG if verbose)
+    # - Console only shows ERROR by default (or INFO/DEBUG if verbose)
+    file_level: Literal["DEBUG", "INFO"] = "DEBUG" if verbose else "INFO"
+    console_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "DEBUG" if verbose else "ERROR"
+    log_file = settings.data_dir / "logs" / "pipeline.log"
+
+    setup_logging(
+        level=file_level,
+        console_level=console_level,
+        log_file=log_file,
+    )
 
 
 def _determine_stages(stages: list[str] | None) -> tuple[bool, bool, bool]:
@@ -178,6 +190,14 @@ def run(
             ),
         ] = False,
 
+        new_run: Annotated[
+            bool,
+            typer.Option(
+                "--new-run",
+                help="Force creation of new run directory instead of resuming latest run.",
+            ),
+        ] = False,
+
         playlist: Annotated[
             str,
             typer.Option(
@@ -186,13 +206,45 @@ def run(
                 help="Playlist name to extract (default: '✅ {year} Selection').",
             ),
         ] = None,
+
+        test_mode: Annotated[
+            bool,
+            typer.Option(
+                "--test-mode",
+                "-t",
+                help="Run with test library fixture (mocked APIs, no quota usage).",
+            ),
+        ] = False,
+
+        limit: Annotated[
+            int,
+            typer.Option(
+                "--limit",
+                "-l",
+                help="Limit number of tracks to process.",
+            ),
+        ] = None,
+
+        cleanup: Annotated[
+            bool,
+            typer.Option(
+                "--cleanup",
+                help="Delete run directory after completion (for test iterations).",
+            ),
+        ] = False,
 ) -> None:
     """Run the music charts pipeline.
 
+    By default, resumes from the most recent run directory for the given year.
+    Use --new-run to force creation of a fresh run directory.
+
     Examples:
-        msc run --year 2025
-        msc run --year 2025 --stage extract --stage enrich
-        msc run --year 2025 --reset  # Start from scratch
+        msc run --year 2025                    # Resume latest 2025 run or create new
+        msc run --year 2025 --new-run          # Force new run directory
+        msc run --year 2025 --stage extract    # Resume and run extraction only
+        msc run --year 2025 --reset            # Start from scratch
+        msc run --test-mode                    # Run with test fixtures (no API calls)
+        msc run --test-mode --limit 2          # Test with only 2 tracks
     """
     # Local import to avoid circular dependencies
     from msc.pipeline.orchestrator import PipelineOrchestrator
@@ -207,10 +259,25 @@ def run(
     _display_pipeline_config(year, run_extraction, run_enrichment, run_ranking, no_youtube)
 
     try:
+        # Detect verbose mode from logging configuration
+        # (verbose flag from main callback sets DEBUG level)
+        import logging
+        is_verbose = logging.getLogger().level == logging.DEBUG
+
+        # Test mode info
+        if test_mode:
+            typer.echo("🧪 Test mode enabled - using test fixtures with mocked APIs")
+            if limit:
+                typer.echo(f"   Track limit: {limit}")
+            typer.echo("")
+
         # Initialize orchestrator
         orchestrator = PipelineOrchestrator(
             include_youtube=not no_youtube,
-            verbose=False,
+            verbose=is_verbose,
+            new_run=new_run,
+            test_mode=test_mode,
+            track_limit=limit,
         )
 
         # Reset if requested
@@ -234,6 +301,14 @@ def run(
         # Display summary
         _display_summary(orchestrator, results)
 
+        # Cleanup if requested
+        if cleanup and orchestrator.run_dir:
+            import shutil
+            typer.echo("")
+            typer.echo(f"🧹 Cleaning up run directory: {orchestrator.run_dir}")
+            shutil.rmtree(orchestrator.run_dir, ignore_errors=True)
+            typer.echo("✓ Cleanup complete")
+
     except KeyboardInterrupt:
         typer.echo("")
         typer.echo("⚠️  Pipeline interrupted by user")
@@ -248,10 +323,9 @@ def run(
 
 @app.command()
 def billing() -> None:
-    """Check Songstats API billing and quota status.
+    """Check Songstats API billing and usage status.
 
-    Displays current API usage, remaining quota, and reset date.
-    Warns if usage exceeds 80% of monthly limit.
+    Displays current month API usage, billing costs, and comparison with previous month.
 
     Examples:
         msc billing
@@ -275,16 +349,6 @@ def billing() -> None:
         table = QuotaFormatter.format_billing_table(quota_data)
         console = Console()
         console.print(table)
-
-        # Warn if usage is high (>= 80%)
-        requests_used = quota_data.get("requests_used", 0)
-        requests_limit = quota_data.get("requests_limit", 0)
-        usage_pct = (requests_used / requests_limit) * 100 if requests_limit > 0 else 0.0
-
-        if usage_pct >= 80:
-            console.print(
-                f"\n⚠️  [bold yellow]Warning: {usage_pct:.1f}% of monthly quota used[/bold yellow]"
-            )
 
     except Exception as error:
         help_text = ErrorHandler.handle(error)
@@ -385,8 +449,8 @@ def export(
         settings = get_settings()
         settings.year = year
 
-        # Determine stats file path
-        stats_file = settings.year_output_dir / "stats.json"
+        # Determine enriched tracks file path
+        stats_file = settings.output_dir / "enriched_tracks.json"
 
         if not stats_file.exists():
             typer.echo(
@@ -453,7 +517,7 @@ def clean(
         dry_run: Annotated[
             bool,
             typer.Option(
-                "--dry-run",
+                "--dry-run/--no-dry-run",
                 help="Show what would be deleted without actually deleting.",
             ),
         ] = True,
@@ -512,23 +576,32 @@ def clean(
         raise typer.Exit(1)
 
 
-def _has_platform_data(track: TrackWithStats, platform_attr: str, stat_attr: str) -> bool:
-    """Check if track has data for a specific platform stat.
+def _has_platform_data(track: TrackWithStats, platform_attr: str) -> bool:
+    """Check if track is present on a specific platform.
+
+    A track is considered present if ANY field in the platform stats
+    has a non-None value (even if it's 0). Songstats only returns data
+    for platforms where the track exists.
 
     Args:
         track: TrackWithStats object
         platform_attr: Platform attribute name (e.g., 'spotify', 'apple_music')
-        stat_attr: Stat attribute to check (e.g., 'streams', 'views', 'fans')
 
     Returns:
-        True if platform exists and has the specified stat
+        True if platform exists and has at least one non-None field value
     """
     platform = getattr(track.platform_stats, platform_attr, None)
-    return platform is not None and getattr(platform, stat_attr, None) is not None
+    if platform is None:
+        return False
+
+    # Get all field values from the platform model
+    platform_dict = platform.model_dump()
+    # Track is present if ANY field has a non-None value
+    return any(value is not None for value in platform_dict.values())
 
 
 def _count_platform_tracks(data: list) -> dict[str, int]:
-    """Count tracks with data on each platform.
+    """Count tracks present on each platform.
 
     Args:
         data: List of TrackWithStats objects
@@ -536,18 +609,24 @@ def _count_platform_tracks(data: list) -> dict[str, int]:
     Returns:
         Dictionary mapping platform names to track counts
     """
-    # Platform configurations: (display_name, platform_attr, stat_attr)
+    # Platform configurations: (display_name, platform_attr)
+    # All 10 supported platforms
     platforms = [
-        ("Spotify", "spotify", "streams"),
-        ("Apple Music", "apple_music", "streams"),
-        ("YouTube", "youtube", "views"),
-        ("Deezer", "deezer", "fans"),
-        ("TikTok", "tiktok", "views"),
+        ("Spotify", "spotify"),
+        ("Apple Music", "apple_music"),
+        ("YouTube", "youtube"),
+        ("Amazon Music", "amazon_music"),
+        ("Deezer", "deezer"),
+        ("SoundCloud", "soundcloud"),
+        ("Tidal", "tidal"),
+        ("TikTok", "tiktok"),
+        ("Beatport", "beatport"),
+        ("1001Tracklists", "tracklists"),
     ]
 
     return {
-        name: sum(1 for t in data if _has_platform_data(t, platform_attr, stat_attr))
-        for name, platform_attr, stat_attr in platforms
+        name: sum(1 for t in data if _has_platform_data(t, platform_attr))
+        for name, platform_attr in platforms
     }
 
 
@@ -573,8 +652,8 @@ def stats(
         settings = get_settings()
         settings.year = year
 
-        # Load stats file
-        stats_file = settings.year_output_dir / "stats.json"
+        # Load enriched tracks file
+        stats_file = settings.output_dir / "enriched_tracks.json"
 
         if not stats_file.exists():
             typer.echo(

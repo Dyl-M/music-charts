@@ -255,13 +255,13 @@ class SongstatsClient(BaseClient):
 
         Returns:
             Dictionary with YouTube video information:
-            - most_viewed: Top non-Topic channel video (dict with ytb_id, views, channel_name)
+            - most_viewed: Most viewed video (prefers non-Topic, falls back to Topic)
             - most_viewed_is_topic: True if overall most viewed video is from a Topic channel
             - all_sources: List of all videos with full metadata (including Topic channels)
 
         Notes:
             - Topic channels are auto-generated channels (ending with ' - Topic')
-            - most_viewed excludes Topic channels, but all_sources includes them
+            - most_viewed prefers non-Topic videos but falls back to Topic if none exist
             - Returns empty dict if no videos found
         """
         if not songstats_track_id or not songstats_track_id.strip():
@@ -330,6 +330,44 @@ class SongstatsClient(BaseClient):
                 e,
             )
             return {}
+
+    def get_available_platforms(self, songstats_track_id: str) -> set[str]:
+        """Get list of platforms where track is available.
+
+        Args:
+            songstats_track_id: Songstats track identifier.
+
+        Returns:
+            Set of platform names where track exists (e.g., {'spotify', 'youtube', 'tracklist'})
+
+        Examples:
+            >>> client.get_available_platforms("2kuc1bpm")
+            {'tracklist'}
+        """
+        track_info = self.get_track_info(songstats_track_id)
+
+        if not track_info:
+            return set()
+
+        # Extract platform sources from links array
+        links = track_info.get("track_info", {}).get("links", [])
+        platforms = {link.get("source") for link in links if link.get("source")}
+
+        # Normalize platform names to match model field names
+        platform_name_map = {
+            "tracklist": "1001tracklists",
+            "amazon": "amazon_music",
+        }
+
+        normalized = {platform_name_map.get(platform, platform) for platform in platforms}
+
+        self.logger.debug(
+            "Track %s available on platforms: %s",
+            songstats_track_id,
+            ", ".join(sorted(normalized))
+        )
+
+        return normalized
 
     # =========================================================================
     # Data modification endpoints (POST)
@@ -599,7 +637,7 @@ class SongstatsClient(BaseClient):
 
         Returns:
             Dictionary with keys:
-            - most_viewed: Most viewed video excluding Topic channels
+            - most_viewed: Most viewed video (prefers non-Topic, falls back to Topic)
             - most_viewed_is_topic: True if overall most viewed is from Topic channel
             - all_sources: All videos with full metadata (including Topic channels)
         """
@@ -616,13 +654,21 @@ class SongstatsClient(BaseClient):
                 for item in videos
             ]
 
-            # Find most viewed non-Topic video
+            # Find most viewed non-Topic video, fall back to Topic video if none
             non_topic_videos = [
                 vid for vid in video_list
                 if " - Topic" not in vid["channel_name"]
             ]
 
-            most_viewed = non_topic_videos[0] if non_topic_videos else {}
+            if non_topic_videos:
+                most_viewed = non_topic_videos[0]
+
+            elif video_list:
+                # Fallback to most viewed Topic video if no non-Topic videos exist
+                most_viewed = video_list[0]
+
+            else:
+                most_viewed = {}
 
             # Check if overall most viewed video is from a Topic channel
             most_viewed_is_topic = (

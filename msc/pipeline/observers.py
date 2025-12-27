@@ -26,6 +26,9 @@ from rich.progress import (
 from msc.pipeline.observer import EventType, PipelineEvent, PipelineObserver
 from msc.utils.logging import get_logger
 
+# Display truncation limit for terminal output
+TRUNCATION_LIMIT = 40
+
 
 class ConsoleObserver(PipelineObserver):
     """Observer that logs events to console using rich.
@@ -59,12 +62,17 @@ class ConsoleObserver(PipelineObserver):
 
     def on_event(self, event: PipelineEvent) -> None:
         """Handle any pipeline event by logging to console."""
-        # Skip verbose events if not in verbose mode
-        if not self.verbose and event.event_type in {
-            EventType.ITEM_PROCESSING,
-            EventType.CHECKPOINT_SAVED,
-        }:
-            return
+        # In non-verbose mode, only show critical events
+        if not self.verbose:
+            # Only show pipeline-level events and errors/warnings
+            important_events = {
+                EventType.PIPELINE_STARTED,
+                EventType.PIPELINE_COMPLETED,
+                EventType.PIPELINE_FAILED,
+                EventType.ERROR,
+            }
+            if event.event_type not in important_events:
+                return
 
         # Get style from mapping (default: "dim")
         style = self._EVENT_STYLES.get(event.event_type, "dim")
@@ -216,8 +224,8 @@ class ProgressBarObserver(PipelineObserver):
                 item_display = "Processing..."
 
             # Truncate long names to avoid terminal overflow
-            if len(item_display) > 40:
-                item_display = item_display[:37] + "..."
+            if len(item_display) > TRUNCATION_LIMIT:
+                item_display = item_display[:TRUNCATION_LIMIT - 3] + "..."
 
             # Update description with current item
             self.current_items[event.stage_name] = item_display

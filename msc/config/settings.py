@@ -109,6 +109,11 @@ class Settings(BaseSettings):
         """Year-specific output directory."""
         return self.output_dir / str(self.year)
 
+    @property
+    def test_library_path(self) -> Path:
+        """Path to test library fixture for test mode."""
+        return PROJECT_ROOT / "_tests" / "fixtures" / "test_library.xml"
+
     def get_songstats_key(self) -> str:
         """Load Songstats API key from file or environment."""
         if self.songstats_api_key:

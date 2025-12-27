@@ -74,20 +74,26 @@ CATEGORY_WEIGHTS: dict[StatCategory, int] = {
 # Title formatting patterns for API search
 TITLE_PATTERNS_TO_REMOVE: tuple[str, ...] = (
     "[Extended Mix]",
+    "[Extended]",
     "[Original Mix]",
     "[Remix]",
     "[Extended Version]",
     "[Club Edit]",
+    "(DnB)"
     "[",
     "]",
     "?",
     "(",
     ")",
+    "!",
+    '"',
+    ".",
+    ",",
 )
 
 TITLE_PATTERNS_TO_SPACE: tuple[str, ...] = (
     " × ",
-    ", ",
+    " & ",
 )
 
 # API endpoints
@@ -109,3 +115,19 @@ DEFAULT_HEADERS = {
     "Accept-Encoding": "",
     "Accept": "application/json",
 }
+
+# Keywords that indicate false positive matches
+REJECT_KEYWORDS: tuple[str, ...] = (
+    "karaoke",
+    "instrumental",
+    "acapella",
+    "a cappella",
+    "backing track",
+    "originally performed",
+    "cover version",
+    "tribute",
+    "piano version",
+    "acoustic version",
+    "8-bit",
+    "ringtone",
+)

@@ -15,27 +15,40 @@ from msc.utils.logging import get_logger
 class MinMaxNormalizer(NormalizationStrategy):
     """Min-Max normalization strategy.
 
-    Scales values to [0, 1] range using formula:
-    normalized = (value - min) / (max - min)
+    Scales values to a configurable range (default 0-100) using formula:
+    normalized = (value - min) / (max - min) * (range_max - range_min) + range_min
 
     Handles edge cases:
-    - All same values → all become 0.5
-    - Single value → becomes 0.5
+    - All same values → all become midpoint of range
+    - Single value → becomes midpoint of range
     - Empty list → returns empty list
+
+    Attributes:
+        feature_range: Tuple of (min, max) for output range. Default is (0, 100).
     """
 
-    def __init__(self) -> None:
-        """Initialize Min-Max normalizer."""
+    def __init__(self, feature_range: tuple[float, float] = (0.0, 100.0)) -> None:
+        """Initialize Min-Max normalizer.
+
+        Args:
+            feature_range: Desired range of transformed data (min, max).
+                          Default is (0, 100) for percentage-style scores.
+        """
         self.logger = get_logger(__name__)
+        self.feature_range = feature_range
+        self._range_min = feature_range[0]
+        self._range_max = feature_range[1]
+        self._range_span = self._range_max - self._range_min
+        self._midpoint = (self._range_min + self._range_max) / 2
 
     def normalize(self, values: list[float]) -> list[float]:
-        """Normalize values to [0, 1] range using Min-Max scaling.
+        """Normalize values to configured range using Min-Max scaling.
 
         Args:
             values: Raw values to normalize
 
         Returns:
-            Normalized values in [0, 1] range
+            Normalized values in feature_range (default 0-100)
         """
         if not values:
             return []
@@ -45,28 +58,36 @@ class MinMaxNormalizer(NormalizationStrategy):
 
         if not clean_values:
             self.logger.warning("All values are NaN or infinite, returning zeros")
-            return [0.0] * len(values)
+            return [self._range_min] * len(values)
 
         min_val = min(clean_values)
         max_val = max(clean_values)
 
         # Edge case: all values are the same
         if min_val == max_val:
-            self.logger.debug("All values are equal (%f), normalizing to 0.5", min_val)
-            return [0.5 if math.isfinite(v) else 0.0 for v in values]
+            self.logger.debug(
+                "All values are equal (%f), normalizing to midpoint %.1f",
+                min_val,
+                self._midpoint,
+            )
+            return [self._midpoint if math.isfinite(v) else self._range_min for v in values]
 
-        # Standard Min-Max normalization
+        # Standard Min-Max normalization scaled to feature_range
         normalized = []
         for value in values:
             if not math.isfinite(value):
-                normalized.append(0.0)
+                normalized.append(self._range_min)
+
             else:
-                normalized_value = (value - min_val) / (max_val - min_val)
-                normalized.append(normalized_value)
+                # First normalize to [0, 1], then scale to feature_range
+                unit_normalized = (value - min_val) / (max_val - min_val)
+                scaled = unit_normalized * self._range_span + self._range_min
+                normalized.append(scaled)
 
         return normalized
 
-    def get_name(self) -> str:
+    @classmethod
+    def get_name(cls) -> str:
         """Get the name of this normalization strategy."""
         return "MinMax"
 
@@ -129,7 +150,8 @@ class ZScoreNormalizer(NormalizationStrategy):
 
         return normalized
 
-    def get_name(self) -> str:
+    @classmethod
+    def get_name(cls) -> str:
         """Get the name of this normalization strategy."""
         return "ZScore"
 
@@ -231,6 +253,7 @@ class RobustNormalizer(NormalizationStrategy):
 
         return normalized
 
-    def get_name(self) -> str:
+    @classmethod
+    def get_name(cls) -> str:
         """Get the name of this normalization strategy."""
         return "Robust"

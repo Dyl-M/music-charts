@@ -1,5 +1,8 @@
 """Text processing utilities for track titles and artist names."""
 
+# Standard library
+import re
+
 # Local
 from msc.config.constants import TITLE_PATTERNS_TO_REMOVE, TITLE_PATTERNS_TO_SPACE
 
@@ -24,11 +27,14 @@ def format_title(track_title: str) -> str:
     """
     result = track_title
 
+    # Remove patterns case-insensitively (title may already be lowercased)
     for pattern in TITLE_PATTERNS_TO_REMOVE:
-        result = result.replace(pattern, "")
+        # Use regex with IGNORECASE flag for case-insensitive replacement
+        result = re.sub(re.escape(pattern), "", result, flags=re.IGNORECASE)
 
     for pattern in TITLE_PATTERNS_TO_SPACE:
-        result = result.replace(pattern, " ")
+        # Use regex with IGNORECASE flag for case-insensitive replacement
+        result = re.sub(re.escape(pattern), " ", result, flags=re.IGNORECASE)
 
     return result.strip().lower()
 
@@ -54,6 +60,47 @@ def remove_remixer(track_title: str, artist_list: list[str]) -> list[str]:
     return [artist for artist in artist_list if artist.lower() not in title_lower]
 
 
+def format_artist(artist_name: str) -> str:
+    """Format artist name for API search queries.
+
+    Removes feature annotations, special characters, and extra punctuation
+    that interfere with search accuracy. Featured artists are intentionally
+    removed as they typically don't appear in Songstats main artist fields.
+
+    Args:
+        artist_name: Original artist name from library.
+
+    Returns:
+        Cleaned and lowercase artist name suitable for API queries.
+
+    Example:
+        >>> format_artist("Artist A (feat. Artist B)")
+        'artist a'
+        >>> format_artist("Artist A × Artist B")
+        'artist a artist b'
+        >>> format_artist("Artist A & Artist B")
+        'artist a artist b'
+    """
+    result = artist_name
+
+    # Remove feature annotations entirely (case-insensitive)
+    # Match patterns like: (feat. ...), (ft. ...), (featuring ...), [feat. ...]
+    # Remove them completely as they create query mismatches in Songstats
+    result = re.sub(r'\s*[(\[](f(?:ea)?t\.?|featuring)\s+[^)\]]+[)\]]', '', result, flags=re.IGNORECASE)
+
+    # Replace special separators with spaces
+    result = result.replace('×', ' ')
+    result = result.replace('&', ' ')
+
+    # Remove remaining parentheses and brackets
+    result = result.replace('(', '').replace(')', '')
+    result = result.replace('[', '').replace(']', '')
+
+    # Normalize whitespace and lowercase
+    result = ' '.join(result.split())
+    return result.strip().lower()
+
+
 def build_search_query(title: str, artists: list[str]) -> str:
     """Build a search query string from title and artists.
 
@@ -66,9 +113,12 @@ def build_search_query(title: str, artists: list[str]) -> str:
 
     Example:
         >>> build_search_query("song name", ["artist a", "artist b"])
-        'artist a, artist b song name'
+        'artist a artist b song name'
     """
-    artists_str = ", ".join(artists)
+    # Clean artist names
+    cleaned_artists = [format_artist(artist) for artist in artists]
+    # Use space separator instead of comma to avoid punctuation in queries
+    artists_str = " ".join(cleaned_artists)
     return f"{artists_str} {title}".strip()
 
 

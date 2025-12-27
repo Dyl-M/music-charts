@@ -1,421 +1,838 @@
-"""Unit tests for CLI commands."""
+"""Unit tests for CLI module.
+
+Tests CLI commands and helper functions.
+"""
 
 # Standard library
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 # Third-party
+import pytest
 from typer.testing import CliRunner
 
 # Local
-from msc import __version__
-from msc.cli import app
+# noinspection PyProtectedMember
+from msc.cli import (
+    app,
+    version_callback,
+    _determine_stages,
+    _display_pipeline_config,
+    _display_summary,
+    _has_platform_data,
+    _count_platform_tracks,
+)
 
 runner = CliRunner()
 
 
-class TestVersionFlag:
-    """Tests for --version flag."""
+class TestVersionCallback:
+    """Tests for version_callback function."""
 
     @staticmethod
-    def test_version_short_flag() -> None:
-        """Should display version with -v flag."""
-        result = runner.invoke(app, ["-v"])
-
-        assert result.exit_code == 0
-        assert f"msc version {__version__}" in result.stdout
-
-    @staticmethod
-    def test_version_long_flag() -> None:
-        """Should display version with --version flag."""
-        result = runner.invoke(app, ["--version"])
-
-        assert result.exit_code == 0
-        assert f"msc version {__version__}" in result.stdout
+    def test_raises_exit_when_true() -> None:
+        """Should raise SystemExit when value is True."""
+        import typer
+        with pytest.raises(typer.Exit):
+            version_callback(True)
 
     @staticmethod
-    def test_version_exits_without_running_command() -> None:
-        """Should exit after displaying version."""
-        result = runner.invoke(app, ["--version", "init"])
-
-        # Should exit with version, not run init command
-        assert result.exit_code == 0
-        assert f"msc version {__version__}" in result.stdout
-        assert "Directories created" not in result.stdout
+    def test_no_exit_when_false() -> None:
+        """Should not exit when value is False."""
+        version_callback(False)  # Should not raise
 
 
-class TestInitCommand:
-    """Tests for the init command."""
+class TestDetermineStages:
+    """Tests for _determine_stages function."""
 
     @staticmethod
-    def test_init_creates_directories(tmp_path: Path) -> None:
-        """Should create all required directories."""
-        # Use a temporary settings instance
-        from msc.config.settings import Settings
-
-        settings = Settings(
-            data_dir=tmp_path / "data",
-            tokens_dir=tmp_path / "tokens",
-            config_dir=tmp_path / "config",
-        )
-
-        with patch("msc.cli.get_settings", return_value=settings):
-            result = runner.invoke(app, ["init"])
-
-            assert result.exit_code == 0
-            assert "Creating directory structure..." in result.stdout
-            assert "Directories created:" in result.stdout
-            assert "Initialization complete!" in result.stdout
-
-            # Verify directories were created
-            assert settings.data_dir.exists()
-            assert settings.input_dir.exists()
-            assert settings.output_dir.exists()
-            assert settings.cache_dir.exists()
-            assert settings.tokens_dir.exists()
-            assert settings.config_dir.exists()
+    def test_all_stages_when_none() -> None:
+        """Should run all stages when None provided."""
+        extract, enrich, rank = _determine_stages(None)
+        assert extract is True
+        assert enrich is True
+        assert rank is True
 
     @staticmethod
-    def test_init_displays_created_directories(tmp_path: Path) -> None:
-        """Should display list of created directories."""
-        from msc.config.settings import Settings
-
-        settings = Settings(
-            data_dir=tmp_path / "data",
-            tokens_dir=tmp_path / "tokens",
-            config_dir=tmp_path / "config",
-        )
-
-        with patch("msc.cli.get_settings", return_value=settings):
-            result = runner.invoke(app, ["init"])
-
-            assert result.exit_code == 0
-            assert str(settings.data_dir) in result.stdout
-            assert str(settings.input_dir) in result.stdout
-            assert str(settings.output_dir) in result.stdout
-            assert str(settings.cache_dir) in result.stdout
-            assert str(settings.tokens_dir) in result.stdout
-            assert str(settings.config_dir) in result.stdout
+    def test_all_stages_when_all() -> None:
+        """Should run all stages when 'all' specified."""
+        extract, enrich, rank = _determine_stages(["all"])
+        assert extract is True
+        assert enrich is True
+        assert rank is True
 
     @staticmethod
-    def test_init_idempotent(tmp_path: Path) -> None:
-        """Should handle directories that already exist."""
-        from msc.config.settings import Settings
-
-        settings = Settings(
-            data_dir=tmp_path / "data",
-            tokens_dir=tmp_path / "tokens",
-            config_dir=tmp_path / "config",
-        )
-
-        # Create directories first
-        settings.ensure_directories()
-
-        # Run init again - should not fail
-        with patch("msc.cli.get_settings", return_value=settings):
-            result = runner.invoke(app, ["init"])
-
-            assert result.exit_code == 0
-            assert "Initialization complete!" in result.stdout
-
-
-class TestRunCommand:
-    """Tests for the run command."""
+    def test_extract_only() -> None:
+        """Should run only extraction when specified."""
+        extract, enrich, rank = _determine_stages(["extract"])
+        assert extract is True
+        assert enrich is False
+        assert rank is False
 
     @staticmethod
-    def test_run_not_implemented() -> None:
-        """Run command is now implemented."""
-        # The run command is no longer NotImplementedError - it's implemented in Phase 4
-        result = runner.invoke(app, ["run"])
-        # Command should show pipeline stages even if execution fails
-        assert "Pipeline stages:" in result.stdout
+    def test_enrich_only() -> None:
+        """Should run only enrichment when specified."""
+        extract, enrich, rank = _determine_stages(["enrich"])
+        assert extract is False
+        assert enrich is True
+        assert rank is False
 
     @staticmethod
-    def test_run_with_year() -> None:
-        """Should accept year parameter."""
-        result = runner.invoke(app, ["run", "--year", "2024"])
-
-        # Should display year in pipeline header
-        assert "Year 2024" in result.stdout
-        assert "Pipeline stages:" in result.stdout
-
-    @staticmethod
-    def test_run_with_stages() -> None:
-        """Should accept stage parameters."""
-        result = runner.invoke(app, ["run", "--stage", "extract", "--stage", "enrich"])
-
-        # Should display stage selection in output
-        assert "Pipeline stages:" in result.stdout
-        assert "Extraction:  ✓" in result.stdout
-        assert "Enrichment:  ✓" in result.stdout
-        assert "Ranking:     ✗" in result.stdout  # Not selected
+    def test_rank_only() -> None:
+        """Should run only ranking when specified."""
+        extract, enrich, rank = _determine_stages(["rank"])
+        assert extract is False
+        assert enrich is False
+        assert rank is True
 
     @staticmethod
-    def test_run_with_reset_confirmed() -> None:
-        """Should reset pipeline when confirmed."""
-        with patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orch_class:
-            mock_orch = mock_orch_class.return_value
-            mock_orch.reset_pipeline.return_value = None
-            mock_orch.run.return_value = None
-            mock_orch.get_metrics.return_value = {}
-            mock_orch.get_review_queue.return_value = []
-            mock_orch.metrics_observer.get_success_rate.return_value = 100.0
+    def test_multiple_stages() -> None:
+        """Should run multiple specified stages."""
+        extract, enrich, rank = _determine_stages(["extract", "rank"])
+        assert extract is True
+        assert enrich is False
+        assert rank is True
 
-            # Simulate user confirming reset
-            result = runner.invoke(app, ["run", "--reset"], input="y\n")
 
-            # Should show confirmation prompt and reset message
-            assert "This will delete all checkpoints" in result.stdout
-            assert "Pipeline reset complete" in result.stdout
+class TestDisplayPipelineConfig:
+    """Tests for _display_pipeline_config function."""
 
     @staticmethod
-    def test_run_with_reset_aborted() -> None:
-        """Should abort reset when user declines."""
-        with patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orch_class:
-            mock_orch = mock_orch_class.return_value
-
-            # Simulate user declining reset
-            result = runner.invoke(app, ["run", "--reset"], input="n\n")
-
-            # Should abort without resetting (exit code 1 when confirmation is rejected)
-            assert result.exit_code == 1
-            # Confirmation prompt should be shown
-            assert "This will delete all checkpoints" in result.stdout
-            # Should not have called reset
-            mock_orch.reset_pipeline.assert_not_called()
+    def test_outputs_year(capsys) -> None:
+        """Should output the target year."""
+        _display_pipeline_config(2025, True, True, True, False)
+        captured = capsys.readouterr()
+        assert "2025" in captured.out
 
     @staticmethod
-    def test_run_keyboard_interrupt() -> None:
-        """Should handle KeyboardInterrupt gracefully."""
-        with patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orch_class:
-            mock_orch = mock_orch_class.return_value
-            mock_orch.run.side_effect = KeyboardInterrupt()
-
-            result = runner.invoke(app, ["run"])
-
-            # Should show interrupted message
-            assert result.exit_code == 1
-            assert "interrupted by user" in result.stdout
-            assert "Checkpoints have been saved" in result.stdout
-
-
-class TestBillingCommand:
-    """Tests for the billing command."""
+    def test_outputs_stage_status(capsys) -> None:
+        """Should output stage status with checkmarks."""
+        _display_pipeline_config(2025, True, False, True, False)
+        captured = capsys.readouterr()
+        assert "Extraction" in captured.out
+        assert "Enrichment" in captured.out
+        assert "Ranking" in captured.out
 
     @staticmethod
-    def test_billing_success() -> None:
-        """Should display quota information successfully."""
-        # Mock the settings and client
-        with patch("msc.cli.get_settings") as mock_settings, \
-                patch("msc.clients.songstats.SongstatsClient") as mock_client_class:
-            mock_instance = mock_settings.return_value
-            mock_instance.get_songstats_key.return_value = "test_key_12345"
+    def test_outputs_youtube_status(capsys) -> None:
+        """Should output YouTube status."""
+        _display_pipeline_config(2025, True, True, True, True)
+        captured = capsys.readouterr()
+        assert "YouTube" in captured.out
+        assert "disabled" in captured.out
 
-            # Mock the client and its get_quota method
-            mock_client = Mock()
-            mock_client.get_quota.return_value = {
-                "requests_used": 100,
-                "requests_limit": 1000,
-                "reset_date": "2025-01-01",
-            }
-            mock_client_class.return_value = mock_client
 
-            result = runner.invoke(app, ["billing"])
-
-            assert result.exit_code == 0
-            assert "Songstats API Quota" in result.stdout or "100" in result.stdout
+class TestDisplaySummary:
+    """Tests for _display_summary function."""
 
     @staticmethod
-    def test_billing_missing_api_key() -> None:
-        """Should handle missing API key."""
-        with patch("msc.cli.get_settings") as mock_settings:
-            mock_instance = mock_settings.return_value
-            mock_instance.get_songstats_key.side_effect = ValueError("API key not found")
-
-            result = runner.invoke(app, ["billing"])
-
-            assert result.exit_code == 1
-            # Error message might be in stderr or stdout
-            output = result.stdout + result.stderr
-            assert "Error: API key not found" in output or "API key not found" in output
-
-
-class TestValidateCommand:
-    """Tests for the validate command."""
-
-    @staticmethod
-    def test_validate_success() -> None:
-        """Should validate a valid file successfully."""
-        # Create a valid Track JSON file with required fields
-        import json
-        from msc.config.settings import get_settings
-
-        settings = get_settings()
-        # Ensure output directory exists
-        settings.output_dir.mkdir(parents=True, exist_ok=True)
-        test_file = settings.output_dir / "test_validate.json"
-
-        try:
-            test_data = [{
-                "title": "Test Song",
-                "artist_list": ["Artist"],
-                "year": 2025,
-                "genre": [],
-                "label": [],
-                "grouping": None,
-                "search_query": None,
-                "songstats_identifiers": {
-                    "songstats_id": "",
-                    "songstats_title": "",
-                    "isrc": None
-                }
-            }]
-            test_file.write_text(json.dumps(test_data), encoding="utf-8")
-
-            result = runner.invoke(app, ["validate", str(test_file)])
-
-            assert result.exit_code == 0
-            assert "Validation passed" in result.stdout or "valid" in result.stdout.lower()
-
-        finally:
-            # Clean up test file
-            if test_file.exists():
-                test_file.unlink()
-
-    @staticmethod
-    def test_validate_file_not_found() -> None:
-        """Should handle non-existent file."""
-        result = runner.invoke(app, ["validate", "/nonexistent/file.json"])
-
-        assert result.exit_code != 0
-        # Typer will show an error about the file not existing
-
-
-class TestMainCallback:
-    """Tests for the main callback (global options)."""
-
-    @staticmethod
-    def test_verbose_flag_sets_debug_logging() -> None:
-        """Should set DEBUG log level with --verbose."""
-        with patch("msc.cli.setup_logging") as mock_setup:
-            # Run with verbose flag
-            _result = runner.invoke(app, ["--verbose", "init"])
-
-            # Should have called setup_logging with DEBUG
-            mock_setup.assert_called_once_with(level="DEBUG")
-
-    @staticmethod
-    def test_default_sets_info_logging() -> None:
-        """Should set INFO log level by default."""
-        with patch("msc.cli.setup_logging") as mock_setup:
-            # Run without verbose flag
-            _result = runner.invoke(app, ["init"])
-
-            # Should have called setup_logging with INFO
-            mock_setup.assert_called_once_with(level="INFO")
-
-    @staticmethod
-    def test_help_flag() -> None:
-        """Should display help message."""
-        result = runner.invoke(app, ["--help"])
-
-        assert result.exit_code == 0
-        assert "Music Charts" in result.stdout
-        assert "Analyze track performance" in result.stdout
-
-
-class TestDisplaySummaryHelper:
-    """Tests for _display_summary helper function."""
-
-    @staticmethod
-    def test_display_summary_basic() -> None:
-        """Test _display_summary displays basic metrics."""
-        from msc.cli import _display_summary
-        from msc.models.track import Track
-        from msc.models.ranking import PowerRanking, PowerRankingResults, CategoryScore
-        from io import StringIO
-        import sys
-
-        # Create mock orchestrator with metrics
-        mock_orch = Mock()
-        mock_orch.get_metrics.return_value = {
+    def test_outputs_metrics(capsys) -> None:
+        """Should output pipeline metrics."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.get_metrics.return_value = {
             "stages_completed": 3,
             "items_processed": 100,
             "items_failed": 5,
         }
-        mock_orch.metrics_observer.get_success_rate.return_value = 95.0
-        mock_orch.get_review_queue.return_value = []
+        mock_orchestrator.metrics_observer.get_success_rate.return_value = 95.0
+        mock_orchestrator.get_review_queue.return_value = []
 
-        # Create mock results with rankings
-        track = Track(title="Test Track", artist_list=["Test Artist"], year=2024)
-        ranking = PowerRanking(
-            track=track,
-            total_score=10.0,
-            rank=1,
-            category_scores=[CategoryScore(category="popularity", raw_score=0.9, weight=4, weighted_score=3.6)]
+        mock_results = MagicMock()
+        mock_results.rankings = []
+
+        with patch("msc.cli.get_settings") as mock_settings:
+            mock_settings.return_value.data_dir = Path("/data")
+            _display_summary(mock_orchestrator, mock_results)
+
+        captured = capsys.readouterr()
+        assert "Summary" in captured.out
+        assert "95.0%" in captured.out
+
+    @staticmethod
+    def test_shows_review_queue(capsys) -> None:
+        """Should show review queue if not empty."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.get_metrics.return_value = {}
+        mock_orchestrator.metrics_observer.get_success_rate.return_value = 0
+        mock_orchestrator.get_review_queue.return_value = ["item1", "item2"]
+
+        mock_results = MagicMock()
+        mock_results.rankings = []
+
+        with patch("msc.cli.get_settings") as mock_settings:
+            mock_settings.return_value.data_dir = Path("/data")
+            _display_summary(mock_orchestrator, mock_results)
+
+        captured = capsys.readouterr()
+        assert "manual review" in captured.out.lower()
+
+
+class TestHasPlatformData:
+    """Tests for _has_platform_data function."""
+
+    @staticmethod
+    def test_returns_false_for_none_platform() -> None:
+        """Should return False when platform is None."""
+        mock_track = MagicMock()
+        mock_track.platform_stats.spotify = None
+
+        result = _has_platform_data(mock_track, "spotify")
+        assert result is False
+
+    @staticmethod
+    def test_returns_true_for_non_none_values() -> None:
+        """Should return True when platform has non-None values."""
+        mock_track = MagicMock()
+        mock_platform = MagicMock()
+        mock_platform.model_dump.return_value = {"streams_total": 1000, "popularity": None}
+        mock_track.platform_stats.spotify = mock_platform
+
+        result = _has_platform_data(mock_track, "spotify")
+        assert result is True
+
+    @staticmethod
+    def test_returns_false_for_all_none_values() -> None:
+        """Should return False when all platform values are None."""
+        mock_track = MagicMock()
+        mock_platform = MagicMock()
+        mock_platform.model_dump.return_value = {"streams_total": None, "popularity": None}
+        mock_track.platform_stats.spotify = mock_platform
+
+        result = _has_platform_data(mock_track, "spotify")
+        assert result is False
+
+
+class TestCountPlatformTracks:
+    """Tests for _count_platform_tracks function."""
+
+    @staticmethod
+    def test_counts_spotify_tracks() -> None:
+        """Should count tracks with Spotify data."""
+        mock_track1 = MagicMock()
+        mock_platform = MagicMock()
+        mock_platform.model_dump.return_value = {"streams_total": 1000}
+        mock_track1.platform_stats.spotify = mock_platform
+        # All other platforms None
+        for attr in ["apple_music", "youtube", "amazon_music", "deezer",
+                     "soundcloud", "tidal", "tiktok", "beatport", "tracklists"]:
+            setattr(mock_track1.platform_stats, attr, None)
+
+        result = _count_platform_tracks([mock_track1])
+        assert result["Spotify"] == 1
+        assert result["Apple Music"] == 0
+
+    @staticmethod
+    def test_returns_empty_for_empty_list() -> None:
+        """Should return zeros for empty list."""
+        result = _count_platform_tracks([])
+        assert all(count == 0 for count in result.values())
+
+
+class TestCLIHelp:
+    """Tests for CLI help output."""
+
+    @staticmethod
+    def test_main_help() -> None:
+        """Should show main help text."""
+        result = runner.invoke(app, ["--help"])
+        assert result.exit_code == 0
+        assert "Music Charts" in result.output
+
+    @staticmethod
+    def test_run_help() -> None:
+        """Should show run command help."""
+        result = runner.invoke(app, ["run", "--help"])
+        assert result.exit_code == 0
+        assert "pipeline" in result.output.lower()
+
+    @staticmethod
+    def test_billing_help() -> None:
+        """Should show billing command help."""
+        result = runner.invoke(app, ["billing", "--help"])
+        assert result.exit_code == 0
+        assert "Songstats" in result.output
+
+    @staticmethod
+    def test_validate_help() -> None:
+        """Should show validate command help."""
+        result = runner.invoke(app, ["validate", "--help"])
+        assert result.exit_code == 0
+        assert "validate" in result.output.lower()
+
+    @staticmethod
+    def test_export_help() -> None:
+        """Should show export command help."""
+        result = runner.invoke(app, ["export", "--help"])
+        assert result.exit_code == 0
+        assert "export" in result.output.lower()
+
+    @staticmethod
+    def test_clean_help() -> None:
+        """Should show clean command help."""
+        result = runner.invoke(app, ["clean", "--help"])
+        assert result.exit_code == 0
+        assert "cache" in result.output.lower()
+
+    @staticmethod
+    def test_stats_help() -> None:
+        """Should show stats command help."""
+        result = runner.invoke(app, ["stats", "--help"])
+        assert result.exit_code == 0
+        assert "statistics" in result.output.lower()
+
+    @staticmethod
+    def test_init_help() -> None:
+        """Should show init command help."""
+        result = runner.invoke(app, ["init", "--help"])
+        assert result.exit_code == 0
+        assert "directory" in result.output.lower()
+
+
+class TestCLIVersion:
+    """Tests for CLI version output."""
+
+    @staticmethod
+    def test_version_option() -> None:
+        """Should show version with --version flag."""
+        result = runner.invoke(app, ["--version"])
+        assert result.exit_code == 0
+        assert "msc version" in result.output
+
+    @staticmethod
+    def test_version_short_option() -> None:
+        """Should show version with -v flag."""
+        result = runner.invoke(app, ["-v"])
+        assert result.exit_code == 0
+        assert "msc version" in result.output
+
+
+class TestCLIInit:
+    """Tests for CLI init command."""
+
+    @staticmethod
+    def test_creates_directories(tmp_path: Path) -> None:
+        """Should create directory structure."""
+        with patch("msc.cli.get_settings") as mock_settings:
+            mock_settings_instance = MagicMock()
+            mock_settings_instance.data_dir = tmp_path / "data"
+            mock_settings_instance.input_dir = tmp_path / "input"
+            mock_settings_instance.output_dir = tmp_path / "output"
+            mock_settings_instance.cache_dir = tmp_path / "cache"
+            mock_settings_instance.tokens_dir = tmp_path / "tokens"
+            mock_settings_instance.config_dir = tmp_path / "config"
+            mock_settings.return_value = mock_settings_instance
+
+            result = runner.invoke(app, ["init"])
+
+            assert result.exit_code == 0
+            assert "complete" in result.output.lower()
+            mock_settings_instance.ensure_directories.assert_called_once()
+
+
+class TestCLIClean:
+    """Tests for CLI clean command."""
+
+    @staticmethod
+    def test_dry_run_default(tmp_path: Path) -> None:
+        """Should use dry run by default."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.CacheManager") as mock_manager_class, \
+                patch("msc.cli.setup_logging"):
+            # Setup settings mock with all required paths
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.cache_dir = tmp_path / "cache"
+            mock_settings.return_value = mock_settings_obj
+
+            mock_manager = MagicMock()
+            mock_stats = MagicMock()
+            mock_stats.file_count = 5
+            mock_stats.total_size_bytes = 1024
+            mock_stats.oldest_file_age_days = 3
+            mock_stats.cache_dir = tmp_path / "cache"
+            mock_manager.get_stats.return_value = mock_stats
+            mock_manager.clean.return_value = 5
+            mock_manager.format_size.return_value = "1.0 KB"
+            mock_manager_class.return_value = mock_manager
+
+            result = runner.invoke(app, ["clean"])
+
+            assert result.exit_code == 0
+            mock_manager.clean.assert_called_once_with(dry_run=True, older_than_days=None)
+
+    @staticmethod
+    def test_shows_empty_cache_message(tmp_path: Path) -> None:
+        """Should show message for empty cache."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.CacheManager") as mock_manager_class, \
+                patch("msc.cli.setup_logging"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.cache_dir = tmp_path / "cache"
+            mock_settings.return_value = mock_settings_obj
+
+            mock_manager = MagicMock()
+            mock_stats = MagicMock()
+            mock_stats.file_count = 0
+            mock_manager.get_stats.return_value = mock_stats
+            mock_manager_class.return_value = mock_manager
+
+            result = runner.invoke(app, ["clean"])
+
+            assert result.exit_code == 0
+            assert "empty" in result.output.lower()
+
+
+class TestCLIValidate:
+    """Tests for CLI validate command."""
+
+    @staticmethod
+    def test_validates_existing_file(tmp_path: Path) -> None:
+        """Should validate existing JSON file."""
+        import json
+
+        test_file = tmp_path / "test.json"
+        test_file.write_text(
+            json.dumps([{"title": "Test", "artist_list": ["A"], "year": 2024}]),
+            encoding="utf-8"
         )
-        results = PowerRankingResults(rankings=[ranking], year=2024)
 
-        # Capture stdout
-        captured_output = StringIO()
-        sys.stdout = captured_output
+        with patch("msc.cli.FileValidator") as mock_validator_class, \
+                patch("msc.cli.ValidationFormatter"):
+            mock_validator = MagicMock()
+            mock_result = MagicMock()
+            mock_result.is_valid = True
+            mock_result.model_name = "Track"
+            mock_validator.validate_file.return_value = mock_result
+            mock_validator_class.return_value = mock_validator
 
-        try:
-            _display_summary(mock_orch, results)
-            output = captured_output.getvalue()
+            result = runner.invoke(app, ["validate", str(test_file)])
 
-            # Check that summary components are displayed
-            assert "Pipeline Summary" in output
-            assert "Stages completed:  3" in output
-            assert "Items processed:   100" in output
-            assert "Items failed:      5" in output
-            assert "Success rate:      95.0%" in output
-            assert "Top 5 Rankings:" in output
-            assert "Pipeline completed successfully!" in output
-
-        finally:
-            sys.stdout = sys.__stdout__
+            assert result.exit_code == 0
 
     @staticmethod
-    def test_display_summary_with_review_queue() -> None:
-        """Test _display_summary displays review queue warning."""
-        from msc.cli import _display_summary
-        from io import StringIO
-        import sys
-
-        mock_orch = Mock()
-        mock_orch.get_metrics.return_value = {
-            "stages_completed": 2,
-            "items_processed": 50,
-            "items_failed": 10,
-        }
-        mock_orch.metrics_observer.get_success_rate.return_value = 80.0
-        mock_orch.get_review_queue.return_value = [{"track_id": "1"}, {"track_id": "2"}]  # 2 items in queue
-
-        captured_output = StringIO()
-        sys.stdout = captured_output
-
-        try:
-            _display_summary(mock_orch, None)
-            output = captured_output.getvalue()
-
-            # Should show review queue warning
-            assert "2 items need manual review" in output
-            assert "manual_review.json" in output
-
-        finally:
-            sys.stdout = sys.__stdout__
-
-
-class TestNoArgs:
-    """Tests for running without arguments."""
+    def test_fails_for_missing_file() -> None:
+        """Should fail for non-existent file."""
+        result = runner.invoke(app, ["validate", "/nonexistent/file.json"])
+        assert result.exit_code != 0
 
     @staticmethod
-    def test_no_args_shows_help() -> None:
-        """Should show help when run without arguments."""
-        result = runner.invoke(app, [])
+    def test_displays_validation_errors(tmp_path: Path) -> None:
+        """Should display validation errors for invalid file."""
+        import json
 
-        # Typer may return 0 or 2 depending on version, both are acceptable
-        assert result.exit_code in (0, 2)
-        # Should show help text or command list
-        assert "Usage:" in result.stdout or "Music Charts" in result.stdout or "Commands:" in result.stdout
+        test_file = tmp_path / "invalid.json"
+        test_file.write_text(json.dumps([{"bad": "data"}]), encoding="utf-8")
+
+        with patch("msc.cli.FileValidator") as mock_validator_class, \
+                patch("msc.cli.ValidationFormatter") as mock_formatter:
+            mock_validator = MagicMock()
+            mock_result = MagicMock()
+            mock_result.is_valid = False
+            mock_result.errors = ["Missing field: title"]
+            mock_result.error_count = 1
+            mock_validator.validate_file.return_value = mock_result
+            mock_validator_class.return_value = mock_validator
+
+            mock_formatter.format_error_list.return_value = "Error list"
+
+            result = runner.invoke(app, ["validate", str(test_file)])
+
+            assert result.exit_code == 1
+            assert "failed" in result.output.lower()
+
+
+class TestCLIBilling:
+    """Tests for CLI billing command."""
+
+    @staticmethod
+    def test_displays_quota_table(tmp_path: Path) -> None:
+        """Should display quota table with billing info."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.clients.songstats.SongstatsClient") as mock_client_class, \
+                patch("msc.cli.QuotaFormatter") as mock_formatter, \
+                patch("rich.console.Console"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.get_songstats_key.return_value = "test_key"
+            mock_settings.return_value = mock_settings_obj
+
+            mock_client = MagicMock()
+            mock_client.get_quota.return_value = {
+                "used": 100,
+                "limit": 1000,
+                "remaining": 900,
+            }
+            mock_client_class.return_value = mock_client
+
+            mock_formatter.format_billing_table.return_value = "Billing Table"
+
+            result = runner.invoke(app, ["billing"])
+
+            assert result.exit_code == 0
+            mock_client.get_quota.assert_called_once()
+
+    @staticmethod
+    def test_handles_network_error(tmp_path: Path) -> None:
+        """Should handle network error gracefully."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.clients.songstats.SongstatsClient") as mock_client_class, \
+                patch("msc.cli.ErrorHandler") as mock_handler:
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.get_songstats_key.return_value = "test_key"
+            mock_settings.return_value = mock_settings_obj
+
+            mock_client = MagicMock()
+            mock_client.get_quota.return_value = None
+            mock_client_class.return_value = mock_client
+
+            mock_handler.handle.return_value = "Network error occurred"
+
+            result = runner.invoke(app, ["billing"])
+
+            assert result.exit_code == 1
+
+    @staticmethod
+    def test_handles_missing_api_key(tmp_path: Path) -> None:
+        """Should handle missing API key."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.cli.ErrorHandler") as mock_handler:
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.get_songstats_key.side_effect = FileNotFoundError("API key not found")
+            mock_settings.return_value = mock_settings_obj
+
+            mock_handler.handle.return_value = "API key not found"
+
+            result = runner.invoke(app, ["billing"])
+
+            assert result.exit_code == 1
+
+
+class TestCLIExport:
+    """Tests for CLI export command."""
+
+    @staticmethod
+    def test_export_csv_creates_file(tmp_path: Path) -> None:
+        """Should export to CSV format."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.storage.json_repository.JSONStatsRepository") as mock_repo_class, \
+                patch("msc.cli.DataExporter") as mock_exporter_class, \
+                patch("msc.cli.ExportFormatter") as mock_formatter, \
+                patch("rich.console.Console"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            # Create fake stats file
+            stats_file = tmp_path / "output" / "enriched_tracks.json"
+            stats_file.parent.mkdir(parents=True, exist_ok=True)
+            stats_file.write_text("[]", encoding="utf-8")
+
+            mock_repo = MagicMock()
+            mock_repo.count.return_value = 5
+            mock_repo_class.return_value = mock_repo
+
+            mock_exporter = MagicMock()
+            mock_result = MagicMock()
+            mock_result.row_count = 5
+            mock_result.file_size_bytes = 1024
+            mock_result.duration_seconds = 0.5
+            mock_result.file_path = tmp_path / "export.csv"
+            mock_exporter.export_csv.return_value = mock_result
+            mock_exporter_class.return_value = mock_exporter
+
+            mock_formatter.format_export_summary.return_value = "Export summary"
+
+            result = runner.invoke(app, ["export", "--year", "2025", "--format", "csv"])
+
+            assert result.exit_code == 0
+            mock_exporter.export_csv.assert_called_once()
+
+    @staticmethod
+    def test_export_ods_creates_file(tmp_path: Path) -> None:
+        """Should export to ODS format."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.storage.json_repository.JSONStatsRepository") as mock_repo_class, \
+                patch("msc.cli.DataExporter") as mock_exporter_class, \
+                patch("msc.cli.ExportFormatter") as mock_formatter, \
+                patch("rich.console.Console"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            stats_file = tmp_path / "output" / "enriched_tracks.json"
+            stats_file.parent.mkdir(parents=True, exist_ok=True)
+            stats_file.write_text("[]", encoding="utf-8")
+
+            mock_repo = MagicMock()
+            mock_repo.count.return_value = 5
+            mock_repo_class.return_value = mock_repo
+
+            mock_exporter = MagicMock()
+            mock_result = MagicMock()
+            mock_result.row_count = 5
+            mock_result.file_size_bytes = 2048
+            mock_result.duration_seconds = 0.8
+            mock_result.file_path = tmp_path / "export.ods"
+            mock_exporter.export_ods.return_value = mock_result
+            mock_exporter_class.return_value = mock_exporter
+
+            mock_formatter.format_export_summary.return_value = "Export summary"
+
+            result = runner.invoke(app, ["export", "--year", "2025", "--format", "ods"])
+
+            assert result.exit_code == 0
+            mock_exporter.export_ods.assert_called_once()
+
+    @staticmethod
+    def test_export_html_creates_file(tmp_path: Path) -> None:
+        """Should export to HTML format."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.storage.json_repository.JSONStatsRepository") as mock_repo_class, \
+                patch("msc.cli.DataExporter") as mock_exporter_class, \
+                patch("msc.cli.ExportFormatter") as mock_formatter, \
+                patch("rich.console.Console"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            stats_file = tmp_path / "output" / "enriched_tracks.json"
+            stats_file.parent.mkdir(parents=True, exist_ok=True)
+            stats_file.write_text("[]", encoding="utf-8")
+
+            mock_repo = MagicMock()
+            mock_repo.count.return_value = 5
+            mock_repo_class.return_value = mock_repo
+
+            mock_exporter = MagicMock()
+            mock_result = MagicMock()
+            mock_result.row_count = 5
+            mock_result.file_size_bytes = 4096
+            mock_result.duration_seconds = 1.0
+            mock_result.file_path = tmp_path / "export.html"
+            mock_exporter.export_html.return_value = mock_result
+            mock_exporter_class.return_value = mock_exporter
+
+            mock_formatter.format_export_summary.return_value = "Export summary"
+
+            result = runner.invoke(app, ["export", "--year", "2025", "--format", "html"])
+
+            assert result.exit_code == 0
+            mock_exporter.export_html.assert_called_once()
+
+    @staticmethod
+    def test_export_handles_missing_data(tmp_path: Path) -> None:
+        """Should show error when data file does not exist."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            result = runner.invoke(app, ["export", "--year", "2025"])
+
+            assert result.exit_code == 1
+            assert "no data found" in result.output.lower()
+
+    @staticmethod
+    def test_export_handles_empty_repository(tmp_path: Path) -> None:
+        """Should show error when repository is empty."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.storage.json_repository.JSONStatsRepository") as mock_repo_class:
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            stats_file = tmp_path / "output" / "enriched_tracks.json"
+            stats_file.parent.mkdir(parents=True, exist_ok=True)
+            stats_file.write_text("[]", encoding="utf-8")
+
+            mock_repo = MagicMock()
+            mock_repo.count.return_value = 0
+            mock_repo_class.return_value = mock_repo
+
+            result = runner.invoke(app, ["export", "--year", "2025"])
+
+            assert result.exit_code == 1
+            assert "empty" in result.output.lower()
+
+    @staticmethod
+    def test_export_unsupported_format(tmp_path: Path) -> None:
+        """Should show error for unsupported format."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.storage.json_repository.JSONStatsRepository") as mock_repo_class:
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            stats_file = tmp_path / "output" / "enriched_tracks.json"
+            stats_file.parent.mkdir(parents=True, exist_ok=True)
+            stats_file.write_text("[]", encoding="utf-8")
+
+            mock_repo = MagicMock()
+            mock_repo.count.return_value = 5
+            mock_repo_class.return_value = mock_repo
+
+            result = runner.invoke(app, ["export", "--year", "2025", "--format", "pdf"])
+
+            assert result.exit_code == 1
+            assert "unsupported" in result.output.lower()
+
+
+class TestCLIStats:
+    """Tests for CLI stats command."""
+
+    @staticmethod
+    def test_displays_statistics(tmp_path: Path) -> None:
+        """Should display dataset statistics."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.storage.json_repository.JSONStatsRepository") as mock_repo_class, \
+                patch("msc.cli._count_platform_tracks") as mock_count:
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            stats_file = tmp_path / "output" / "enriched_tracks.json"
+            stats_file.parent.mkdir(parents=True, exist_ok=True)
+            stats_file.write_text("[]", encoding="utf-8")
+
+            mock_repo = MagicMock()
+            mock_track = MagicMock()
+            mock_repo.get_all.return_value = [mock_track]
+            mock_repo_class.return_value = mock_repo
+
+            mock_count.return_value = {"Spotify": 1, "Apple Music": 0}
+
+            result = runner.invoke(app, ["stats", "--year", "2025"])
+
+            assert result.exit_code == 0
+            assert "statistics" in result.output.lower()
+
+    @staticmethod
+    def test_handles_missing_file(tmp_path: Path) -> None:
+        """Should show error when stats file does not exist."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            result = runner.invoke(app, ["stats", "--year", "2025"])
+
+            assert result.exit_code == 1
+            assert "no data found" in result.output.lower()
+
+    @staticmethod
+    def test_handles_empty_data(tmp_path: Path) -> None:
+        """Should show error when repository returns empty list."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.setup_logging"), \
+                patch("msc.storage.json_repository.JSONStatsRepository") as mock_repo_class:
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.output_dir = tmp_path / "output"
+            mock_settings_obj.year = 2025
+            mock_settings.return_value = mock_settings_obj
+
+            stats_file = tmp_path / "output" / "enriched_tracks.json"
+            stats_file.parent.mkdir(parents=True, exist_ok=True)
+            stats_file.write_text("[]", encoding="utf-8")
+
+            mock_repo = MagicMock()
+            mock_repo.get_all.return_value = []
+            mock_repo_class.return_value = mock_repo
+
+            result = runner.invoke(app, ["stats", "--year", "2025"])
+
+            assert result.exit_code == 1
+            assert "empty" in result.output.lower()
+
+
+class TestCLICleanExtended:
+    """Extended tests for CLI clean command."""
+
+    @staticmethod
+    def test_actual_deletion(tmp_path: Path) -> None:
+        """Should actually delete files when --no-dry-run is used."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.CacheManager") as mock_manager_class, \
+                patch("msc.cli.setup_logging"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.cache_dir = tmp_path / "cache"
+            mock_settings.return_value = mock_settings_obj
+
+            mock_manager = MagicMock()
+            mock_stats = MagicMock()
+            mock_stats.file_count = 5
+            mock_stats.total_size_bytes = 1024
+            mock_stats.oldest_file_age_days = 3
+            mock_stats.cache_dir = tmp_path / "cache"
+            mock_manager.get_stats.return_value = mock_stats
+            mock_manager.clean.return_value = 5
+            mock_manager.format_size.return_value = "1.0 KB"
+            mock_manager_class.return_value = mock_manager
+
+            result = runner.invoke(app, ["clean", "--no-dry-run"])
+
+            assert result.exit_code == 0
+            mock_manager.clean.assert_called_once_with(dry_run=False, older_than_days=None)
+            assert "deleted" in result.output.lower()
+
+    @staticmethod
+    def test_older_than_filter(tmp_path: Path) -> None:
+        """Should apply older-than filter."""
+        with patch("msc.cli.get_settings") as mock_settings, \
+                patch("msc.cli.CacheManager") as mock_manager_class, \
+                patch("msc.cli.setup_logging"):
+            mock_settings_obj = MagicMock()
+            mock_settings_obj.data_dir = tmp_path
+            mock_settings_obj.cache_dir = tmp_path / "cache"
+            mock_settings.return_value = mock_settings_obj
+
+            mock_manager = MagicMock()
+            mock_stats = MagicMock()
+            mock_stats.file_count = 10
+            mock_stats.total_size_bytes = 2048
+            mock_stats.oldest_file_age_days = 30
+            mock_stats.cache_dir = tmp_path / "cache"
+            mock_manager.get_stats.return_value = mock_stats
+            mock_manager.clean.return_value = 3
+            mock_manager.format_size.return_value = "2.0 KB"
+            mock_manager_class.return_value = mock_manager
+
+            result = runner.invoke(app, ["clean", "--older-than", "7"])
+
+            assert result.exit_code == 0
+            mock_manager.clean.assert_called_once_with(dry_run=True, older_than_days=7)

@@ -15,7 +15,27 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 
 ## Status
 
-**Current:** Phase 5 (CLI & Polish) ✅ **Complete** - Professional-grade CLI with comprehensive features
+**Version 1.0.0** ✅ **Ready** - Professional-grade data pipeline with CLI
+
+**Branch:** `feat-V1` → `main`
+
+### Version 1.0.0 Features
+
+- **Legacy-Compatible Scoring Algorithm:** Power rankings now use 0-100 scale with data availability weighting
+- **Dynamic Weight Adjustment:** Category weights adapt based on per-metric data availability (ISSUE-017/019)
+- **YouTube "Topic Channel" Fallback:** Tracks with only Topic channel videos now correctly capture YouTube data (
+  ISSUE-018)
+- **UUID5-based Track Identifiers:** Compact 8-character deterministic IDs replacing long string concatenation
+- **Songstats Match Validation:** Keyword-based rejection prevents false positives (karaoke, instrumentals)
+- **Enhanced Metadata Extraction:** ISRC codes, Songstats artist/label lists for data quality validation
+- **Run-based Directory Structure:** Organized output with timestamps for better tracking
+- **Clean Console Output:** Minimal logs with file-based verbose logging and enhanced progress bars
+- **Manual Review Queue:** Automatic checkpoint resumption with deduplication
+- **Comprehensive Query Cleaning:** Advanced text normalization for better Songstats search accuracy
+- **Pre-1.0.0 Code Review:** Dead code removal, redundancy fixes, Pythonic improvements, lazy logging compliance
+
+### CLI Features
+
 - **7 CLI commands:** `run`, `billing`, `validate`, `export`, `clean`, `stats`, `init`
 - **Error handling infrastructure:** Custom exceptions with helpful multi-line suggestions
 - **Display formatters:** Rich tables and panels for quota, validation errors, export summaries
@@ -24,11 +44,13 @@ Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amaz
 - **Cache management:** Statistics and cleanup with dry-run mode
 - **Enhanced progress bars:** ETA, current item display, error visibility
 
-**Completed Phases:**
-- Phase 4 (Pipeline Migration) ✅ Complete - Full ETL pipeline with clean architecture
-- Phase 3 (Data Models) ✅ Complete - 17 models (Track, PlatformStats, PowerRanking, etc.)
-- Phase 2 (API Clients) ✅ Complete - 3 clients (MusicBee, Songstats, YouTube)
-- Phase 1 (Foundation) ✅ Complete - Config, utils, base classes (100% coverage)
+**Architecture (All Phases Complete):**
+
+- Phase 5: CLI & Polish - 7 commands, error handling, export formats
+- Phase 4: Pipeline Migration - Full ETL with checkpoints, observers
+- Phase 3: Data Models - 17 Pydantic models with validation
+- Phase 2: API Clients - MusicBee, Songstats, YouTube (100% coverage)
+- Phase 1: Foundation - Config, utils, base classes
 
 **Package Manager:** [uv](https://github.com/astral-sh/uv) for faster dependency resolution and reproducible builds
 
@@ -145,7 +167,7 @@ music-charts/
 ├── _config/                # Runtime configuration
 ├── _data/                  # Data artifacts (gitignored)
 ├── _demos/                 # Interactive demo scripts
-├── _docs/                  # Documentations and notes
+├── _docs/                  # Documentation and notes
 │
 ├── _legacy/                # Archived original scripts
 │   ├── src/                # Original pipeline scripts
@@ -159,6 +181,7 @@ music-charts/
 └── msc/                    # Main package (new modular architecture)
     ├── analysis/           # Analytics modules
     ├── clients/            # API clients
+    ├── commands/           # CLI utilities
     ├── config/             # Configuration
     ├── models/             # Data models
     ├── pipeline/           # ETL pipeline base classes
@@ -174,6 +197,7 @@ music-charts/
 ```bash
 pytest                      # Run all tests
 pytest _tests/unit/         # Unit tests only
+pytest _tests/integration/  # Integration tests only
 pytest --cov=msc            # With coverage report
 pytest -v --tb=short        # Verbose with short traceback
 ```

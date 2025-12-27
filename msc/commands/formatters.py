@@ -22,42 +22,33 @@ class QuotaFormatter:
         """Create rich table for Songstats quota display.
 
         Args:
-            quota_data: Dictionary with quota information:
-                - requests_used: Number of requests consumed
-                - requests_limit: Total monthly quota
-                - reset_date: Next billing cycle date
+            quota_data: Dictionary with quota information from Songstats API:
+                - status.current_month_total_requests: Current month API requests
+                - status.current_month_total_bill: Current month billing cost
+                - status.previous_month_total_requests: Previous month API requests
+                - status.previous_month_total_bill: Previous month billing cost
 
         Returns:
             Rich Table object with formatted quota data
         """
-        table = Table(title="🎵 Songstats API Quota", show_header=True)
+        table = Table(title="🎵 Songstats API Status", show_header=True)
 
         table.add_column("Metric", style="cyan", no_wrap=True)
-        table.add_column("Value", style="white")
+        table.add_column("Current Month", style="white")
+        table.add_column("Previous Month", style="dim")
 
-        # Extract quota data
-        requests_used = quota_data.get("requests_used", 0)
-        requests_limit = quota_data.get("requests_limit", 0)
-        reset_date = quota_data.get("reset_date", "Unknown")
-
-        # Calculate usage percentage and remaining
-        if requests_limit > 0:
-            usage_pct = (requests_used / requests_limit) * 100
-            remaining = requests_limit - requests_used
-
-        else:
-            usage_pct = 0.0
-            remaining = 0
-
-        # Determine color based on usage
-        usage_color = QuotaFormatter.get_quota_warning_level(usage_pct)
+        # Extract status data
+        status = quota_data.get("status", {})
+        current_requests = status.get("current_month_total_requests", 0)
+        current_objects = status.get("current_month_total_requested_objects", 0)
+        current_bill = status.get("current_month_total_bill", "0.00")
+        previous_requests = status.get("previous_month_total_requests", 0)
+        previous_bill = status.get("previous_month_total_bill", "0.00")
 
         # Add rows
-        table.add_row("Requests Used", f"{requests_used:,}")
-        table.add_row("Requests Limit", f"{requests_limit:,}")
-        table.add_row("Remaining", f"{remaining:,}")
-        table.add_row("Usage", f"[{usage_color}]{usage_pct:.1f}%[/{usage_color}]")
-        table.add_row("Resets On", reset_date)
+        table.add_row("API Requests", f"{current_requests:,}", f"{previous_requests:,}")
+        table.add_row("Objects Requested", f"{current_objects:,}", "-")
+        table.add_row("Total Bill", f"${current_bill}", f"${previous_bill}")
 
         return table
 

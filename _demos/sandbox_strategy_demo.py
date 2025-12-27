@@ -14,9 +14,6 @@ Usage:
     python _demos/sandbox_strategy_demo.py
 """
 
-# Standard library
-from typing import Any
-
 # Local
 from msc.analysis.normalizers import MinMaxNormalizer, RobustNormalizer, ZScoreNormalizer
 from msc.analysis.strategy import NormalizationStrategy

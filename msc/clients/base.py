@@ -2,7 +2,7 @@
 
 # Standard library
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 # Third-party
 import requests
@@ -37,7 +37,7 @@ class BaseClient(ABC):
         self.timeout = timeout
         self.rate_limiter = RateLimiter(rate_limit)
         self.logger = get_logger(self.__class__.__name__)
-        self._session: requests.Session | None = None
+        self._session: Optional[requests.Session] = None
 
     @property
     def session(self) -> requests.Session:

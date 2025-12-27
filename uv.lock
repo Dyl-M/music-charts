@@ -365,7 +365,7 @@ wheels = [
 
 [[package]]
 name = "music-charts"
-version = "0.0.1a0"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "google-auth" },

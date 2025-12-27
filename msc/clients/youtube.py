@@ -1,7 +1,7 @@
 """YouTube Data API client for video metadata and playlist management."""
 
 # Standard library
-from typing import Any
+from typing import Any, Optional
 
 # Third-party
 import pyyoutube as pyt
@@ -45,8 +45,8 @@ class YouTubeClient(BaseClient):
 
         super().__init__(api_key=None, rate_limit=rate_limit, timeout=timeout)
         self.settings = settings
-        self._youtube_client: pyt.Client | None = None
-        self._credentials: Credentials | None = None
+        self._youtube_client: Optional[pyt.Client] = None
+        self._credentials: Optional[Credentials] = None
 
     @property
     def youtube_client(self) -> pyt.Client:

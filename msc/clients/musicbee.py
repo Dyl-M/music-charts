@@ -3,7 +3,7 @@
 # Standard library
 from pathlib import Path
 import shutil
-from typing import Any
+from typing import Any, Optional
 
 # Third-party
 import libpybee
@@ -65,7 +65,7 @@ class MusicBeeClient:
             )
 
         # State
-        self._library: libpybee.Library | None = None
+        self._library: Optional[libpybee.Library] = None
         self._cached_xml_path: Path | None = None
 
     def get_library(self) -> libpybee.Library:

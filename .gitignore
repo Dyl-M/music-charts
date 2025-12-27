@@ -171,25 +171,24 @@ _legacy/data/selection_2024.json
 _legacy/data/ytb_2024.json
 
 # New data structure
-_data/checkpoints/
-_data/demo
-_data/input/
-_data/log/
-_data/output/
 _data/cache/
+_data/demo
+_data/logs/
+_data/output/
+_data/runs/
 
 # Claude.ai configuration files
 .claude/
-_docs/commit_m_tmp.txt
-_docs/PR-DRAFT.md
 
 # Internal documentation
 _docs/CODE_REVIEW_FINDINGS.md
-_docs/COVERAGE_REPORT.md
 _docs/IMPROVEMENTS.md
-_docs/PHASE4_IMPLEMENTATION.md
 CLAUDE.md
 coverage.json
+
+# Archive & drafts
+_archive/
+_drafts/
 
 # Ruff
 .ruff_cache/
