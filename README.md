@@ -139,7 +139,7 @@ music-charts/
     └── cli.py              # Typer CLI entry point
 ```
 
-Each submodule contains a `README_*.md` file with detailed documentation and code examples.
+Each submodule contains a `README.md` file with detailed documentation and code examples.
 
 ## Development
 
