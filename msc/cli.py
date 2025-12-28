@@ -2,7 +2,7 @@
 
 # Standard library
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated
 
 # Third-party
 import typer
@@ -16,7 +16,7 @@ from msc.commands.formatters import ExportFormatter, QuotaFormatter, ValidationF
 from msc.commands.validators import FileValidator
 from msc.config.settings import get_settings
 from msc.models.stats import TrackWithStats
-from msc.utils.logging import setup_logging
+from msc.utils.logging import LogLevel, setup_logging
 
 app = typer.Typer(
     name="msc",
@@ -59,8 +59,8 @@ def main(
     # Configure logging
     # - File always logs INFO (or DEBUG if verbose)
     # - Console only shows ERROR by default (or INFO/DEBUG if verbose)
-    file_level: Literal["DEBUG", "INFO"] = "DEBUG" if verbose else "INFO"
-    console_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "DEBUG" if verbose else "ERROR"
+    file_level: LogLevel = "DEBUG" if verbose else "INFO"
+    console_level: LogLevel = "DEBUG" if verbose else "ERROR"
     log_file = settings.data_dir / "logs" / "pipeline.log"
 
     setup_logging(

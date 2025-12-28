@@ -10,12 +10,13 @@ Data pipeline for analyzing track performance across streaming platforms and gen
 ## Overview
 
 Music-charts processes electronic music tracks from a MusicBee library, enriches them with data from
-the [Songstats API](https://songstats.com/), and generates power rankings based on weighted metrics across 10 platforms:
+the [Songstats API](https://docs.songstats.com/), and generates power rankings based on weighted metrics across 10
+platforms:
 Spotify, Apple Music, YouTube, Deezer, TikTok, Beatport, Tidal, SoundCloud, Amazon Music, and 1001Tracklists.
 
 ## Features
 
-The `msc` CLI provides a complete ETL pipeline with 7 commands: `run`, `billing`, `validate`, `export`, `clean`,
+The [`msc`](msc) CLI provides a complete ETL pipeline with 7 commands: `run`, `billing`, `validate`, `export`, `clean`,
 `stats`, and `init`. It extracts tracks from MusicBee playlists, enriches them with cross-platform statistics via the
 Songstats API, and generates power rankings using a weighted scoring algorithm (0-100 scale with data availability
 weighting).
@@ -118,6 +119,12 @@ msc clean --no-dry-run
 msc clean --no-dry-run --older-than 7
 ```
 
+## Utility Scripts
+
+The [`_scripts`](_scripts) directory contains standalone utilities for manual operations outside the main CLI pipeline.
+
+See the associated [`README.md`](_scripts/README.md) for detailed documentation.
+
 ## Project Structure
 
 ```
@@ -125,6 +132,7 @@ music-charts/
 ├── .github/                # GitHub Actions & Dependabot configurations
 ├── _config/                # Runtime configuration
 ├── _data/                  # Data artifacts (gitignored)
+├── _scripts/               # Standalone utility scripts
 ├── _tests/                 # Test suite
 ├── _tokens/                # Credentials (gitignored)
 └── msc/                    # Main package

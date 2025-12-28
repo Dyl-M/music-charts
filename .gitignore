@@ -166,7 +166,8 @@ cython_debug/
 
 # New data structure
 _data/cache/
-_data/demo
+_data/demo/
+_data/input/
 _data/logs/
 _data/output/
 _data/runs/
