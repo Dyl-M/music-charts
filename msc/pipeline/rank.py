@@ -210,7 +210,7 @@ class RankingStage(PipelineStage[list[TrackWithStats], PowerRankingResults], Obs
         import json
 
         try:
-            data = results.model_dump(mode="json")
+            data = results.model_dump(mode="json", by_alias=True)
 
             with secure_write(
                     file_path,

@@ -24,6 +24,7 @@ from msc.models.track import Track, SongstatsIdentifiers
 track = Track(
     title="16",
     artist_list=["blasterjaxx", "hardwell", "maddix"],
+    artist="Blasterjaxx & Hardwell & Maddix",  # MusicBee "Artist Displayed" tag
     year=2024,
     genre=["hard techno"],
     grouping=["revealed"],
@@ -32,8 +33,9 @@ track = Track(
 # Access properties
 print(track.primary_artist)  # "blasterjaxx"
 print(track.all_artists_string)  # "blasterjaxx, hardwell, maddix"
-print(track.identifier)  # "a1b2c3d4" (8-char UUID5-based)
+print(track.identifier)  # "a1b2c3d4" (8-char UUID5-based, serialized as "track_id")
 print(track.legacy_identifier)  # "blasterjaxx_16_2024"
+print(track.artist)  # "Blasterjaxx & Hardwell & Maddix" (clean display format)
 
 # Check genre
 if track.has_genre("hard techno"):
@@ -182,6 +184,7 @@ All models share these characteristics:
 
 - **Immutable** (`frozen=True`): Data doesn't change after creation
 - **Validated**: Pydantic validates all inputs
-- **Serializable**: `model_dump()` / `model_dump_json()` for export
+- **Serializable**: `model_dump(by_alias=True)` for export with proper field names
+- **Track IDs**: `identifier` property serializes as `track_id` in JSON output
 - **Legacy Support**: `from_legacy_json()` for old data formats
 - **Flat Export**: `to_flat_dict()` for DataFrame compatibility

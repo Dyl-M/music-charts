@@ -9,7 +9,7 @@ track metadata with platform statistics.
 from typing import Annotated, Any, Self
 
 # Third-party
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, computed_field
 
 # Local
 from msc.models.base import MSCBaseModel
@@ -321,6 +321,7 @@ class TrackWithStats(MSCBaseModel):
         )
     ]
 
+    @computed_field(alias="track_id")  # Serialize as "track_id"
     @property
     def identifier(self) -> str:
         """Unique identifier for this track.
@@ -329,7 +330,7 @@ class TrackWithStats(MSCBaseModel):
         Used as the unique key for storage and retrieval.
 
         Returns:
-            Track identifier string
+            8-character hexadecimal identifier (e.g., "a1b2c3d4")
 
         Examples:
             >>> track_with_stats = TrackWithStats(
@@ -344,7 +345,7 @@ class TrackWithStats(MSCBaseModel):
             ...     )
             ... )
             >>> track_with_stats.identifier
-            'blasterjaxx_16_2024'
+            'a1b2c3d4'
         """
         return self.track.identifier
 

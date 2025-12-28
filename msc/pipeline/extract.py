@@ -111,6 +111,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 if isinstance(track_data, dict):
                     year = track_data.get("year")
                     artist_list = track_data.get("artist_list", [])
+                    artist = track_data.get("artist")  # MusicBee "Artist Displayed" tag
                     title = track_data.get("title", "")
                     grouping = track_data.get("grouping")
                     genre = track_data.get("genre")
@@ -118,6 +119,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                 else:
                     year = track_data.year
                     artist_list = getattr(track_data, "artist_list", [])
+                    artist = getattr(track_data, "artist", None)  # MusicBee "Artist Displayed" tag
                     title = track_data.title
                     grouping = getattr(track_data, "grouping", None)
                     genre = getattr(track_data, "genre", None)
@@ -146,6 +148,7 @@ class ExtractionStage(PipelineStage[list[Track], list[Track]], Observable):
                     track = Track(
                         title=title,
                         artist_list=artist_list,
+                        artist=artist,  # MusicBee "Artist Displayed" tag
                         year=year,
                         genre=genre_list,
                         grouping=grouping_list,  # Store as list (supports multiple values)
