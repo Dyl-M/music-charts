@@ -728,8 +728,8 @@ class SongstatsClient(BaseClient):
                 for item in videos
             ]
 
-            # Sort helper: treat None views as 0 for comparison
             def view_count_key(vid: dict[str, Any]) -> int:
+                """Extract view count for sorting, treating None as 0."""
                 views = vid.get("views")
                 return views if views is not None else 0
 
