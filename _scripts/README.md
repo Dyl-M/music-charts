@@ -181,9 +181,111 @@ python _scripts/manual_link_submission.py --submit --debug
 
 **Options:**
 
-| Flag         | Description                                       |
-|--------------|---------------------------------------------------|
-| `--submit`   | Submit pending links to Songstats API             |
-| `--platform` | Filter by specific platform (e.g., `soundcloud`)  |
-| `--debug`    | Enable debug logging (shows API responses)        |
-| `--input`    | Custom path to platform_coverage.json             |
+| Flag         | Description                                      |
+|--------------|--------------------------------------------------|
+| `--submit`   | Submit pending links to Songstats API            |
+| `--platform` | Filter by specific platform (e.g., `soundcloud`) |
+| `--debug`    | Enable debug logging (shows API responses)       |
+| `--input`    | Custom path to platform_coverage.json            |
+
+---
+
+### `manual_youtube_coverage.py`
+
+Manage YouTube video source coverage for enriched tracks. Identifies tracks with fewer
+than 5 YouTube sources and compares a curated playlist against track sources.
+
+**Usage:**
+
+```bash
+# Show coverage summary (default)
+python _scripts/manual_youtube_coverage.py
+
+# Generate/update coverage report from enriched tracks
+python _scripts/manual_youtube_coverage.py --generate
+
+# Submit new YouTube links to Songstats API
+python _scripts/manual_youtube_coverage.py --submit
+
+# Interactively whitelist tracks (no more sources to add)
+python _scripts/manual_youtube_coverage.py --whitelist-tracks
+
+# Interactively whitelist playlist videos (not relevant)
+python _scripts/manual_youtube_coverage.py --whitelist-videos
+
+# Enable debug logging
+python _scripts/manual_youtube_coverage.py --generate --debug
+```
+
+**Workflow:**
+
+1. Run pipeline to generate `enriched_tracks.json`
+2. Run `--generate` to create coverage report at `_data/input/youtube_coverage.json`
+3. Review tracks needing sources and unmatched playlist videos
+4. Fill in `new_links` field for tracks you want to enhance
+5. Run `--submit` to send new links to Songstats API
+6. Run `--whitelist-tracks` to mark tracks as fully covered
+7. Run `--whitelist-videos` to mark playlist videos as not relevant
+8. Re-run `--generate` to update report with whitelist exclusions
+
+**Output files:**
+
+| File                                 | Description                                        |
+|--------------------------------------|----------------------------------------------------|
+| `_data/input/youtube_coverage.json`  | Tracks needing sources + unmatched playlist videos |
+| `_data/input/youtube_whitelist.json` | Whitelisted tracks and playlist videos             |
+| `_data/logs/youtube_coverage.log`    | Execution log                                      |
+
+**Coverage JSON format:**
+
+```json
+{
+  "tracks_needing_sources": [
+    {
+      "track_id": "f68b210b",
+      "artist": "Disclosure",
+      "title": "When A Fire Starts To Burn",
+      "songstats_id": "em0th986",
+      "current_sources": [
+        "GR9pJd5KBp8"
+      ],
+      "source_count": 1,
+      "new_links": []
+    }
+  ],
+  "unmatched_playlist_videos": [
+    {
+      "video_id": "dQw4w9WgXcQ",
+      "title": "Rick Astley - Never Gonna Give You Up",
+      "channel_name": "RickAstleyVEVO",
+      "position": 42
+    }
+  ]
+}
+```
+
+**Whitelist JSON format:**
+
+```json
+{
+  "tracks": [
+    "track_id_1",
+    "track_id_2"
+  ],
+  "playlist_videos": [
+    "video_id_1",
+    "video_id_2"
+  ]
+}
+```
+
+**Options:**
+
+| Flag                 | Description                                            |
+|----------------------|--------------------------------------------------------|
+| `--generate`         | Generate/update coverage report from enriched tracks   |
+| `--submit`           | Submit new YouTube links to Songstats API              |
+| `--whitelist-tracks` | Interactively whitelist tracks (no more sources)       |
+| `--whitelist-videos` | Interactively whitelist playlist videos (not relevant) |
+| `--debug`            | Enable debug logging                                   |
+| `--input`            | Custom path to enriched_tracks.json                    |

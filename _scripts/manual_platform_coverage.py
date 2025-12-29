@@ -32,6 +32,7 @@ import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any
 
 # Add project root to path for imports
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -39,10 +40,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # Local imports (reuse existing components)
 # ruff: noqa: E402
-from msc.config.settings import get_settings
+from _shared import (
+    get_display_artist,
+    load_enriched_tracks,
+    resolve_input_path,
+    setup_script_context,
+)
+
 from msc.models.stats import TrackWithStats
-from msc.utils.logging import LogLevel, get_logger, setup_logging
-from msc.utils.path_utils import validate_path_within_base
 
 # Platform names matching PlatformStats model field names
 # Note: TikTok excluded - too difficult for manual additions
@@ -103,24 +108,6 @@ def is_platform_missing(track: TrackWithStats, platform: str) -> bool:
     return len(non_none_fields) == 0
 
 
-def get_display_artist(track: TrackWithStats) -> str:
-    """Get artist display name for output.
-
-    Uses Track.artist (MusicBee "Artist Displayed" tag) if available,
-    falls back to all_artists_string.
-
-    Args:
-        track: TrackWithStats instance.
-
-    Returns:
-        Artist display string.
-    """
-    if track.track.artist:
-        return track.track.artist
-
-    return track.track.all_artists_string
-
-
 def create_empty_whitelist() -> dict[str, list[str]]:
     """Create empty whitelist structure with all platforms.
 
@@ -177,51 +164,6 @@ def save_whitelist(whitelist: dict[str, list[str]], whitelist_path: Path) -> Non
         json.dump(sorted_whitelist, f, indent=2, ensure_ascii=False)
 
     temp_file.replace(whitelist_path)
-
-
-def load_enriched_tracks(
-        stats_path: Path,
-        logger: logging.Logger | None = None,
-) -> list[TrackWithStats]:
-    """Load enriched tracks from stats JSON file.
-
-    Args:
-        stats_path: Path to enriched_tracks.json.
-        logger: Optional logger for reporting skipped entries.
-
-    Returns:
-        List of TrackWithStats instances.
-
-    Raises:
-        FileNotFoundError: If file does not exist.
-    """
-    validate_path_within_base(stats_path, PROJECT_ROOT)
-
-    if not stats_path.exists():
-        raise FileNotFoundError(f"Enriched tracks file not found: {stats_path}")
-
-    with open(stats_path, encoding="utf-8") as f:
-        data = json.load(f)
-
-    tracks = []
-    skipped = 0
-
-    for item in data:
-        try:
-            track = TrackWithStats.model_validate(item)
-            tracks.append(track)
-        except Exception as e:
-            skipped += 1
-
-            if logger:
-                logger.warning("Skipping invalid track entry: %s", e)
-
-            continue
-
-    if skipped > 0 and logger:
-        logger.warning("Skipped %d invalid track entries", skipped)
-
-    return tracks
 
 
 def generate_coverage_report(
@@ -521,33 +463,14 @@ def main() -> None:
     """Main entry point for platform coverage utility."""
     args = parse_args()
 
-    settings = get_settings()
-    log_file = settings.data_dir / "logs" / LOG_FILE
-
-    log_level: LogLevel = "DEBUG" if args.debug else "INFO"
-
-    setup_logging(
-        level=log_level,
-        console_level=log_level,
-        log_file=log_file,
-    )
-
-    logger = get_logger(__name__)
+    # Initialize common context
+    ctx = setup_script_context(args, LOG_FILE)
+    logger = ctx.logger
 
     # Paths
-    input_dir = settings.data_dir / "input"
-    coverage_path = input_dir / COVERAGE_FILE
-    whitelist_path = input_dir / WHITELIST_FILE
-
-    # Determine enriched tracks path
-    if args.input:
-        stats_path = args.input
-
-        if not stats_path.is_absolute():
-            stats_path = PROJECT_ROOT / stats_path
-
-    else:
-        stats_path = settings.data_dir / "output" / "enriched_tracks.json"
+    coverage_path = ctx.input_dir / COVERAGE_FILE
+    whitelist_path = ctx.input_dir / WHITELIST_FILE
+    stats_path = resolve_input_path(args, ctx.settings)
 
     # Load whitelist
     whitelist = load_whitelist(whitelist_path)
@@ -633,7 +556,7 @@ def main() -> None:
                 logger.info("  python _scripts/manual_platform_coverage.py --generate")
 
         logger.info("")
-        logger.info("Log file: %s", log_file)
+        logger.info("Log file: %s", ctx.log_file)
 
     except FileNotFoundError as e:
         logger.error("File not found: %s", e)

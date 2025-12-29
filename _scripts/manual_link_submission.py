@@ -29,7 +29,6 @@ import json
 import logging
 import sys
 from pathlib import Path
-from time import sleep
 from typing import Any
 
 # Add project root to path for imports
@@ -38,6 +37,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # Local imports (reuse existing components)
 # ruff: noqa: E402
+from _shared import display_submission_results, submit_links_to_songstats
+
 from msc.clients.songstats import SongstatsClient
 from msc.config.settings import get_settings
 from msc.utils.logging import LogLevel, get_logger, setup_logging
@@ -138,86 +139,6 @@ def get_pending_submissions(
     return pending
 
 
-def submit_links(
-        client: SongstatsClient,
-        submissions: list[dict[str, Any]],
-        logger: logging.Logger,
-) -> dict[str, Any]:
-    """Submit links to Songstats API.
-
-    Args:
-        client: Initialized SongstatsClient.
-        submissions: List of submission entries.
-        logger: Logger instance for output.
-
-    Returns:
-        Dictionary with 'success', 'pending', 'failed' counts and track lists.
-    """
-    results: dict[str, Any] = {
-        "success": 0,
-        "pending": 0,
-        "failed": 0,
-        "successful_tracks": [],
-        "pending_tracks": [],
-        "failed_tracks": [],
-    }
-
-    for idx, submission in enumerate(submissions, start=1):
-        platform = submission["platform"]
-        songstats_id = submission["songstats_id"]
-        link = submission["link"]
-        track_name = f"{submission['artist']} - {submission['title']}"
-        display_name = PLATFORM_DISPLAY_NAMES.get(platform, platform)
-
-        logger.info(
-            "Processing %d/%d: [%s] %s",
-            idx,
-            len(submissions),
-            display_name,
-            track_name,
-        )
-        logger.info("  Link: %s", link)
-
-        if not songstats_id:
-            results["failed"] += 1
-            results["failed_tracks"].append(f"{track_name} (no songstats_id)")
-            logger.error("  Failed: Missing songstats_id")
-            continue
-
-        response = client.add_track_link(
-            link=link,
-            songstats_track_id=songstats_id,
-        )
-
-        logger.debug("API response: %s", response)
-
-        if not response:
-            results["failed"] += 1
-            results["failed_tracks"].append(f"{track_name} (no response)")
-            logger.error("  Failed: No response from API")
-
-        elif response.get("result") == "success":
-            results["success"] += 1
-            results["successful_tracks"].append(track_name)
-            logger.info("  Success: Link submitted")
-
-        elif "support team" in response.get("message", "").lower():
-            # Manual review required - not an error, just pending
-            results["pending"] += 1
-            results["pending_tracks"].append(track_name)
-            logger.warning("  Pending: Requires manual review")
-
-        else:
-            results["failed"] += 1
-            message = response.get("message", "Unknown error")
-            results["failed_tracks"].append(f"{track_name} ({message})")
-            logger.error("  Failed: %s", message)
-
-        sleep(1)  # Rate limiting
-
-    return results
-
-
 def display_pending_summary(
         pending: list[dict[str, Any]],
         logger: logging.Logger,
@@ -264,43 +185,6 @@ def display_pending_summary(
     logger.info("")
     logger.info("-" * 60)
     logger.info("Total pending: %d links", total)
-
-
-def display_results_summary(
-        results: dict[str, Any],
-        logger: logging.Logger,
-) -> None:
-    """Display submission results summary.
-
-    Args:
-        results: Results dictionary from submit_links.
-        logger: Logger instance.
-    """
-    logger.info("")
-    logger.info("=" * 60)
-    logger.info("Submission Summary")
-    logger.info("=" * 60)
-    logger.info("Successful:     %d", results["success"])
-    logger.info("Pending review: %d", results["pending"])
-    logger.info("Failed:         %d", results["failed"])
-
-    if results["successful_tracks"]:
-        logger.info("")
-        logger.info("Successfully submitted:")
-        for track in results["successful_tracks"]:
-            logger.info("  - %s", track)
-
-    if results["pending_tracks"]:
-        logger.info("")
-        logger.info("Pending manual review:")
-        for track in results["pending_tracks"]:
-            logger.info("  - %s", track)
-
-    if results["failed_tracks"]:
-        logger.info("")
-        logger.info("Failed submissions:")
-        for track in results["failed_tracks"]:
-            logger.info("  - %s", track)
 
 
 def parse_args() -> argparse.Namespace:
@@ -420,10 +304,10 @@ def main() -> None:
 
             logger.info("")
 
-            client = SongstatsClient()
-            results = submit_links(client, pending, logger)
+            with SongstatsClient() as client:
+                results = submit_links_to_songstats(client, pending, logger)
 
-            display_results_summary(results, logger)
+            display_submission_results(results, logger)
 
         else:
             # Preview mode (default)

@@ -50,9 +50,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # Local imports (reuse existing components)
 # ruff: noqa: E402
+from _shared import (
+    display_submission_results,
+    save_json_atomically,
+    setup_script_context,
+)
+
 from msc.clients.songstats import SongstatsClient
 from msc.config.settings import get_settings
-from msc.utils.logging import LogLevel, get_logger, setup_logging
 from msc.utils.path_utils import validate_path_within_base
 
 
@@ -188,7 +193,7 @@ def submit_tracks(
         logger: Logger instance for output.
 
     Returns:
-        Dictionary with 'success' count, 'failed' count, and 'successful_tracks' list.
+        Dictionary with 'success', 'pending', 'failed' counts and track lists.
     """
     results: dict[str, Any] = {
         "success": 0,
@@ -196,6 +201,7 @@ def submit_tracks(
         "failed": 0,
         "successful_tracks": [],
         "pending_tracks": [],
+        "failed_tracks": [],
     }
 
     for idx, submission in enumerate(submissions, start=1):
@@ -220,6 +226,7 @@ def submit_tracks(
 
         if not response:
             results["failed"] += 1
+            results["failed_tracks"].append(f"{track_name} (no response)")
             logger.error("Failed to submit: %s (No response)", track_id)
 
         elif response.get("result") == "success":
@@ -236,6 +243,7 @@ def submit_tracks(
         else:
             results["failed"] += 1
             message = response.get("message", "Unknown error")
+            results["failed_tracks"].append(f"{track_name} ({message})")
             logger.error("Failed to submit: %s (%s)", track_id, message)
 
         sleep(1)  # Let the API breathe
@@ -297,11 +305,7 @@ def generate_template(pending_tracks: list[dict[str, Any]], output_path: Path) -
             "spotify_track_id": "",
         })
 
-    # Ensure parent directory exists
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(template_entries, f, indent=2, ensure_ascii=False)
+    save_json_atomically(template_entries, output_path)
 
     return len(template_entries)
 
@@ -389,22 +393,16 @@ Examples:
     return parser.parse_args()
 
 
+LOG_FILE = "manual_submissions.log"
+
+
 def main() -> None:
     """Main entry point for manual track submission script."""
     args = parse_args()
 
-    settings = get_settings()
-    log_file = settings.data_dir / "logs" / "manual_submissions.log"
-
-    log_level: LogLevel = "DEBUG" if args.debug else "INFO"
-
-    setup_logging(
-        level=log_level,
-        console_level=log_level,
-        log_file=log_file,
-    )
-
-    logger = get_logger(__name__)
+    # Initialize common context
+    ctx = setup_script_context(args, LOG_FILE)
+    logger = ctx.logger
 
     # Handle --generate mode
     if args.generate:
@@ -441,7 +439,7 @@ def main() -> None:
 
     else:
         # Auto-detect from default or specified input directory
-        input_dir = args.input_dir if args.input_dir else PROJECT_ROOT / DEFAULT_INPUT_FOLDER
+        input_dir = args.input_dir if args.input_dir else ctx.input_dir
 
         if not input_dir.is_absolute():
             input_dir = PROJECT_ROOT / input_dir
@@ -473,35 +471,16 @@ def main() -> None:
             logger.warning("No submissions found in input file")
             sys.exit(0)
 
-        client = SongstatsClient()
-
         logger.info("")
         logger.info("Submitting tracks to Songstats API...")
-        results = submit_tracks(client, submissions, logger)
+
+        with SongstatsClient() as client:
+            results = submit_tracks(client, submissions, logger)
+
+        display_submission_results(results, logger)
 
         logger.info("")
-        logger.info("=" * 60)
-        logger.info("Submission Summary")
-        logger.info("=" * 60)
-        logger.info("Total submitted:  %d", len(submissions))
-        logger.info("Successful:       %d", results["success"])
-        logger.info("Pending review:   %d", results["pending"])
-        logger.info("Failed:           %d", results["failed"])
-
-        if results["successful_tracks"]:
-            logger.info("")
-            logger.info("Successfully added tracks:")
-            for track_name in results["successful_tracks"]:
-                logger.info("  - %s", track_name)
-
-        if results["pending_tracks"]:
-            logger.info("")
-            logger.info("Tracks pending manual review:")
-            for track_name in results["pending_tracks"]:
-                logger.info("  - %s", track_name)
-
-        logger.info("")
-        logger.info("Log file: %s", log_file)
+        logger.info("Log file: %s", ctx.log_file)
 
     except FileNotFoundError as e:
         logger.error("File not found: %s", e)
