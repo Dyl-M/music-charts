@@ -82,7 +82,9 @@ class MinMaxNormalizer(NormalizationStrategy):
                 # First normalize to [0, 1], then scale to feature_range
                 unit_normalized = (value - min_val) / (max_val - min_val)
                 scaled = unit_normalized * self._range_span + self._range_min
-                normalized.append(scaled)
+                # Clamp to range to prevent floating-point drift beyond bounds
+                clamped = max(self._range_min, min(self._range_max, scaled))
+                normalized.append(clamped)
 
         return normalized
 

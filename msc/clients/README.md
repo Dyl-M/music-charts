@@ -73,17 +73,24 @@ results = client.search_track("hardwell blasterjaxx 16", limit=3)
 for r in results:
     print(f"{r['title']} by {r['artists']} (ID: {r['songstats_id']})")
 
-# Get track info
+# Get track info (links, platform availability)
 info = client.get_track_info(songstats_id="qmr6e0bx")
 
+# Get track metadata (title, artists, labels, ISRC)
+# Useful for repopulating manually-added Songstats IDs
+metadata = client.get_track_metadata(songstats_id="qmr6e0bx")
+print(f"Title: {metadata['title']}")
+print(f"Artists: {metadata['artists']}")
+print(f"Labels: {metadata['labels']}")
+print(f"ISRC: {metadata['isrc']}")
+
 # Get platform statistics
-stats = client.get_track_stats(songstats_id="qmr6e0bx")
+stats = client.get_platform_stats(songstats_id="qmr6e0bx")
 # Returns stats for all platforms: spotify, apple_music, youtube, etc.
 
 # Get YouTube videos for a track
 videos = client.get_youtube_videos(songstats_id="qmr6e0bx")
-for v in videos:
-    print(f"{v['title']} - {v['view_count']} views")
+print(f"Most viewed: {videos['most_viewed']['ytb_id']}")
 ```
 
 ## YouTube Client

@@ -65,7 +65,7 @@ class JSONTrackRepository(TrackRepository):
         try:
             self.file_path.parent.mkdir(parents=True, exist_ok=True)
 
-            data = [track.model_dump(mode="json") for track in self._tracks.values()]
+            data = [track.model_dump(mode="json", by_alias=True) for track in self._tracks.values()]
 
             # Write to temp file first for atomicity
             temp_file = self.file_path.with_suffix(".tmp")
@@ -176,7 +176,7 @@ class JSONStatsRepository(StatsRepository):
         try:
             self.file_path.parent.mkdir(parents=True, exist_ok=True)
 
-            data = [stats.model_dump(mode="json") for stats in self._stats.values()]
+            data = [stats.model_dump(mode="json", by_alias=True) for stats in self._stats.values()]
 
             # Write to temp file first for atomicity
             temp_file = self.file_path.with_suffix(".tmp")
@@ -242,7 +242,7 @@ class JSONStatsRepository(StatsRepository):
                 data = [stats.to_flat_dict() for stats in self._stats.values()]
 
             else:
-                data = [stats.model_dump(mode="json") for stats in self._stats.values()]
+                data = [stats.model_dump(mode="json", by_alias=True) for stats in self._stats.values()]
 
             with secure_write(file_path, encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)

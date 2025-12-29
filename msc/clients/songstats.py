@@ -369,6 +369,80 @@ class SongstatsClient(BaseClient):
 
         return normalized
 
+    def get_track_metadata(self, songstats_track_id: str) -> dict[str, Any]:
+        """Fetch track metadata for repopulating missing identifier fields.
+
+        Retrieves title, artists, labels, and ISRC from track info endpoint.
+        Useful for manually-added Songstats IDs that lack complete metadata.
+
+        Args:
+            songstats_track_id: Songstats track identifier.
+
+        Returns:
+            Dictionary with metadata fields:
+            - title: Track title from Songstats
+            - artists: List of artist names
+            - labels: List of label names
+            - isrc: ISRC code (if available)
+
+        Examples:
+            >>> client.get_track_metadata("qmr6e0bx")
+            {'title': 'Track Name', 'artists': ['Artist'], 'labels': ['Label'], 'isrc': 'USRC12345678'}
+        """
+        if not songstats_track_id or not songstats_track_id.strip():
+            self.logger.error("Songstats track ID is required")
+            return {}
+
+        track_info = self.get_track_info(songstats_track_id.strip())
+        if not track_info:
+            return {}
+
+        metadata: dict[str, Any] = {
+            "title": "",
+            "artists": [],
+            "labels": [],
+            "isrc": None,
+        }
+
+        track_info_data = track_info.get("track_info", {})
+
+        # Extract title
+        metadata["title"] = track_info_data.get("title", "")
+
+        # Extract artists (may be in track_info or need search)
+        artists_data = track_info_data.get("artists", [])
+        if isinstance(artists_data, list):
+            metadata["artists"] = [
+                artist["name"] if isinstance(artist, dict) else str(artist)
+                for artist in artists_data
+            ]
+
+        # Extract labels (may be in track_info or need search)
+        labels_data = track_info_data.get("labels", [])
+        if isinstance(labels_data, list):
+            metadata["labels"] = [
+                label["name"] if isinstance(label, dict) else str(label)
+                for label in labels_data
+            ]
+
+        # Extract ISRC from links
+        links = track_info_data.get("links", [])
+        for link in links:
+            if isinstance(link, dict) and link.get("isrc"):
+                metadata["isrc"] = link["isrc"]
+                break
+
+        self.logger.debug(
+            "Retrieved metadata for %s: title=%s, artists=%d, labels=%d, isrc=%s",
+            songstats_track_id,
+            metadata["title"][:30] if metadata["title"] else "N/A",
+            len(metadata["artists"]),
+            len(metadata["labels"]),
+            "yes" if metadata["isrc"] else "no",
+        )
+
+        return metadata
+
     # =========================================================================
     # Data modification endpoints (POST)
     # =========================================================================
@@ -654,6 +728,11 @@ class SongstatsClient(BaseClient):
                 for item in videos
             ]
 
+            def view_count_key(vid: dict[str, Any]) -> int:
+                """Extract view count for sorting, treating None as 0."""
+                views = vid.get("views")
+                return views if views is not None else 0
+
             # Find most viewed non-Topic video, fall back to Topic video if none
             non_topic_videos = [
                 vid for vid in video_list
@@ -661,11 +740,12 @@ class SongstatsClient(BaseClient):
             ]
 
             if non_topic_videos:
-                most_viewed = non_topic_videos[0]
+                # Sort by views descending to find actual most viewed
+                most_viewed = max(non_topic_videos, key=view_count_key)
 
             elif video_list:
                 # Fallback to most viewed Topic video if no non-Topic videos exist
-                most_viewed = video_list[0]
+                most_viewed = max(video_list, key=view_count_key)
 
             else:
                 most_viewed = {}

@@ -135,16 +135,21 @@ class PowerRanking(MSCBaseModel):
     def artist_display(self) -> str:
         """Artist name(s) for display.
 
-        Returns primary artist for single artist, or "Artist1 & Artist2"
-        for collaborations.
+        Uses MusicBee 'Artist Displayed' tag if available (clean format),
+        otherwise falls back to joining artist_list.
 
         Returns:
             Formatted artist string.
 
         Examples:
             >>> ranking.artist_display
-            'blasterjaxx & hardwell & maddix'
+            'Disclosure'  # From MusicBee tag
         """
+        # Use MusicBee "Artist Displayed" tag if available
+        if self.track.artist:
+            return self.track.artist
+
+        # Fallback to joined artist_list
         if len(self.track.artist_list) == 1:
             return self.track.primary_artist
         return " & ".join(self.track.artist_list)

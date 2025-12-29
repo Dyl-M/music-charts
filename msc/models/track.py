@@ -5,7 +5,7 @@ import uuid
 from typing import Annotated, Any
 
 # Third-party
-from pydantic import Field, ConfigDict, field_validator
+from pydantic import Field, ConfigDict, computed_field, field_validator
 
 # Local
 from msc.models.base import MSCBaseModel
@@ -52,6 +52,13 @@ class Track(MSCBaseModel):
         list[str],
         Field(min_length=1, description="List of artist names")
     ]
+    artist: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="MusicBee 'Artist Displayed' tag (clean format, excludes remixers)"
+        )
+    ]
     year: Annotated[
         int,
         Field(ge=1900, le=2100, description="Release year")
@@ -81,6 +88,7 @@ class Track(MSCBaseModel):
     songstats_identifiers: Annotated[
         "SongstatsIdentifiers",
         Field(
+            alias="s_identifiers",
             default_factory=lambda: SongstatsIdentifiers(songstats_id="", songstats_title=""),
             description="Songstats track identifiers (populated during extraction)"
         )
@@ -132,6 +140,7 @@ class Track(MSCBaseModel):
         """
         return ", ".join(self.artist_list)
 
+    @computed_field(alias="track_id")  # Serialize as "track_id"
     @property
     def identifier(self) -> str:
         """Unique identifier for this track (UUID5-based).

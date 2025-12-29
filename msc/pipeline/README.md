@@ -164,6 +164,36 @@ class SlackNotifier(PipelineObserver):
 orchestrator.attach(SlackNotifier())
 ```
 
+## Manual Songstats ID Addition
+
+When tracks fail automatic matching, you can manually add Songstats IDs to `tracks.json`.
+The enrichment stage will automatically repopulate missing metadata fields.
+
+### Process
+
+1. Check `manual_review.json` for unmatched tracks
+2. Find the Songstats ID on [songstats.com](https://songstats.com) (from URL: `songstats.com/track/<ID>`)
+3. Edit `tracks.json` and add the ID:
+
+```json
+{
+  "songstats_identifiers": {
+    "s_id": "qmr6e0bx",
+    "s_title": ""
+  }
+}
+```
+
+4. Run enrichment: `msc run --year 2025 --stage enrich --stage rank`
+
+The enrichment stage will detect the incomplete metadata and automatically fetch:
+- `songstats_title` - Track title from Songstats
+- `songstats_artists` - Artist names
+- `songstats_labels` - Record labels
+- `isrc` - International Standard Recording Code
+
+The updated metadata is saved back to `tracks.json`.
+
 ## Run Directory Structure
 
 Each pipeline run creates a timestamped directory:

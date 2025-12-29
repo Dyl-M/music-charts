@@ -574,3 +574,130 @@ class TestSongstatsClientExtractYouTubeVideos:
         result = client._extract_youtube_videos(response)
         assert result["most_viewed"] == {}
         assert result["all_sources"] == []
+
+    @staticmethod
+    def test_selects_most_viewed_with_none_views_in_list(client) -> None:
+        """Should select video with highest views even when some have None views.
+
+        Regression test: API can return videos with view_count=None (e.g., newly
+        added or unavailable videos). The extraction should skip None views and
+        select the actual most viewed video.
+        """
+        response = {
+            "stats": [
+                {
+                    "source": "youtube",
+                    "data": {
+                        "videos": [
+                            {
+                                "external_id": "vid_none",
+                                "view_count": None,
+                                "youtube_channel_name": "Some Channel",
+                            },
+                            {
+                                "external_id": "vid_high",
+                                "view_count": 1500000,
+                                "youtube_channel_name": "Official Channel",
+                            },
+                            {
+                                "external_id": "vid_low",
+                                "view_count": 50000,
+                                "youtube_channel_name": "Fan Channel",
+                            },
+                        ],
+                    },
+                }
+            ]
+        }
+        result = client._extract_youtube_videos(response)
+
+        # Should select the video with 1.5M views, not the one with None
+        assert result["most_viewed"]["ytb_id"] == "vid_high"
+        assert result["most_viewed"]["views"] == 1500000
+        assert len(result["all_sources"]) == 3
+
+
+class TestSongstatsClientGetTrackMetadata:
+    """Tests for get_track_metadata method."""
+
+    @staticmethod
+    def test_returns_empty_on_empty_id(client) -> None:
+        """Should return empty dict for empty ID."""
+        result = client.get_track_metadata("")
+        assert result == {}
+
+    @staticmethod
+    def test_returns_empty_on_whitespace_id(client) -> None:
+        """Should return empty dict for whitespace-only ID."""
+        result = client.get_track_metadata("   ")
+        assert result == {}
+
+    @staticmethod
+    def test_returns_metadata_from_track_info(client) -> None:
+        """Should extract metadata from track_info response."""
+        with patch.object(client, "get_track_info") as mock_info:
+            mock_info.return_value = {
+                "track_info": {
+                    "title": "Test Track",
+                    "artists": [{"name": "Artist 1"}, {"name": "Artist 2"}],
+                    "labels": [{"name": "Label 1"}],
+                    "links": [{"source": "spotify", "isrc": "USRC12345678"}],
+                }
+            }
+            result = client.get_track_metadata("test_id")
+
+            assert result["title"] == "Test Track"
+            assert result["artists"] == ["Artist 1", "Artist 2"]
+            assert result["labels"] == ["Label 1"]
+            assert result["isrc"] == "USRC12345678"
+
+    @staticmethod
+    def test_handles_string_artists(client) -> None:
+        """Should handle artist names as strings."""
+        with patch.object(client, "get_track_info") as mock_info:
+            mock_info.return_value = {
+                "track_info": {
+                    "title": "Test Track",
+                    "artists": ["Artist 1", "Artist 2"],
+                    "labels": [],
+                    "links": [],
+                }
+            }
+            result = client.get_track_metadata("test_id")
+            assert result["artists"] == ["Artist 1", "Artist 2"]
+
+    @staticmethod
+    def test_returns_empty_when_track_info_fails(client) -> None:
+        """Should return empty dict when get_track_info returns empty."""
+        with patch.object(client, "get_track_info") as mock_info:
+            mock_info.return_value = {}
+            result = client.get_track_metadata("test_id")
+            assert result == {}
+
+    @staticmethod
+    def test_handles_missing_fields(client) -> None:
+        """Should handle missing fields gracefully."""
+        with patch.object(client, "get_track_info") as mock_info:
+            mock_info.return_value = {"track_info": {}}
+            result = client.get_track_metadata("test_id")
+
+            assert result["title"] == ""
+            assert result["artists"] == []
+            assert result["labels"] == []
+            assert result["isrc"] is None
+
+    @staticmethod
+    def test_extracts_isrc_from_first_link(client) -> None:
+        """Should extract ISRC from first link that has one."""
+        with patch.object(client, "get_track_info") as mock_info:
+            mock_info.return_value = {
+                "track_info": {
+                    "links": [
+                        {"source": "deezer"},  # No ISRC
+                        {"source": "spotify", "isrc": "FIRST_ISRC"},
+                        {"source": "apple_music", "isrc": "SECOND_ISRC"},
+                    ],
+                }
+            }
+            result = client.get_track_metadata("test_id")
+            assert result["isrc"] == "FIRST_ISRC"

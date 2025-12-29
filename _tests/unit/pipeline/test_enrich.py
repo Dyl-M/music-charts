@@ -602,3 +602,239 @@ class TestEnrichmentStageLoadErrors:
 
         event_types = [e.event_type for e in mock_observer.events]
         assert EventType.ERROR in event_types
+
+
+class TestEnrichmentStageMetadataRepopulation:
+    """Tests for metadata repopulation functionality."""
+
+    @staticmethod
+    def test_needs_repopulation_false_without_id(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+    ) -> None:
+        """Should return False when track has no songstats_id."""
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+        )
+        track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+        )
+        assert stage._needs_metadata_repopulation(track) is False
+
+    @staticmethod
+    def test_needs_repopulation_false_when_complete(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+    ) -> None:
+        """Should return False when all metadata fields are present."""
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+        )
+        track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="abc123",
+                songstats_title="Test Title",
+                songstats_artists=["Artist"],
+                songstats_labels=["Label"],
+                isrc="USRC12345678",
+            ),
+        )
+        assert stage._needs_metadata_repopulation(track) is False
+
+    @staticmethod
+    def test_needs_repopulation_true_when_missing_title(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+    ) -> None:
+        """Should return True when songstats_title is missing."""
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+        )
+        track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="abc123",
+                songstats_title="",  # Empty title
+                songstats_artists=["Artist"],
+                songstats_labels=["Label"],
+                isrc="USRC12345678",
+            ),
+        )
+        assert stage._needs_metadata_repopulation(track) is True
+
+    @staticmethod
+    def test_needs_repopulation_true_when_missing_artists(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+    ) -> None:
+        """Should return True when songstats_artists is empty."""
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+        )
+        track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="abc123",
+                songstats_title="Title",
+                songstats_artists=[],  # Empty artists
+                songstats_labels=["Label"],
+                isrc="USRC12345678",
+            ),
+        )
+        assert stage._needs_metadata_repopulation(track) is True
+
+    @staticmethod
+    def test_repopulate_metadata_updates_missing_fields(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+    ) -> None:
+        """Should update missing metadata fields from API."""
+        mock_songstats_client.get_track_metadata.return_value = {
+            "title": "API Title",
+            "artists": ["API Artist"],
+            "labels": ["API Label"],
+            "isrc": "NEWISRC123",
+        }
+
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+        )
+
+        track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="abc123",
+                songstats_title="",  # Missing
+            ),
+        )
+
+        updated = stage._repopulate_metadata(track)
+
+        assert updated.songstats_identifiers.songstats_title == "API Title"
+        assert updated.songstats_identifiers.songstats_artists == ["API Artist"]
+        assert updated.songstats_identifiers.songstats_labels == ["API Label"]
+        assert updated.songstats_identifiers.isrc == "NEWISRC123"
+
+    @staticmethod
+    def test_repopulate_metadata_preserves_existing_fields(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+    ) -> None:
+        """Should not overwrite existing metadata fields."""
+        mock_songstats_client.get_track_metadata.return_value = {
+            "title": "API Title",
+            "artists": ["API Artist"],
+            "labels": ["API Label"],
+            "isrc": "NEWISRC123",
+        }
+
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+        )
+
+        track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="abc123",
+                songstats_title="Existing Title",  # Already has title
+                isrc="EXISTINGISRC",  # Already has ISRC
+            ),
+        )
+
+        updated = stage._repopulate_metadata(track)
+
+        # Should preserve existing values
+        assert updated.songstats_identifiers.songstats_title == "Existing Title"
+        assert updated.songstats_identifiers.isrc == "EXISTINGISRC"
+        # Should update missing values
+        assert updated.songstats_identifiers.songstats_artists == ["API Artist"]
+        assert updated.songstats_identifiers.songstats_labels == ["API Label"]
+
+    @staticmethod
+    def test_repopulate_metadata_returns_original_on_api_failure(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+    ) -> None:
+        """Should return original track when API fails."""
+        mock_songstats_client.get_track_metadata.return_value = {}
+
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+        )
+
+        track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="abc123",
+                songstats_title="",
+            ),
+        )
+
+        result = stage._repopulate_metadata(track)
+        assert result.songstats_identifiers.songstats_title == ""
+
+    @staticmethod
+    def test_update_track_in_repository(
+            mock_songstats_client: MagicMock,
+            mock_stats_repository: MagicMock,
+            mock_checkpoint_manager: MagicMock,
+            mock_track_repository: MagicMock,
+    ) -> None:
+        """Should update track in repository with new metadata."""
+        updated_track = Track(
+            title="Test",
+            artist_list=["Artist"],
+            year=2024,
+            songstats_identifiers=SongstatsIdentifiers(
+                songstats_id="abc123",
+                songstats_title="New Title",
+            ),
+        )
+
+        stage = EnrichmentStage(
+            songstats_client=mock_songstats_client,
+            stats_repository=mock_stats_repository,
+            checkpoint_manager=mock_checkpoint_manager,
+            track_repository=mock_track_repository,
+        )
+
+        stage._update_track_in_repository(updated_track)
+
+        # add() is called with the updated track
+        mock_track_repository.add.assert_called_once_with(updated_track)
