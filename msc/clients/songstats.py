@@ -728,6 +728,11 @@ class SongstatsClient(BaseClient):
                 for item in videos
             ]
 
+            # Sort helper: treat None views as 0 for comparison
+            def view_count_key(vid: dict[str, Any]) -> int:
+                views = vid.get("views")
+                return views if views is not None else 0
+
             # Find most viewed non-Topic video, fall back to Topic video if none
             non_topic_videos = [
                 vid for vid in video_list
@@ -735,11 +740,12 @@ class SongstatsClient(BaseClient):
             ]
 
             if non_topic_videos:
-                most_viewed = non_topic_videos[0]
+                # Sort by views descending to find actual most viewed
+                most_viewed = max(non_topic_videos, key=view_count_key)
 
             elif video_list:
                 # Fallback to most viewed Topic video if no non-Topic videos exist
-                most_viewed = video_list[0]
+                most_viewed = max(video_list, key=view_count_key)
 
             else:
                 most_viewed = {}

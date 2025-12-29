@@ -575,6 +575,47 @@ class TestSongstatsClientExtractYouTubeVideos:
         assert result["most_viewed"] == {}
         assert result["all_sources"] == []
 
+    @staticmethod
+    def test_selects_most_viewed_with_none_views_in_list(client) -> None:
+        """Should select video with highest views even when some have None views.
+
+        Regression test: API can return videos with view_count=None (e.g., newly
+        added or unavailable videos). The extraction should skip None views and
+        select the actual most viewed video.
+        """
+        response = {
+            "stats": [
+                {
+                    "source": "youtube",
+                    "data": {
+                        "videos": [
+                            {
+                                "external_id": "vid_none",
+                                "view_count": None,
+                                "youtube_channel_name": "Some Channel",
+                            },
+                            {
+                                "external_id": "vid_high",
+                                "view_count": 1500000,
+                                "youtube_channel_name": "Official Channel",
+                            },
+                            {
+                                "external_id": "vid_low",
+                                "view_count": 50000,
+                                "youtube_channel_name": "Fan Channel",
+                            },
+                        ],
+                    },
+                }
+            ]
+        }
+        result = client._extract_youtube_videos(response)
+
+        # Should select the video with 1.5M views, not the one with None
+        assert result["most_viewed"]["ytb_id"] == "vid_high"
+        assert result["most_viewed"]["views"] == 1500000
+        assert len(result["all_sources"]) == 3
+
 
 class TestSongstatsClientGetTrackMetadata:
     """Tests for get_track_metadata method."""
