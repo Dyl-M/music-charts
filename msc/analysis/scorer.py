@@ -240,6 +240,8 @@ class PowerRankingScorer:
                 weighted_sum += norm_value * avail_weight
 
             score = weighted_sum / total_availability
+            # Clamp to 0-100 range to prevent floating-point drift
+            score = max(0.0, min(100.0, score))
             track_scores.append(score)
 
         # Step 5: Compute category weight = avg_availability

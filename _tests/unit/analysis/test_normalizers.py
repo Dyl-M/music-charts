@@ -112,6 +112,27 @@ class TestMinMaxNormalizerNormalize:
         assert result[1] == 0.0  # 10 is min
         assert result[2] == 100.0  # 50 is max
 
+    @staticmethod
+    def test_clamps_floating_point_drift() -> None:
+        """Should clamp values to prevent floating-point drift beyond range.
+
+        Due to floating-point arithmetic, calculations like (max - min) / (max - min)
+        can produce values slightly above 1.0. This test verifies clamping works.
+        """
+        normalizer = MinMaxNormalizer()
+
+        # Use values that might cause floating-point precision issues
+        result = normalizer.normalize([0.0, 100.0])
+
+        # Both min and max should be exactly at bounds
+        assert result[0] == 0.0
+        assert result[1] == 100.0
+        assert result[1] <= 100.0  # Strictly <= 100
+
+        # All values should be within bounds
+        for value in result:
+            assert 0.0 <= value <= 100.0
+
 
 class TestZScoreNormalizerInit:
     """Tests for ZScoreNormalizer initialization."""
