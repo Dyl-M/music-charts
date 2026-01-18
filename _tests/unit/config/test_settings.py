@@ -39,9 +39,9 @@ class TestSettingsDefaults:
 
     @staticmethod
     def test_default_year() -> None:
-        """Should default to 2025."""
+        """Should default to 2026."""
         settings = Settings()
-        assert settings.year == 2025
+        assert settings.year == 2026
 
     @staticmethod
     def test_default_playlist_id() -> None:

@@ -528,8 +528,8 @@ class TestCLIExport:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2026"
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             # Create fake stats file
@@ -552,7 +552,7 @@ class TestCLIExport:
 
             mock_formatter.format_export_summary.return_value = "Export summary"
 
-            result = runner.invoke(app, ["export", "--year", "2025", "--format", "csv"])
+            result = runner.invoke(app, ["export", "--year", "2026", "--format", "csv"])
 
             assert result.exit_code == 0
             mock_exporter.export_csv.assert_called_once()
@@ -569,8 +569,8 @@ class TestCLIExport:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2026"
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             stats_file = tmp_path / "output" / "enriched_tracks.json"
@@ -592,7 +592,7 @@ class TestCLIExport:
 
             mock_formatter.format_export_summary.return_value = "Export summary"
 
-            result = runner.invoke(app, ["export", "--year", "2025", "--format", "ods"])
+            result = runner.invoke(app, ["export", "--year", "2026", "--format", "ods"])
 
             assert result.exit_code == 0
             mock_exporter.export_ods.assert_called_once()
@@ -609,8 +609,8 @@ class TestCLIExport:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2026"
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             stats_file = tmp_path / "output" / "enriched_tracks.json"
@@ -632,7 +632,7 @@ class TestCLIExport:
 
             mock_formatter.format_export_summary.return_value = "Export summary"
 
-            result = runner.invoke(app, ["export", "--year", "2025", "--format", "html"])
+            result = runner.invoke(app, ["export", "--year", "2026", "--format", "html"])
 
             assert result.exit_code == 0
             mock_exporter.export_html.assert_called_once()
@@ -645,10 +645,10 @@ class TestCLIExport:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
-            result = runner.invoke(app, ["export", "--year", "2025"])
+            result = runner.invoke(app, ["export", "--year", "2026"])
 
             assert result.exit_code == 1
             assert "no data found" in result.output.lower()
@@ -662,7 +662,7 @@ class TestCLIExport:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             stats_file = tmp_path / "output" / "enriched_tracks.json"
@@ -673,7 +673,7 @@ class TestCLIExport:
             mock_repo.count.return_value = 0
             mock_repo_class.return_value = mock_repo
 
-            result = runner.invoke(app, ["export", "--year", "2025"])
+            result = runner.invoke(app, ["export", "--year", "2026"])
 
             assert result.exit_code == 1
             assert "empty" in result.output.lower()
@@ -687,8 +687,8 @@ class TestCLIExport:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year_output_dir = tmp_path / "output" / "2025"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year_output_dir = tmp_path / "output" / "2026"
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             stats_file = tmp_path / "output" / "enriched_tracks.json"
@@ -699,7 +699,7 @@ class TestCLIExport:
             mock_repo.count.return_value = 5
             mock_repo_class.return_value = mock_repo
 
-            result = runner.invoke(app, ["export", "--year", "2025", "--format", "pdf"])
+            result = runner.invoke(app, ["export", "--year", "2026", "--format", "pdf"])
 
             assert result.exit_code == 1
             assert "unsupported" in result.output.lower()
@@ -718,7 +718,7 @@ class TestCLIStats:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             stats_file = tmp_path / "output" / "enriched_tracks.json"
@@ -732,7 +732,7 @@ class TestCLIStats:
 
             mock_count.return_value = {"Spotify": 1, "Apple Music": 0}
 
-            result = runner.invoke(app, ["stats", "--year", "2025"])
+            result = runner.invoke(app, ["stats", "--year", "2026"])
 
             assert result.exit_code == 0
             assert "statistics" in result.output.lower()
@@ -745,10 +745,10 @@ class TestCLIStats:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
-            result = runner.invoke(app, ["stats", "--year", "2025"])
+            result = runner.invoke(app, ["stats", "--year", "2026"])
 
             assert result.exit_code == 1
             assert "no data found" in result.output.lower()
@@ -762,7 +762,7 @@ class TestCLIStats:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
             mock_settings_obj.output_dir = tmp_path / "output"
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             stats_file = tmp_path / "output" / "enriched_tracks.json"
@@ -773,7 +773,7 @@ class TestCLIStats:
             mock_repo.get_all.return_value = []
             mock_repo_class.return_value = mock_repo
 
-            result = runner.invoke(app, ["stats", "--year", "2025"])
+            result = runner.invoke(app, ["stats", "--year", "2026"])
 
             assert result.exit_code == 1
             assert "empty" in result.output.lower()

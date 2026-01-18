@@ -33,7 +33,7 @@ def mock_settings_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("MSC_DATA_DIR", str(data_dir))
     monkeypatch.setenv("MSC_TOKENS_DIR", str(tokens_dir))
     monkeypatch.setenv("MSC_CONFIG_DIR", str(config_dir))
-    monkeypatch.setenv("MSC_YEAR", "2025")
+    monkeypatch.setenv("MSC_YEAR", "2026")
 
     return tmp_path
 

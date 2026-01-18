@@ -59,7 +59,7 @@ class TestRunCommandIntegration:
                 patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orchestrator:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             mock_orch = MagicMock()
@@ -82,7 +82,7 @@ class TestRunCommandIntegration:
                 patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orchestrator:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             mock_orch = MagicMock()
@@ -106,7 +106,7 @@ class TestRunCommandIntegration:
                 patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orchestrator_class:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             mock_orch = MagicMock()
@@ -131,7 +131,7 @@ class TestRunCommandIntegration:
                 patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orchestrator_class:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             mock_orch = MagicMock()
@@ -155,11 +155,11 @@ class TestRunCommandIntegration:
                 patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orchestrator_class:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
             # Create a fake run directory
-            run_dir = tmp_path / "runs" / "2025_test"
+            run_dir = tmp_path / "runs" / "2026_test"
             run_dir.mkdir(parents=True)
             (run_dir / "test_file.json").write_text("{}", encoding="utf-8")
 
@@ -185,10 +185,10 @@ class TestRunCommandIntegration:
                 patch("msc.pipeline.orchestrator.PipelineOrchestrator") as mock_orchestrator_class:
             mock_settings_obj = MagicMock()
             mock_settings_obj.data_dir = tmp_path
-            mock_settings_obj.year = 2025
+            mock_settings_obj.year = 2026
             mock_settings.return_value = mock_settings_obj
 
-            run_dir = tmp_path / "runs" / "2025_test"
+            run_dir = tmp_path / "runs" / "2026_test"
             run_dir.mkdir(parents=True)
             (run_dir / "test_file.json").write_text("{}", encoding="utf-8")
 
