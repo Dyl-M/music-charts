@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     year: Annotated[
         int,
         Field(description="Target year for analysis", ge=2000, le=2100),
-    ] = 2025
+    ] = 2026
 
     playlist_id: Annotated[
         str,

@@ -56,19 +56,19 @@ msc init
 
 ```bash
 # Run all stages (extract, enrich, rank)
-msc run --year 2025
+msc run --year 2026
 
 # Run specific stages only
-msc run --year 2025 --stage extract --stage enrich
+msc run --year 2026 --stage extract --stage enrich
 
 # Skip YouTube enrichment
-msc run --year 2025 --no-youtube
+msc run --year 2026 --no-youtube
 
 # Reset and start fresh
-msc run --year 2025 --reset
+msc run --year 2026 --reset
 
 # Custom playlist
-msc run --year 2025 --playlist "My Custom Playlist"
+msc run --year 2026 --playlist "My Custom Playlist"
 ```
 
 ### Check API billing
@@ -82,28 +82,28 @@ msc billing
 
 ```bash
 # Export to CSV (default)
-msc export --year 2025
+msc export --year 2026
 
 # Export to ODS (LibreOffice/OpenOffice)
-msc export --year 2025 --format ods --output rankings.ods
+msc export --year 2026 --format ods --output rankings.ods
 
 # Export to HTML
-msc export --year 2025 --format html --output report.html
+msc export --year 2026 --format html --output report.html
 ```
 
 ### Validate Data Files
 
 ```bash
 # Validate any JSON data file (auto-detects format)
-msc validate _data/output/2025/stats.json
-msc validate _data/output/2025/rankings.json
+msc validate _data/output/2026/stats.json
+msc validate _data/output/2026/rankings.json
 ```
 
 ### View Statistics
 
 ```bash
 # Display dataset statistics
-msc stats --year 2025
+msc stats --year 2026
 ```
 
 ### Clean Cache
@@ -171,4 +171,4 @@ mypy msc/                   # Type checking (when available)
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE) - Copyright (c) 2024-2025 Dylan "Dyl-M" Monfret.
+This project is licensed under the [MIT License](LICENSE) - Copyright (c) 2024-2026 Dylan "Dyl-M" Monfret.

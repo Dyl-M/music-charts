@@ -163,7 +163,7 @@ def run(
                 "-y",
                 help="Target year for analysis.",
             ),
-        ] = 2025,
+        ] = 2026,
 
         stages: Annotated[
             list[str],
@@ -239,10 +239,10 @@ def run(
     Use --new-run to force creation of a fresh run directory.
 
     Examples:
-        msc run --year 2025                    # Resume latest 2025 run or create new
-        msc run --year 2025 --new-run          # Force new run directory
-        msc run --year 2025 --stage extract    # Resume and run extraction only
-        msc run --year 2025 --reset            # Start from scratch
+        msc run --year 2026                    # Resume latest 2026 run or create new
+        msc run --year 2026 --new-run          # Force new run directory
+        msc run --year 2026 --stage extract    # Resume and run extraction only
+        msc run --year 2026 --reset            # Start from scratch
         msc run --test-mode                    # Run with test fixtures (no API calls)
         msc run --test-mode --limit 2          # Test with only 2 tracks
     """
@@ -373,8 +373,8 @@ def validate(
     and validates against the appropriate Pydantic model.
 
     Examples:
-        msc validate _data/output/2025/stats.json
-        msc validate _data/output/2025/rankings.json
+        msc validate _data/output/2026/stats.json
+        msc validate _data/output/2026/rankings.json
     """
     try:
         from rich.console import Console
@@ -417,7 +417,7 @@ def export(
                 "-y",
                 help="Year to export.",
             ),
-        ] = 2025,
+        ] = 2026,
         export_format: Annotated[
             str,
             typer.Option(
@@ -438,9 +438,9 @@ def export(
     """Export enriched track data to CSV, ODS (LibreOffice), or HTML format.
 
     Examples:
-        msc export --year 2025 --format csv
-        msc export --year 2025 --format ods --output rankings.ods
-        msc export --year 2025 --format html --output report.html
+        msc export --year 2026 --format csv
+        msc export --year 2026 --format ods --output rankings.ods
+        msc export --year 2026 --format html --output report.html
     """
     try:
         from msc.storage.json_repository import JSONStatsRepository
@@ -639,12 +639,12 @@ def stats(
                 "-y",
                 help="Year to analyze.",
             ),
-        ] = 2025,
+        ] = 2026,
 ) -> None:
     """Display statistics about processed track data.
 
     Examples:
-        msc stats --year 2025
+        msc stats --year 2026
     """
     try:
         from msc.storage.json_repository import JSONStatsRepository
