@@ -26,8 +26,10 @@ Input CSV Format:
 Input JSON Format:
     [
         {"songstats_artist_id": "abc123", "spotify_track_id": "4uLU6hMCjMI75M1A2tKUQC"},
-        {"songstats_artist_id": "def456", "spotify_track_id": "7ouMYWpwJ422jRcDASZB7P"}
+        {"songstats_artist_id": "def456", "spotify_track_id": ["7ouMYWpwJ422jRcDASZB7P", "2abc..."]}
     ]
+
+    Note: spotify_track_id can be a single string or a list of strings (JSON only).
 
 Output:
     - Console: Real-time progress with success/failure counts
@@ -86,7 +88,7 @@ def load_manual_review() -> list[dict[str, Any]]:
     return []
 
 
-def load_input_file(file_path: Path) -> list[dict[str, str]]:
+def load_input_file(file_path: Path) -> list[dict[str, Any]]:
     """Load artist/track ID pairs from CSV or JSON input file.
 
     Args:
@@ -94,6 +96,7 @@ def load_input_file(file_path: Path) -> list[dict[str, str]]:
 
     Returns:
         List of dictionaries with 'songstats_artist_id' and 'spotify_track_id' keys.
+        For JSON, spotify_track_id can be a string or list of strings.
 
     Raises:
         FileNotFoundError: If file does not exist.
@@ -145,14 +148,14 @@ def _parse_csv(file_path: Path) -> list[dict[str, str]]:
         return data
 
 
-def _parse_json(file_path: Path) -> list[dict[str, str]]:
+def _parse_json(file_path: Path) -> list[dict[str, Any]]:
     """Parse JSON input file.
 
     Args:
         file_path: Path to JSON file.
 
     Returns:
-        List of parsed objects.
+        List of parsed objects. spotify_track_id can be a string or list of strings.
 
     Raises:
         ValueError: If JSON structure is invalid.
@@ -177,19 +180,33 @@ def _parse_json(file_path: Path) -> list[dict[str, str]]:
                 f"Required: {', '.join(sorted(required))}"
             )
 
+        # Validate spotify_track_id is string or list of strings
+        track_id = item["spotify_track_id"]
+        if isinstance(track_id, str):
+            continue
+        elif isinstance(track_id, list):
+            if not all(isinstance(tid, str) for tid in track_id):
+                raise ValueError(
+                    f"Item {idx}: spotify_track_id list must contain only strings"
+                )
+        else:
+            raise ValueError(
+                f"Item {idx}: spotify_track_id must be a string or list of strings"
+            )
+
     return data
 
 
 def submit_tracks(
         client: SongstatsClient,
-        submissions: list[dict[str, str]],
+        submissions: list[dict[str, Any]],
         logger: logging.Logger,
 ) -> dict[str, Any]:
     """Submit tracks to Songstats API.
 
     Args:
         client: Initialized SongstatsClient.
-        submissions: List of artist/track ID pairs.
+        submissions: List of artist/track ID pairs. spotify_track_id can be string or list.
         logger: Logger instance for output.
 
     Returns:
@@ -206,47 +223,53 @@ def submit_tracks(
 
     for idx, submission in enumerate(submissions, start=1):
         artist_id = submission["songstats_artist_id"]
-        track_id = submission["spotify_track_id"]
-        track_name = submission.get("track", f"{artist_id} / {track_id}")
+        track_ids = submission["spotify_track_id"]
+        track_name = submission.get("track", f"{artist_id} / {track_ids}")
+
+        # Normalize to list for uniform processing
+        if isinstance(track_ids, str):
+            track_ids = [track_ids]
 
         logger.info(
-            "Processing %d/%d: artist=%s, track=%s",
+            "Processing %d/%d: artist=%s, track(s)=%s",
             idx,
             len(submissions),
             artist_id,
-            track_id,
+            track_ids,
         )
 
-        response = client.add_artist_track(
-            songstats_artist_id=artist_id,
-            spotify_track_id=track_id,
-        )
+        for track_id in track_ids:
+            spotify_link = f"https://open.spotify.com/track/{track_id}"
+            response = client.add_artist_track(
+                songstats_artist_id=artist_id,
+                link=spotify_link,
+            )
 
-        logger.debug("API response: %s", response)
+            logger.debug("API response: %s", response)
 
-        if not response:
-            results["failed"] += 1
-            results["failed_tracks"].append(f"{track_name} (no response)")
-            logger.error("Failed to submit: %s (No response)", track_id)
+            if not response:
+                results["failed"] += 1
+                results["failed_tracks"].append(f"{track_name} [{track_id}] (no response)")
+                logger.error("Failed to submit: %s (No response)", track_id)
 
-        elif response.get("result") == "success":
-            results["success"] += 1
-            results["successful_tracks"].append(track_name)
-            logger.info("Successfully added: %s", track_id)
+            elif response.get("result") == "success":
+                results["success"] += 1
+                results["successful_tracks"].append(f"{track_name} [{track_id}]")
+                logger.info("Successfully added: %s", track_id)
 
-        elif "support team" in response.get("message", "").lower():
-            # Manual review required - not an error, just pending
-            results["pending"] += 1
-            results["pending_tracks"].append(track_name)
-            logger.warning("Pending manual review: %s", track_id)
+            elif "support team" in response.get("message", "").lower():
+                # Manual review required - not an error, just pending
+                results["pending"] += 1
+                results["pending_tracks"].append(f"{track_name} [{track_id}]")
+                logger.warning("Pending manual review: %s", track_id)
 
-        else:
-            results["failed"] += 1
-            message = response.get("message", "Unknown error")
-            results["failed_tracks"].append(f"{track_name} ({message})")
-            logger.error("Failed to submit: %s (%s)", track_id, message)
+            else:
+                results["failed"] += 1
+                message = response.get("message", "Unknown error")
+                results["failed_tracks"].append(f"{track_name} [{track_id}] ({message})")
+                logger.error("Failed to submit: %s (%s)", track_id, message)
 
-        sleep(1)  # Let the API breathe
+            sleep(1)  # Let the API breathe
 
     return results
 
