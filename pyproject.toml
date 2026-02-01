@@ -8,7 +8,7 @@ version = "1.1.0"
 description = "Data pipeline for analyzing track performance across streaming platforms"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.12, <3.15"
+requires-python = ">=3.12, <3.13"
 authors = [
     { name = "Dylan \"Dyl-M\" Monfret", email = "dyl_m.dev@proton.me" }
 ]
@@ -24,30 +24,30 @@ classifiers = [
 ]
 
 dependencies = [
-    "google-auth>=2.41.0,<2.49.0",
-    "google-auth-oauthlib>=1.2.3",
-    "libpybee>=0.2.1",
-    "odfpy>=1.4.1",
-    "pandas>=2.3.0",
-    "plotly>=6.5.0",
-    "pydantic>=2.10.0",
-    "pydantic-settings>=2.6.0",
-    "python-youtube>=0.9.7",
-    "requests>=2.32.5",
-    "scikit-learn>=1.7.0",
-    "tenacity>=9.0.0",
-    "tqdm>=4.67.0",
-    "typer>=0.15.0",
+    "google-auth==2.48.0",
+    "google-auth-oauthlib==1.2.4",
+    "libpybee==0.2.1",
+    "odfpy==1.4.1",
+    "pandas==2.3.0",
+    "plotly==6.5.0",
+    "pydantic==2.10.0",
+    "pydantic-settings==2.6.0",
+    "python-youtube==0.9.7",
+    "requests==2.32.5",
+    "scikit-learn==1.7.0",
+    "tenacity==9.0.0",
+    "tqdm==4.67.0",
+    "typer==0.15.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pandas-stubs>=2.3.3",
-    "pytest>=9.0.2",
-    "pytest-cov>=7.0.0",
-    "ruff>=0.8.0",
-    "mypy>=1.13.0",
-    "types-requests>=2.32.0",
+    "pandas-stubs==2.3.3.260113",
+    "pytest==9.0.2",
+    "pytest-cov==7.0.0",
+    "ruff==0.8.0",
+    "mypy==1.13.0",
+    "types-requests==2.32.4.20260107",
 ]
 
 [project.scripts]
