@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "google-auth>=2.41.0, <2.42.0",
+    "google-auth>=2.41.0,<2.49.0",
     "google-auth-oauthlib>=1.2.3",
     "libpybee>=0.2.1",
     "odfpy>=1.4.1",
