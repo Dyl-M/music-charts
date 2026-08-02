@@ -24,20 +24,20 @@ classifiers = [
 ]
 
 dependencies = [
-    "google-auth==2.55.1",
+    "google-auth==2.56.2",
     "google-auth-oauthlib==1.4.0",
     "libpybee==0.2.1",
     "odfpy==1.4.1",
-    "pandas==3.0.3",
-    "plotly==6.8.0",
+    "pandas==3.0.5",
+    "plotly==6.9.0",
     "pydantic==2.13.4",
     "pydantic-settings==2.14.2",
     "python-youtube==0.9.9",
     "requests==2.34.2",
     "scikit-learn==1.9.0",
     "tenacity==9.1.4",
-    "tqdm==4.68.3",
-    "typer==0.26.8",
+    "tqdm==4.70.0",
+    "typer==0.27.0",
 ]
 
 [project.optional-dependencies]
@@ -45,9 +45,9 @@ dev = [
     "pandas-stubs==3.0.3.260530",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
-    "ruff==0.15.20",
-    "mypy==2.1.0",
-    "types-requests==2.33.0.20260518",
+    "ruff==0.16.0",
+    "mypy==2.3.0",
+    "types-requests==2.33.0.20260712",
 ]
 
 [project.scripts]
