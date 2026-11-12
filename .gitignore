@@ -185,3 +185,6 @@ _drafts/
 
 # Ruff
 .ruff_cache/
+
+# uv lockfile (not versioned: dependency alerts are based on pyproject.toml only)
+uv.lock
